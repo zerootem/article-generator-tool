@@ -1,0 +1,30 @@
+name = "article-generator-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-14"
+workers_dev = true
+
+[vars]
+# Replace placeholders through Cloudflare Dashboard; no secret values belong in this file.
+TEAM_DOMAIN = "https://REPLACE_WITH_TEAM.cloudflareaccess.com"
+POLICY_AUD = "REPLACE_WITH_ACCESS_APPLICATION_AUD"
+ADMIN_EMAIL = "REPLACE_WITH_OWNER_EMAIL"
+ALLOWED_ORIGINS = "https://zerootem.github.io"
+AI_MODEL = "gpt-4.1-mini"
+AI_ALLOWED_MODELS = '["gpt-4.1-mini"]'
+
+[[kv_namespaces]]
+binding = "AI_SETTINGS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[[ratelimits]]
+name = "AI_RATE_LIMITER"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+[observability]
+enabled = true
+
+[secrets]
+required = ["AI_PROVIDER_API_KEY"]
