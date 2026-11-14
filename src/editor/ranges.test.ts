@@ -23,4 +23,21 @@ describe('editor range mapping', () => {
     expect(findActiveRange(nested, 17, 18)?.id).toBe('inner');
     expect(findActiveRange(nested, 17, 18, 'heading')).toBeNull();
   });
+
+  it('chooses the next block when the caret is exactly at a shared boundary', () => {
+    const adjacent = [
+      { id: 'before', type: 'paragraph', start: 0, end: 10 },
+      { id: 'after', type: 'heading', start: 10, end: 20 },
+    ];
+    expect(findActiveRange(adjacent, 10, 10)?.id).toBe('after');
+  });
+
+  it('chooses a nested block at its opening boundary and falls back to the final block end', () => {
+    const nested = [
+      { id: 'outer', type: 'paragraph', start: 0, end: 30 },
+      { id: 'inner', type: 'heading', start: 10, end: 20 },
+    ];
+    expect(findActiveRange(nested, 10, 10)?.id).toBe('inner');
+    expect(findActiveRange(nested, 20, 20)?.id).toBe('outer');
+  });
 });

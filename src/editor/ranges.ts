@@ -68,8 +68,13 @@ export function findActiveRange(
     .filter((range) => {
       if (type && range.type !== type) return false;
       return low === high
-        ? low >= range.start && low <= range.end
+        ? low >= range.start && low < range.end
         : low < range.end && high > range.start;
     })
-    .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0] ?? null;
+    .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0]
+    ?? (low === high
+      ? ranges.filter((range) => (!type || range.type === type) && low === range.end)
+        .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0]
+      : undefined)
+    ?? null;
 }

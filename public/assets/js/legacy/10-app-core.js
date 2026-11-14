@@ -462,6 +462,7 @@ function modweebRenderEditor(b){
                 <option value="warning" ${b.noteStyle==="warning"?"selected":""}>تحذير</option>
                 <option value="question" ${b.noteStyle==="question"?"selected":""}>سؤال (qs)</option>
             </select>`;
+            h += `<input class="modweeb-gen-input" type="text" placeholder="${b.noteStyle==='warning'?'Warning!':b.noteStyle==='question'?'Did you know?':'Info!'}" value="${modweebEscapeAttr(b.noteTitle||'')}" onchange="updateBlock('${t}','noteTitle',this.value)">`;
             h += `<textarea class="modweeb-gen-textarea" placeholder="نص الملاحظة" onchange="updateBlock('${t}','content',this.value)">${b.content||""}</textarea>`;
             return h;
         }
@@ -479,6 +480,8 @@ function modweebRenderEditor(b){
             h += `<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;margin-top:4px;cursor:pointer">
                 <input type="checkbox" ${b.alertOutlined?"checked":""} onchange="updateBlock('${t}','alertOutlined',this.checked)"> نمط Outline (مخطط)
             </label>`;
+            const alertTitles = {info:'Info!',warning:'Warning!',success:'Success!',error:'Error!',tip:'Tip!',question:'Question'};
+            h += `<input class="modweeb-gen-input" type="text" placeholder="${alertTitles[b.alertStyle||'info']||'Info!'}" value="${modweebEscapeAttr(b.alertTitle||'')}" onchange="updateBlock('${t}','alertTitle',this.value)">`;
             h += `<textarea class="modweeb-gen-textarea" placeholder="نص التنبيه" onchange="updateBlock('${t}','content',this.value)">${b.content||""}</textarea>`;
             return h;
         }
@@ -899,9 +902,10 @@ function modweebRenderPreviewItem(b){
         /* ─── Note (info / warning / question) ─── */
         case "note": {
             let cls = "note";
-            let label = "Info!";
-            if (b.noteStyle === "warning") { cls += " wr"; label = "Warning!"; }
-            else if (b.noteStyle === "question") { cls += " qs"; label = "Did you know?"; }
+            const labels = {info:"Info!",warning:"Warning!",question:"Did you know?"};
+            if (b.noteStyle === "warning") cls += " wr";
+            else if (b.noteStyle === "question") cls += " qs";
+            const label = modweebEscapeHtml(b.noteTitle || labels[b.noteStyle] || labels.info);
             return `<p class="${cls}"><b>${label}</b><br>\n  ${b.content||""}\n</p>`;
         }
 
@@ -915,7 +919,7 @@ function modweebRenderPreviewItem(b){
             const base = st.split(' ')[0];
             const outlined = b.alertOutlined || st.includes('outline');
             const cls = 'alert ' + base + (outlined ? ' outline' : '');
-            const lbl = labels[base] || 'Info!';
+            const lbl = modweebEscapeHtml(b.alertTitle || labels[base] || 'Info!');
             return `<div class="${cls}"><b>${lbl}</b>\n  ${b.content||""}\n</div>`;
         }
 
@@ -1347,36 +1351,6 @@ function closeConfirmSheet(confirmed){
 }
 
 /* ============================================================
-   14. AI Base URL
-   ============================================================ */
-const AI_BASE = (() => {
-    const h = window.location.hostname;
-    if (h.includes('replit') || h.includes('repl.co') || h.includes('replit.dev') || h.includes('replit.app')) {
-        return window.location.origin + '/api/ai';
-    }
-    return 'https://b01955d8-12d4-4391-a6ec-4e0002010656-00-2om65nm992vw3.sisko.replit.dev/api/ai';
-})();
-
-
-let _aiCountdownTimer = null;
-function aiShowRateLimit(retryFn, seconds){
-    if (seconds === undefined) seconds = 62;
-    if (_aiCountdownTimer) clearInterval(_aiCountdownTimer);
-    let remaining = seconds;
-    const tick = () => {
-        modweebShowStatus('تجاوزت حد الطلبات - إعادة المحاولة بعد ' + remaining + ' ثانية...', 2000);
-        remaining--;
-        if (remaining <= 0) {
-            clearInterval(_aiCountdownTimer);
-            _aiCountdownTimer = null;
-            retryFn();
-        }
-    };
-    tick();
-    _aiCountdownTimer = setInterval(tick, 1000);
-}
-
-/* ============================================================
    15. AI: Suggest Titles
    ============================================================ */
 async function aiGenerateArticle(){
@@ -1389,7 +1363,7 @@ async function aiGenerateArticle(){
         return;
     }
     const generationMode = window.modweebAI.getGenerationMode();
-    const noKeyMode = generationMode === 'puter';
+    const noKeyMode = generationMode === 'puter' || generationMode === 'worker';
     const activeProvider = window.modweebAI.getActiveProvider();
     if (!noKeyMode && window.modweebAgent && !window.modweebAgent.hasKey(activeProvider)) {
         modweebShowStatus('أضف مفتاح API للمزود المختار أولاً؛ فتح الإعدادات…', 2500);
@@ -1415,7 +1389,7 @@ async function aiGenerateArticle(){
         size: (document.getElementById('aiSize')||{}).value || 'md',
         language: (document.getElementById('aiLanguage')||{}).value || 'ar',
         country: (document.getElementById('aiCountry')||{}).value || 'ar',
-        pov: (document.getElementById('aiPov')||{}).value || 'we',
+        pov: (document.getElementById('aiPov')||{}).value || 'neutral',
         readingEase: (document.getElementById('aiReadingEase')||{}).value || 'easy',
         articleType: (document.getElementById('aiArticleType')||{}).value || 'guide',
         opening: (document.getElementById('aiOpening')||{}).value || 'brief',
@@ -1428,7 +1402,13 @@ async function aiGenerateArticle(){
         hasKeyPoints:    chk('aiHasKeyPoints'),
         hasInstructions: chk('aiHasInstructions'),
         hasBold:         chk('aiHasBold'),
-        hasImages: false, hasYoutube: false
+        hasNotes:        chk('aiHasNotes'),
+        hasAlerts:       chk('aiHasAlerts'),
+        hasBlur:         chk('aiHasBlur'),
+        hasCode:         chk('aiHasCode'),
+        hasImages:       chk('aiHasImages'),
+        hasYoutube:      chk('aiHasYoutube'),
+        youtubeReference: (document.getElementById('aiYoutubeReference')||{}).value || ''
     };
 
     const { systemPrompt, userPrompt } = window.modweebPrompts.article(params);
@@ -1439,23 +1419,23 @@ async function aiGenerateArticle(){
             systemPrompt, userPrompt,
             maxTokens: 16000,
             temperature: 0.7,
-            jsonMode: true,
-            serverFallback: async () => {
-                /* fallback للخادم */
-                const r = await fetch(AI_BASE + '/generate-article', {
-                    method: 'POST',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify(params)
-                });
-                const d = await r.json();
-                return JSON.stringify(d); /* نتوقع JSON */
-            }
+            jsonMode: true
         });
 
         const data = window.modweebAI.parseJSON(raw);
         if (!data || !Array.isArray(data.sections) || data.sections.length === 0) throw new Error('لم يُرجع المزود أقسام مقال صالحة؛ جرّب نموذجاً آخر أو قلّل حجم المقال');
+        const videoId = params.hasYoutube && typeof window.modweebExtractYoutubeId === 'function'
+            ? window.modweebExtractYoutubeId(params.youtubeReference) : '';
+        /* لا نثق بأي معرّف فيديو أنشأه النموذج؛ يُقبل فقط رابط/معرّف أدخله المستخدم. */
+        data.sections = data.sections.filter(section => section && section.type !== 'lazyYt');
+        if (videoId) {
+            const nextH2 = data.sections.findIndex((section, index) => index > 0 && section.type === 'heading' && /^h2$/i.test(section.headingLevel || ''));
+            const insertAt = nextH2 > 0 ? nextH2 : Math.min(3, data.sections.length);
+            data.sections.splice(insertAt, 0, {type:'lazyYt', youtubeId:videoId, youtubeMode:'lazy', ratio:'16/9'});
+        }
         closeAIPopup();
         aiApplySections(data);
+        if (params.hasYoutube && !videoId) modweebShowStatus('تم توليد المقال. ابحث عن فيديو مناسب والصق رابطه قبل إعادة التوليد لإدراجه.', 5000);
     } catch(e) {
         if (e.message === 'no_key'){
             modweebShowStatus('لا يوجد مفتاح API محفوظ للمزود المختار؛ افتح إعدادات المزود وأضف المفتاح', 4500);
@@ -1520,16 +1500,7 @@ async function aiSuggestTitles(){
     const { systemPrompt, userPrompt } = window.modweebPrompts.suggestTitles({ title: topic, language: lang, count: 10 });
 
     try {
-        const raw = await window.modweebAI.call({
-            systemPrompt, userPrompt, maxTokens: 800, jsonMode: true,
-            serverFallback: async () => {
-                const r = await fetch(AI_BASE + '/suggest-titles', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ title: topic, language: lang, count: 10 })
-                });
-                return JSON.stringify(await r.json());
-            }
-        });
+        const raw = await window.modweebAI.call({ systemPrompt, userPrompt, maxTokens: 800, jsonMode: true });
         const data = window.modweebAI.parseJSON(raw) || {};
         const list = Array.isArray(data.suggestions) ? data.suggestions.filter(Boolean) : [];
         if (!list.length){ box.innerHTML = '<div style="padding:10px 12px;color:var(--notifC)">لم تُولَّد اقتراحات</div>'; return; }
@@ -1549,7 +1520,10 @@ async function aiSuggestTitles(){
         });
         box.appendChild(grid);
     } catch(e){
-        box.innerHTML = '<div style="padding:10px 12px;color:#d32f2f;font-size:0.8rem">فشل التوليد: ' + e.message + '</div>';
+        const errorBox = document.createElement('div');
+        errorBox.style.cssText = 'padding:10px 12px;color:#d32f2f;font-size:0.8rem';
+        errorBox.textContent = 'فشل التوليد: ' + (e && e.message ? e.message : 'تحقق من إعداد النموذج');
+        box.replaceChildren(errorBox);
     } finally { if (btn){ btn.disabled = false; btn.classList.remove('loading'); } }
 }
 
@@ -1566,16 +1540,7 @@ async function aiGenerateKeywords(){
     const { systemPrompt, userPrompt } = window.modweebPrompts.keywords({ topic, language: lang });
 
     try {
-        const raw = await window.modweebAI.call({
-            systemPrompt, userPrompt, maxTokens: 600, jsonMode: true,
-            serverFallback: async () => {
-                const r = await fetch(AI_BASE + '/generate-keywords', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ topic, language: lang })
-                });
-                return JSON.stringify(await r.json());
-            }
-        });
+        const raw = await window.modweebAI.call({ systemPrompt, userPrompt, maxTokens: 600, jsonMode: true });
         const data = window.modweebAI.parseJSON(raw) || {};
         const inp = document.getElementById('aiKeywords');
         if (inp && data.keywords){
@@ -1639,6 +1604,7 @@ function aiApplySections(data){
             case 'note':
                 b.content  = sec.content || '';
                 b.noteStyle = sec.noteStyle || 'info';
+                b.noteTitle = sec.noteTitle || '';
                 break;
 
             /* ─── alert ─── */
@@ -1646,6 +1612,7 @@ function aiApplySections(data){
                 b.content      = sec.content || '';
                 b.alertStyle   = sec.alertStyle || 'info';
                 b.alertOutlined = !!sec.alertOutlined;
+                b.alertTitle = sec.alertTitle || '';
                 break;
 
             /* ─── blockquote ─── */
@@ -1890,17 +1857,7 @@ async function runImproveText(){
         const { systemPrompt, userPrompt } = window.modweebPrompts.improveText({
             text, action: window._improveAction || 'rewrite', language: lang
         });
-        const raw = await window.modweebAI.call({
-            systemPrompt, userPrompt, maxTokens: 4000,
-            serverFallback: async () => {
-                const r = await fetch(AI_BASE + '/improve-text', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ text, action: window._improveAction || 'rewrite', language: lang })
-                });
-                const d = await r.json();
-                return d.result || '';
-            }
-        });
+        const raw = await window.modweebAI.call({ systemPrompt, userPrompt, maxTokens: 4000 });
         if (resultLabel) resultLabel.textContent = 'النتيجة — ' + (labels[window._improveAction] || '');
         if (resultBox) resultBox.textContent = raw;
         if (resultSection) resultSection.style.display = 'block';
@@ -1935,180 +1892,245 @@ function seoSwitchTab(tab, el){
     if (el) el.classList.add('active');
     const p = document.getElementById('seoTab-' + tab);
     if (p) p.classList.add('active');
+    if (tab === 'meta') {
+        const titleField = document.getElementById('seoMetaTitle');
+        const descField = document.getElementById('seoMetaDesc');
+        if (titleField) seoMetaFieldUpdate('title', titleField);
+        if (descField) seoMetaFieldUpdate('desc', descField);
+    }
+}
+function seoParseArticleDocument(){
+    generateFullHTML();
+    const parser = new DOMParser();
+    const parsed = parser.parseFromString(String(modweebArticleHTML || ''), 'text/html');
+    parsed.querySelectorAll('script, style, noscript, template').forEach(node => node.remove());
+    return parsed;
 }
 function seoGetArticleText(){
-    generateFullHTML();
-    const t = document.createElement('div');
-    t.innerHTML = modweebArticleHTML || '';
-    return t.textContent || '';
+    return seoParseArticleDocument().body.textContent || '';
+}
+function seoCountWords(text){
+    return String(text || '').trim().split(/\s+/).filter(word => word.length > 1).length;
+}
+function seoCountPhrase(text, phrase){
+    const value = String(phrase || '').trim();
+    if (!value) return 0;
+    const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return (String(text || '').match(new RegExp(escaped, 'gi')) || []).length;
+}
+function seoAddCheck(checks, type, text, scoreable){
+    checks.push({type, text, scoreable: !!scoreable});
 }
 function seoAnalyzeArticle(){
     const btn = document.getElementById('seoAnalyzeBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'جاري التحليل...'; }
     setTimeout(() => {
         try {
-            const text = seoGetArticleText();
-            const words = text.trim() ? text.trim().split(/\s+/).filter(w => w.length > 1) : [];
-            const wordCount = words.length;
-            const tmp = document.createElement('div');
-            tmp.innerHTML = modweebArticleHTML || '';
-            const h2s = tmp.querySelectorAll('h2').length;
-            const h3s = tmp.querySelectorAll('h3').length;
-            const imgs = tmp.querySelectorAll('img').length;
-            const links = tmp.querySelectorAll('a').length;
-            const kwInput = document.getElementById('seoFocusKw') || document.getElementById('aiMainKeyword');
-            const focusKw = (kwInput ? kwInput.value : '').trim().toLowerCase();
-            const titleEl = document.getElementById('bloggerPostTitle') || document.getElementById('aiTopic');
-            const titleText = (titleEl ? titleEl.value : '').toLowerCase();
-            const firstPara = tmp.querySelector('p');
-            const introText = firstPara ? firstPara.textContent.toLowerCase() : '';
-            let score = 0;
+            const doc = seoParseArticleDocument();
+            const text = doc.body.textContent || '';
+            const wordCount = seoCountWords(text);
+            const headings = Array.from(doc.body.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+            const h2s = doc.body.querySelectorAll('h2').length;
+            const imgs = doc.body.querySelectorAll('img').length;
+            const imagesWithoutAlt = Array.from(doc.body.querySelectorAll('img')).filter(img => !img.hasAttribute('alt')).length;
+            const titleEl = document.getElementById('bloggerPostTitle');
+            const articleTitle = String(titleEl ? titleEl.value : '').trim();
+            const titleInArticle = Array.from(doc.body.querySelectorAll('h1')).some(h => h.textContent.trim());
+            const firstPara = doc.body.querySelector('p');
+            const hasIntro = !!(firstPara && firstPara.textContent.trim());
             const checks = [];
-            if (wordCount >= 1500) { score += 20; checks.push({type:'pass', text:'عدد الكلمات ممتاز (' + wordCount + ')'}); }
-            else if (wordCount >= 800) { score += 13; checks.push({type:'warn', text:'عدد الكلمات مقبول (' + wordCount + ')'}); }
-            else if (wordCount >= 300) { score += 7; checks.push({type:'warn', text:'المقال قصير (' + wordCount + ')'}); }
-            else { checks.push({type:'fail', text:'المقال قصير جداً (' + wordCount + ')'}); }
-            if (h2s >= 3) { score += 15; checks.push({type:'pass', text:'عناوين H2 كافية (' + h2s + ')'}); }
-            else if (h2s >= 1) { score += 8; checks.push({type:'warn', text:'عناوين H2 قليلة (' + h2s + ')'}); }
-            else { checks.push({type:'fail', text:'لا توجد عناوين H2'}); }
-            if (h3s >= 2) { score += 10; checks.push({type:'pass', text:'عناوين H3 موجودة (' + h3s + ')'}); }
-            else if (h3s >= 1) { score += 5; checks.push({type:'warn', text:'عناوين H3 قليلة (' + h3s + ')'}); }
-            else { checks.push({type:'warn', text:'لا توجد عناوين H3'}); }
-            if (imgs >= 2) { score += 10; checks.push({type:'pass', text:'صور كافية (' + imgs + ')'}); }
-            else if (imgs === 1) { score += 5; checks.push({type:'warn', text:'صورة واحدة فقط'}); }
-            else { checks.push({type:'fail', text:'لا توجد صور'}); }
-            if (links >= 3) { score += 10; checks.push({type:'pass', text:'روابط كافية (' + links + ')'}); }
-            else if (links >= 1) { score += 5; checks.push({type:'warn', text:'روابط قليلة (' + links + ')'}); }
-            else { checks.push({type:'warn', text:'لا توجد روابط'}); }
+
+            if (articleTitle || titleInArticle) seoAddCheck(checks, 'pass', 'عنوان المقال موجود', true);
+            else seoAddCheck(checks, 'fail', 'أضف عنواناً واضحاً يصف موضوع المقال', true);
+            if (hasIntro) seoAddCheck(checks, 'pass', 'توجد فقرة تمهيدية', true);
+            else seoAddCheck(checks, 'fail', 'أضف مقدمة موجزة تساعد القارئ على فهم موضوع المقال', true);
+
+            if (headings.length) {
+                seoAddCheck(checks, 'pass', 'توجد عناوين فرعية لتقسيم المحتوى (' + headings.length + ')');
+                let previousLevel = 0;
+                let skippedLevel = false;
+                headings.forEach(heading => {
+                    const level = Number(heading.tagName.slice(1));
+                    if (previousLevel && level > previousLevel + 1) skippedLevel = true;
+                    if (!heading.textContent.trim()) seoAddCheck(checks, 'warn', 'يوجد عنوان فرعي بلا نص؛ راجع تسلسل العناوين');
+                    previousLevel = level;
+                });
+                if (skippedLevel) seoAddCheck(checks, 'warn', 'راجع تسلسل مستويات العناوين؛ يظهر انتقال يتجاوز مستوىً فرعياً');
+                else seoAddCheck(checks, 'pass', 'تسلسل مستويات العناوين يبدو متدرجاً');
+            } else {
+                seoAddCheck(checks, 'warn', 'لا توجد عناوين فرعية؛ أضفها إذا ساعدت على تنظيم المحتوى للقارئ');
+            }
+            if (imagesWithoutAlt) seoAddCheck(checks, 'warn', 'أضف نصاً بديلاً وصفياً للصور التي تنقل معنى (' + imagesWithoutAlt + ' بلا سمة alt)');
+            else if (imgs) seoAddCheck(checks, 'pass', 'للصور سمة alt؛ تحقّق من دقة الوصف أو اترك الزخرفية فارغة');
+            else seoAddCheck(checks, 'warn', 'لا توجد صور؛ أضف صوراً فقط إن أفادت القارئ');
+
+            const descriptionEl = document.getElementById('seoMetaDesc') || document.getElementById('bloggerMetaDescription');
+            const description = String(descriptionEl ? descriptionEl.value : '').trim();
+            const metaTitleEl = document.getElementById('seoMetaTitle');
+            const comparisonTitle = String(metaTitleEl && metaTitleEl.value.trim() ? metaTitleEl.value : articleTitle).trim();
+            const normalizedDesc = description.toLocaleLowerCase().replace(/\s+/g, ' ');
+            const normalizedTitle = comparisonTitle.toLocaleLowerCase().replace(/\s+/g, ' ');
+            if (!description) seoAddCheck(checks, 'fail', 'اكتب وصفاً موجزاً وذا معنى يلخص هذه الصفحة', true);
+            else if (normalizedDesc === normalizedTitle) {
+                seoAddCheck(checks, 'warn', 'راجع الوصف ليكون محدداً وذا معنى، لا مجرد تكرار للعنوان', true);
+            } else seoAddCheck(checks, 'pass', 'الوصف موجود ويختلف عن العنوان؛ تحقّق يدوياً من دقته وتفرّده', true);
+            seoAddCheck(checks, 'warn', 'لا يمكن لهذا الفحص التحقق من تفرد الوصف مقارنةً بصفحات الموقع الأخرى');
+
+            const kwInput = document.getElementById('seoFocusKw') || document.getElementById('aiMainKeyword');
+            const focusKw = String(kwInput ? kwInput.value : '').trim();
+            const kwCount = seoCountPhrase(text, focusKw);
+            const density = wordCount ? parseFloat(((kwCount / wordCount) * 100).toFixed(1)) : 0;
+            const loweredKw = focusKw.toLocaleLowerCase();
+            const kwInTitle = !!(loweredKw && (articleTitle.toLocaleLowerCase().includes(loweredKw) || Array.from(doc.body.querySelectorAll('h1')).some(h => h.textContent.toLocaleLowerCase().includes(loweredKw))));
+            const kwInIntro = !!(loweredKw && firstPara && firstPara.textContent.toLocaleLowerCase().includes(loweredKw));
+            const kwInHeading = !!(loweredKw && headings.some(h => h.textContent.toLocaleLowerCase().includes(loweredKw)));
             if (focusKw) {
-                const kwInText = (text.toLowerCase().match(new RegExp(focusKw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'g')) || []).length;
-                const density = wordCount > 0 ? ((kwInText / wordCount) * 100).toFixed(1) : 0;
-                const kwInTitle = titleText.includes(focusKw);
-                const kwInIntro = introText.includes(focusKw);
-                const firstH2 = tmp.querySelector('h2');
-                const kwInH2 = firstH2 ? firstH2.textContent.toLowerCase().includes(focusKw) : false;
-                if (density >= 1 && density <= 3) { score += 10; checks.push({type:'pass', text:'كثافة الكلمة مثالية (' + density + '%)'}); }
-                else if (density > 0) { score += 4; checks.push({type:'warn', text:'كثافة الكلمة ' + density + '%'}); }
-                else { checks.push({type:'fail', text:'الكلمة المفتاحية غير موجودة'}); }
-                if (kwInTitle) { score += 10; checks.push({type:'pass', text:'الكلمة في العنوان'}); } else { checks.push({type:'fail', text:'أضف الكلمة في العنوان'}); }
-                if (kwInIntro) { score += 8; checks.push({type:'pass', text:'الكلمة في المقدمة'}); } else { checks.push({type:'warn', text:'أضف الكلمة في المقدمة'}); }
-                if (kwInH2) { score += 7; checks.push({type:'pass', text:'الكلمة في H2'}); } else { checks.push({type:'warn', text:'أضف الكلمة في H2'}); }
+                if (kwCount > 1) seoAddCheck(checks, 'warn', 'تكرر المصطلح المحوري ' + kwCount + ' مرة؛ راجع طبيعية الأسلوب وتجنب الحشو، ولا تستهدف نسبة بعينها');
+                else if (!kwCount) seoAddCheck(checks, 'warn', 'لم يظهر المصطلح المحوري في نص المقال؛ تحقّق من صلة المحتوى بموضوعه دون فرض تكراره');
+                else seoAddCheck(checks, 'pass', 'المصطلح المحوري ظاهر مرة؛ عدد التكرارات ملاحظة وصفية لا هدفاً');
+                if (!kwInTitle) seoAddCheck(checks, 'warn', 'المصطلح غير ظاهر في العنوان؛ استخدمه فقط إذا صاغ عنواناً طبيعياً ودقيقاً');
+                if (!kwInIntro) seoAddCheck(checks, 'warn', 'المصطلح غير ظاهر في المقدمة؛ لا تضفه إن لم يكن مناسباً للسياق');
+                if (headings.length && !kwInHeading) seoAddCheck(checks, 'warn', 'المصطلح غير ظاهر في العناوين الفرعية؛ لا تدرجه قسراً');
                 const focusEl = document.getElementById('seoFocusKw');
                 if (focusEl) focusEl.value = focusKw;
-                seoUpdateKwStats(focusKw, kwInText, parseFloat(density), kwInTitle, kwInIntro, kwInH2);
-            } else { checks.push({type:'warn', text:'أدخل الكلمة المفتاحية'}); }
-            score = Math.min(100, score);
+                seoUpdateKwStats(focusKw, kwCount, density, kwInTitle, kwInIntro, kwInHeading);
+            } else {
+                seoAddCheck(checks, 'warn', 'أدخل مصطلحاً لتحليل مرات ظهوره فقط؛ لا تتوفر هنا بيانات حجم بحث');
+                seoUpdateKwStats('', 0, 0, false, false, false);
+            }
+            const scoreable = checks.filter(check => check.scoreable);
+            const score = scoreable.length ? Math.round(scoreable.filter(check => check.type === 'pass').length / scoreable.length * 100) : 0;
             seoUpdateScoreUI(score, wordCount, h2s, imgs, checks);
-            seoUpdateTips(checks, wordCount, h2s, h3s, imgs, links, focusKw);
-            modweebShowStatus('SEO Score: ' + score + '/100', 3000);
-        } catch(e) { modweebShowStatus('خطأ في التحليل: ' + e.message); }
+            seoUpdateTips(checks);
+            const titleCountEl = document.getElementById('seoMetaTitle');
+            const descCountEl = document.getElementById('seoMetaDesc');
+            if (titleCountEl) seoMetaFieldUpdate('title', titleCountEl);
+            if (descCountEl) seoMetaFieldUpdate('desc', descCountEl);
+            modweebShowStatus('اكتمل التقييم التحريري المحلي؛ ليس توقعاً لترتيب البحث', 3000);
+        } catch(e) { modweebShowStatus('خطأ في التحليل: ' + (e.message || ''), 3000); }
         finally { if (btn) { btn.disabled = false; btn.textContent = 'تحليل المقال'; } }
     }, 100);
 }
 function seoUpdateScoreUI(score, wc, h2, imgs, checks){
     const num = document.getElementById('seoScoreNum'); if (num) num.textContent = score;
     const arc = document.getElementById('seoScoreArc');
-    if (arc) { const c = 213.6; arc.style.strokeDashoffset = c - (score/100)*c; arc.setAttribute('stroke', score>=80?'#22c55e':score>=60?'#f59e0b':'#ef4444'); }
+    if (arc) { const c = 213.6; arc.style.strokeDashoffset = c - (score/100)*c; arc.setAttribute('stroke', '#3b82f6'); }
     const st = document.getElementById('seoStatWords'); if (st) st.textContent = wc;
     const sh = document.getElementById('seoStatH2'); if (sh) sh.textContent = h2;
     const si = document.getElementById('seoStatImgs'); if (si) si.textContent = imgs;
     const t = document.getElementById('seoScoreTitle');
-    if (t) t.textContent = decodeHtmlEntities('SEO Score: ' + score + '/100 - ' + (score>=80?'ممتاز':score>=60?'جيد':score>=40?'مقبول':'يحتاج تحسين'));
+    if (t) t.textContent = 'تقييم تحريري داخلي: ' + score + '/100 (ليس توقعاً للترتيب)';
     const sub = document.getElementById('seoScoreSubtitle');
-    if (sub) sub.textContent = decodeHtmlEntities(checks.filter(c=>c.type==='pass').length + ' نقطة ممتازة, ' + checks.filter(c=>c.type==='fail').length + ' تحتاج إصلاح');
+    if (sub) sub.textContent = checks.filter(c=>c.type==='pass').length + ' ملاحظات مستوفاة، ' + checks.filter(c=>c.type==='fail').length + ' نقاط أساسية للمراجعة؛ التحذيرات لا تعني مخالفة';
     const cc = document.getElementById('seoChecksContainer');
     if (cc) {
-        const icons = {pass:'', warn:'!', fail:'×'};
-        cc.innerHTML = checks.map(c => '<div class="seo-check-item ' + c.type + '"><span class="seo-check-icon">' + icons[c.type] + '</span><span>' + c.text + '</span></div>').join('');
+        cc.replaceChildren();
+        const icons = {pass:'✓', warn:'!', fail:'×'};
+        checks.forEach(check => {
+            const row = document.createElement('div');
+            row.className = 'seo-check-item ' + (icons[check.type] ? check.type : 'warn');
+            const icon = document.createElement('span'); icon.className = 'seo-check-icon'; icon.textContent = icons[check.type] || '!';
+            const message = document.createElement('span'); message.textContent = check.text;
+            row.append(icon, message); cc.appendChild(row);
+        });
     }
     const ab = document.getElementById('seoApplyBtn');
     if (ab) ab.style.display = 'inline-flex';
 }
-function seoUpdateKwStats(kw, count, density, inTitle, inIntro, inH2){
-    const ks = document.getElementById('seoKwStats'); if (ks) ks.style.display = 'block';
+function seoUpdateKwStats(kw, count, density, inTitle, inIntro, inHeading){
+    const ks = document.getElementById('seoKwStats'); if (ks) ks.style.display = kw ? 'block' : 'none';
+    const label = ks && ks.querySelector('.seo-kw-stat-label');
+    if (label) label.textContent = 'التكرار والنسبة الوصفية، بلا هدف';
     const c = document.getElementById('seoKwCount'); if (c) c.textContent = count;
-    const d = document.getElementById('seoKwDensity'); if (d) d.textContent = density + '%';
+    const d = document.getElementById('seoKwDensity'); if (d) d.textContent = (Number.isFinite(density) ? density : 0) + '%';
     const bar = document.getElementById('seoKwDensityBar');
-    if (bar) { bar.style.width = Math.min(100,(density/4)*100) + '%'; bar.style.background = density>=1&&density<=3?'#22c55e':density>3?'#ef4444':'#f59e0b'; }
+    if (bar) { bar.style.width = '0%'; bar.style.background = '#3b82f6'; bar.setAttribute('aria-hidden', 'true'); if (bar.parentNode) bar.parentNode.style.display = 'none'; const caption = bar.parentNode && bar.parentNode.previousElementSibling; if (caption) caption.textContent = 'النسبة الوصفية (ليست هدفاً)'; }
     const kc = document.getElementById('seoKwChecks');
     if (kc) {
-        const items = [{ok:inTitle,text:'الكلمة في العنوان'},{ok:inIntro,text:'الكلمة في المقدمة'},{ok:inH2,text:'الكلمة في H2'},{ok:density>=1&&density<=3,text:'كثافة مثالية (1-3%)'}];
-        kc.innerHTML = items.map(i => '<div class="seo-check-item ' + (i.ok?'pass':'fail') + '"><span class="seo-check-icon">' + (i.ok?'':'×') + '</span><span>' + i.text + '</span></div>').join('');
+        kc.replaceChildren();
+        const items = [
+            {ok:inTitle,text:'المصطلح في العنوان: ' + (inTitle?'ظاهر':'غير ظاهر؛ ملاحظة فقط')},
+            {ok:inIntro,text:'المصطلح في المقدمة: ' + (inIntro?'ظاهر':'غير ظاهر؛ ملاحظة فقط')},
+            {ok:inHeading,text:'المصطلح في عنوان فرعي: ' + (inHeading?'ظاهر':'غير ظاهر؛ ملاحظة فقط')}
+        ];
+        items.forEach(item => {
+            const row = document.createElement('div'); row.className = 'seo-check-item ' + (item.ok?'pass':'warn');
+            const icon = document.createElement('span'); icon.className = 'seo-check-icon'; icon.textContent = item.ok ? '✓' : '!';
+            const message = document.createElement('span'); message.textContent = item.text;
+            row.append(icon, message); kc.appendChild(row);
+        });
     }
 }
 function seoAnalyzeKeyword(){
     const kwIn = document.getElementById('seoFocusKw');
     if (!kwIn || !kwIn.value.trim()) return;
-    const kw = kwIn.value.trim().toLowerCase();
-    const text = seoGetArticleText().toLowerCase();
-    const words = text.split(/\s+/).filter(w => w.length > 1);
-    const count = (text.match(new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'g')) || []).length;
-    const density = words.length > 0 ? parseFloat(((count/words.length)*100).toFixed(1)) : 0;
-    const tmp = document.createElement('div');
-    tmp.innerHTML = modweebArticleHTML || '';
-    const titleEl = document.getElementById('bloggerPostTitle') || document.getElementById('aiTopic');
-    const titleText = (titleEl ? titleEl.value : '').toLowerCase();
-    const fp = tmp.querySelector('p');
-    const inIntro = fp ? fp.textContent.toLowerCase().includes(kw) : false;
-    const fh = tmp.querySelector('h2');
-    const inH2 = fh ? fh.textContent.toLowerCase().includes(kw) : false;
-    seoUpdateKwStats(kw, count, density, titleText.includes(kw), inIntro, inH2);
-    const ks = document.getElementById('seoKwStats'); if (ks) ks.style.display = 'block';
+    const kw = kwIn.value.trim();
+    const doc = seoParseArticleDocument();
+    const text = doc.body.textContent || '';
+    const words = seoCountWords(text);
+    const count = seoCountPhrase(text, kw);
+    const density = words ? parseFloat(((count/words)*100).toFixed(1)) : 0;
+    const titleEl = document.getElementById('bloggerPostTitle');
+    const titleText = String(titleEl ? titleEl.value : '').toLocaleLowerCase();
+    const fp = doc.body.querySelector('p');
+    const inIntro = !!(fp && fp.textContent.toLocaleLowerCase().includes(kw.toLocaleLowerCase()));
+    const headings = Array.from(doc.body.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+    const inHeading = headings.some(h => h.textContent.toLocaleLowerCase().includes(kw.toLocaleLowerCase()));
+    seoUpdateKwStats(kw, count, density, titleText.includes(kw.toLocaleLowerCase()), inIntro, inHeading);
 }
-function seoUpdateTips(checks, wc, h2, h3, imgs, links, kw){
+function seoUpdateTips(checks){
     const c = document.getElementById('seoTipsContainer');
     if (!c) return;
-    const tips = [];
-    if (wc < 1500) tips.push({priority:'high', tip:'زد طول المقال إلى 1500+ كلمة'});
-    if (h2 < 3) tips.push({priority:'high', tip:'أضف ' + (3-h2) + ' عنوان H2 إضافي'});
-    if (h3 < 2) tips.push({priority:'medium', tip:'أضف عناوين H3'});
-    if (imgs < 2) tips.push({priority:'medium', tip:'أضف ' + (2-imgs) + ' صورة'});
-    if (links < 3) tips.push({priority:'medium', tip:'أضف ' + (3-links) + ' رابط'});
-    if (!kw) tips.push({priority:'high', tip:'حدد الكلمة المفتاحية المحورية'});
-    checks.filter(x => x.type === 'fail').forEach(x => tips.push({priority:'high', tip:x.text}));
-    if (!tips.length) { c.innerHTML = '<div class="seo-check-item pass"><span class="seo-check-icon"></span><span>المقال ممتاز!</span></div>'; return; }
-    const colors = {high:'#ef4444', medium:'#f59e0b', low:'#22c55e'};
-    const labels = {high:'عاجل', medium:'مهم', low:'اختياري'};
-    c.innerHTML = '<div style="font-size:0.75rem;font-weight:600;margin-bottom:8px;color:var(--notifC)">' + tips.length + ' توصية</div>' + tips.map(t => '<div class="seo-check-item" style="border-right:3px solid ' + colors[t.priority] + '"><span style="font-size:0.65rem;background:' + colors[t.priority] + ';color:#fff;padding:1px 5px;border-radius:3px;white-space:nowrap">' + labels[t.priority] + '</span><span style="flex:1">' + t.tip + '</span></div>').join('');
+    const tips = checks.filter(check => check.type !== 'pass');
+    c.replaceChildren();
+    if (!tips.length) {
+        const row = document.createElement('div'); row.className = 'seo-check-item pass';
+        const icon = document.createElement('span'); icon.className = 'seo-check-icon'; icon.textContent = '✓';
+        const message = document.createElement('span'); message.textContent = 'لا تظهر ملاحظات تحريرية إضافية؛ راجع ملاءمة المحتوى لجمهورك';
+        row.append(icon, message); c.appendChild(row); return;
+    }
+    const heading = document.createElement('div');
+    heading.style.cssText = 'font-size:0.75rem;font-weight:600;margin-bottom:8px;color:var(--notifC)';
+    heading.textContent = tips.length + ' ملاحظة تحريرية للمراجعة'; c.appendChild(heading);
+    tips.forEach(check => {
+        const row = document.createElement('div'); row.className = 'seo-check-item';
+        row.style.borderRight = '3px solid ' + (check.type === 'fail' ? '#ef4444' : '#f59e0b');
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-size:0.65rem;background:' + (check.type === 'fail' ? '#ef4444' : '#f59e0b') + ';color:#fff;padding:1px 5px;border-radius:3px;white-space:nowrap';
+        badge.textContent = check.type === 'fail' ? 'أساسي' : 'للمراجعة';
+        const message = document.createElement('span'); message.style.flex = '1'; message.textContent = check.text;
+        row.append(badge, message); c.appendChild(row);
+    });
 }
 function seoMetaFieldUpdate(field, el){
-    const len = el.value.length;
-    if (field === 'title') {
-        const c = document.getElementById('seoMetaTitleLen'); if (c) c.textContent = len + '/60';
-        const b = document.getElementById('seoMetaTitleBar');
-        if (b) { b.style.width = Math.min(100,(len/60)*100) + '%'; b.style.background = len>=50&&len<=60?'#22c55e':len>60?'#ef4444':'#f59e0b'; }
-    } else if (field === 'desc') {
-        const c = document.getElementById('seoMetaDescLen'); if (c) c.textContent = len + '/160';
-        const b = document.getElementById('seoMetaDescBar');
-        if (b) { b.style.width = Math.min(100,(len/160)*100) + '%'; b.style.background = len>=145&&len<=160?'#22c55e':len>160?'#ef4444':'#f59e0b'; }
+    const len = String(el.value || '').length;
+    const countId = field === 'title' ? 'seoMetaTitleLen' : field === 'desc' ? 'seoMetaDescLen' : null;
+    if (countId) {
+        const counter = document.getElementById(countId);
+        if (counter) {
+            counter.textContent = len + ' حرف';
+            const label = counter.parentNode;
+            if (label) Array.from(label.childNodes).filter(node => node.nodeType === 3).forEach(node => { node.nodeValue = field === 'title' ? 'عنوان Meta ' : 'وصف Meta '; });
+        }
+        const bar = document.getElementById(field === 'title' ? 'seoMetaTitleBar' : 'seoMetaDescBar');
+        if (bar) { bar.style.width = '0%'; bar.style.background = '#3b82f6'; bar.setAttribute('aria-hidden', 'true'); if (bar.parentNode) bar.parentNode.style.display = 'none'; }
+        const fieldEl = document.getElementById(field === 'title' ? 'seoMetaTitle' : 'seoMetaDesc');
+        if (fieldEl) fieldEl.placeholder = field === 'title' ? 'عنوان واضح ودقيق للصفحة' : 'وصف فريد وموجز يلخص الصفحة بدقة';
     } else if (field === 'slug') {
         const c = document.getElementById('seoSlugLen'); if (c) c.textContent = len + ' حرف';
     }
 }
 async function seoGenerateMeta(){
-    const topic = ((document.getElementById('aiTopic')||{}).value || (document.getElementById('aiMainKeyword')||{}).value || '').trim();
+    const topic = String((document.getElementById('aiTopic')||{}).value || (document.getElementById('aiMainKeyword')||{}).value || '').trim();
     if (!topic) { modweebShowStatus('أدخل موضوع المقال أو الكلمة أولاً'); return; }
     const progress = document.getElementById('seoMetaProgressBar');
     if (progress) progress.style.display = 'block';
     seoSwitchTab('meta', document.querySelectorAll('.seo-tab-btn')[2]);
     const lang = (document.getElementById('aiLanguage')||{}).value || 'ar';
-    const articleText = seoGetArticleText().slice(0, 2000);
-
-    const { systemPrompt, userPrompt } = window.modweebPrompts.seoMeta({
-        topic, mainKeyword: topic, language: lang, articleText
-    });
-
     try {
-        const raw = await window.modweebAI.call({
-            systemPrompt, userPrompt, maxTokens: 800, jsonMode: true,
-            serverFallback: async () => {
-                const r = await fetch(AI_BASE + '/seo-meta', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ topic, mainKeyword: topic, language: lang, articleText })
-                });
-                return JSON.stringify(await r.json());
-            }
-        });
+        const articleText = seoGetArticleText().slice(0, 2000);
+        const { systemPrompt, userPrompt } = window.modweebPrompts.seoMeta({ topic, mainKeyword: topic, language: lang, articleText });
+        const raw = await window.modweebAI.call({ systemPrompt, userPrompt, maxTokens: 800, jsonMode: true });
         const data = window.modweebAI.parseJSON(raw) || {};
         const tf = document.getElementById('seoMetaTitle');
         const df = document.getElementById('seoMetaDesc');
@@ -2118,19 +2140,20 @@ async function seoGenerateMeta(){
         if (MW_SLUG_ENABLED && sf && data.slug) { sf.value = data.slug; seoMetaFieldUpdate('slug', sf); }
         const tags = document.getElementById('seoKwTagsContainer');
         if (tags && Array.isArray(data.keywords)){
-            tags.innerHTML = '';
-            data.keywords.forEach(k => {
+            tags.replaceChildren();
+            data.keywords.filter(k => typeof k === 'string').forEach(k => {
+                const keyword = k.trim(); if (!keyword) return;
                 const tag = document.createElement('span');
                 tag.className = 'seo-kw-tag';
-                tag.textContent = k;
-                tag.addEventListener('click', () => seoAddKwToField(k));
+                tag.textContent = keyword;
+                tag.addEventListener('click', () => seoAddKwToField(keyword));
                 tags.appendChild(tag);
             });
         }
-        modweebShowStatus('تم توليد بيانات SEO');
+        modweebShowStatus('تم توليد بيانات SEO؛ راجع دقتها وتفرّد الوصف يدوياً');
         const ab = document.getElementById('seoApplyBtn');
         if (ab) ab.style.display = 'inline-flex';
-    } catch(e) { modweebShowStatus('فشل: ' + e.message, 3000); }
+    } catch(e) { modweebShowStatus('فشل: ' + (e.message || ''), 3000); }
     finally { if (progress) progress.style.display = 'none'; }
 }
 function seoAddKwToField(kw){
@@ -2150,7 +2173,6 @@ function seoApplyToArticle(){
     modweebShowStatus('تم تطبيق ' + n + ' عنصر');
     closeSheet('seoAssistantSheet');
 }
-
 /* ============================================================
    21. Templates
    ============================================================ */
@@ -2278,7 +2300,7 @@ function modweebTemplateDefaultBlock(overrides){
         buttonText: '', buttonUrl: '', buttonIcon: '',
         downloadFile: '', fileName: '', fileSize: '',
         quoteStyle: 'normal', quoteAuthor: '',
-        noteStyle: 'info', alertStyle: 'info',
+        noteStyle: 'info', alertStyle: 'info', noteTitle: '', alertTitle: '',
         tableRows: 2, tableCols: 2, tableData: [['',''],['','']], tableClasses: 'bordered stripped hovered',
         steps: [''], codeContent: '', codeLanguage: 'html', codeComment: '', codeSource: '',
         tabHtml: '', tabCss: '', tabJs: '', tabJson: '',
@@ -2312,10 +2334,13 @@ async function templateImproveTitle(){
     const prog = document.getElementById('tmplSetupProgress');
     if (prog) prog.style.display = 'block';
     try {
-        const r = await fetch(AI_BASE + '/improve-text', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text: val, instruction: 'حسّن هذا العنوان ليكون أكثر جذباً وملاءمة لـ SEO', language:'ar'}) });
-        const data = await r.json();
-        if (titleEl && (data.improved || data.result)) titleEl.value = data.improved || data.result;
-    } catch(e) { modweebShowStatus('فشل التحسين'); }
+        const request = window.modweebPrompts.suggestTitles({ title: val, language: (document.getElementById('aiLanguage')||{}).value || 'ar', count: 1 });
+        const raw = await window.modweebAI.call({ systemPrompt: request.systemPrompt, userPrompt: request.userPrompt, maxTokens: 500, jsonMode: true });
+        const data = window.modweebAI.parseJSON(raw) || {};
+        const suggestion = Array.isArray(data.suggestions) ? String(data.suggestions[0] || '').trim() : '';
+        if (!suggestion) throw new Error('لم يُرجع النموذج عنواناً مناسباً');
+        if (titleEl) titleEl.value = suggestion;
+    } catch(e) { modweebShowStatus('فشل تحسين العنوان: ' + (e.message || 'تحقق من إعداد النموذج')); }
     finally { if (prog) prog.style.display = 'none'; }
 }
 async function templateGenerateKeywords(){
@@ -2324,50 +2349,72 @@ async function templateGenerateKeywords(){
     const prog = document.getElementById('tmplSetupProgress');
     if (prog) prog.style.display = 'block';
     try {
-        const r = await fetch(AI_BASE + '/generate-keywords', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({topic: title, language:'ar'}) });
-        const data = await r.json();
+        const request = window.modweebPrompts.keywords({ topic: title, language: (document.getElementById('aiLanguage')||{}).value || 'ar' });
+        const raw = await window.modweebAI.call({ systemPrompt: request.systemPrompt, userPrompt: request.userPrompt, maxTokens: 700, jsonMode: true });
+        const data = window.modweebAI.parseJSON(raw) || {};
         const el = document.getElementById('tmplSetupKeywords');
-        if (el && data.keywords) el.value = Array.isArray(data.keywords) ? data.keywords.join(', ') : data.keywords;
-    } catch(e) { modweebShowStatus('فشل التوليد'); }
+        if (el && Array.isArray(data.keywords)) el.value = data.keywords.filter(k => typeof k === 'string').join('، ');
+        else throw new Error('لم يُرجع النموذج قائمة كلمات');
+    } catch(e) { modweebShowStatus('فشل اقتراح الكلمات: ' + (e.message || 'تحقق من إعداد النموذج')); }
     finally { if (prog) prog.style.display = 'none'; }
 }
 async function templateGenerateAndInsert(){
     const id = window._pendingTemplateId;
     const tmpl = MODWEEB_TEMPLATES[id];
     if (!tmpl) return;
-    const title = (document.getElementById('tmplSetupTitle')||{}).value || '';
-    const desc = (document.getElementById('tmplSetupDesc')||{}).value || '';
-    const keywords = (document.getElementById('tmplSetupKeywords')||{}).value || '';
-    const focusKw = (document.getElementById('tmplSetupFocusKw')||{}).value || '';
+    const title = ((document.getElementById('tmplSetupTitle')||{}).value || '').trim();
+    const desc = ((document.getElementById('tmplSetupDesc')||{}).value || '').trim();
+    const keywords = ((document.getElementById('tmplSetupKeywords')||{}).value || '').trim();
+    const focusKw = ((document.getElementById('tmplSetupFocusKw')||{}).value || '').trim();
     const lang = (document.getElementById('aiLanguage')||{}).value || 'ar';
     const prog = document.getElementById('tmplSetupProgress');
     const btn = document.getElementById('tmplSetupGenBtn');
+    if (!title && !focusKw) { modweebShowStatus('أدخل عنوان المقال أو كلمته المحورية أولاً'); return; }
     if (prog) prog.style.display = 'block';
     if (btn) { btn.disabled = true; btn.textContent = 'جاري التوليد...'; }
     try {
-        const r = await fetch(AI_BASE + '/generate-template-content', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({templateId:id, title, description:desc, keywords, focusKeyword:focusKw, language:lang}) });
-        const data = await r.json();
-        if (r.status === 429 || data.error === 'rate_limit') { aiShowRateLimit(() => templateGenerateAndInsert()); return; }
-        if (data.error) throw new Error(data.error);
-        modweebBlocks = [];
-        const blocks = data.blocks || tmpl.blocks || [];
-        const baseId = Date.now();
-        blocks.forEach((b, i) => modweebBlocks.push(modweebTemplateDefaultBlock(Object.assign({id:(baseId+i)+'-'+Math.random().toString(36).substr(2,5)}, b))));
-        modweebSaveToHistory();
+        const mode = window.modweebAI.getGenerationMode();
+        const provider = window.modweebAI.getActiveProvider();
+        if (mode !== 'puter' && mode !== 'worker' && window.modweebAgent && !window.modweebAgent.hasKey(provider)) {
+            throw new Error('أضف مفتاح المزود المحدد أولاً من تبويب النموذج والمفاتيح.');
+        }
+        const templateTypes = (tmpl.blocks || []).map(block => block.type).filter(Boolean).join('، ');
+        const articleType = ({guide:'guide', review:'review', comparison:'comparison', faq:'faq', tutorial:'tutorial', adsense:'guide', news:'news', affiliate:'review'})[id] || 'guide';
+        const customRequest = [
+            `هيّئ المقال وفق قالب «${tmpl.name}»، واجعل أنواع العناصر المقترحة (${templateTypes}) إرشادية تتكيف مع فائدة القارئ؛ لا تدرج عناصر شكلية بلا حاجة.`,
+            desc ? `وصف المحرر: ${desc}` : '',
+            focusKw ? `المصطلح المحوري: ${focusKw}؛ استخدمه طبيعياً في المواضع الملائمة دون تكرار قسري.` : '',
+            keywords ? `عبارات مساعدة: ${keywords}؛ استعمل ما يلائم الموضوع فقط.` : ''
+        ].filter(Boolean).join('\n');
+        const params = {
+            topic: title || focusKw, mainKeyword: focusKw, keywords, customRequest,
+            writingMode: window._aiWritingMode || 'default',
+            tone: (document.getElementById('aiTone')||{}).value || 'professional',
+            size: (document.getElementById('aiSize')||{}).value || 'md', language: lang,
+            country: (document.getElementById('aiCountry')||{}).value || 'ar',
+            pov: (document.getElementById('aiPov')||{}).value || 'neutral',
+            readingEase: (document.getElementById('aiReadingEase')||{}).value || 'easy',
+            articleType, opening: (document.getElementById('aiOpening')||{}).value || 'brief',
+            hasConclusion: true, hasTables: id === 'comparison', hasH3: true, hasLists: true,
+            hasItalics: false, hasQuotes: false, hasKeyPoints: true, hasInstructions: id === 'tutorial',
+            hasBold: true, hasNotes: ['guide','tutorial'].includes(id), hasAlerts: false,
+            hasBlur: false, hasCode: false, hasImages: false, hasYoutube: false
+        };
+        const request = window.modweebPrompts.article(params);
+        const raw = await window.modweebAI.call({ systemPrompt: request.systemPrompt, userPrompt: request.userPrompt, maxTokens: 16000, temperature: 0.7, jsonMode: true });
+        const data = window.modweebAI.parseJSON(raw);
+        if (!data || !Array.isArray(data.sections) || !data.sections.length) throw new Error('لم يُرجع النموذج أقساماً صالحة.');
+        aiApplySections(data);
         const t = document.getElementById('bloggerPostTitle');
         if (title && t) { t.value = title; modweebAutoSlug(title); }
         const l = document.getElementById('bloggerPostLabels');
         if (keywords && l) l.value = keywords;
+        const meta = document.getElementById('bloggerMetaDescription');
+        if (desc && meta) meta.value = desc;
         closeSheet('templateSetupSheet');
-        modweebShowStatus('تم توليد قالب "' + tmpl.name + '" , ' + modweebBlocks.length + ' عنصر');
+        modweebShowStatus('تم توليد قالب «' + tmpl.name + '» مع ' + modweebBlocks.length + ' عنصر');
     } catch(e) {
-        modweebBlocks = [];
-        (tmpl.blocks || []).forEach((b, i) => modweebBlocks.push(modweebTemplateDefaultBlock(Object.assign({id:(Date.now()+i)+'-'+Math.random().toString(36).substr(2,5)}, b))));
-        modweebSaveToHistory();
-        const t = document.getElementById('bloggerPostTitle');
-        if (title && t) { t.value = title; modweebAutoSlug(title); }
-        closeSheet('templateSetupSheet');
-        modweebShowStatus('تم تحميل القالب الافتراضي (' + (e.message||'') + ')', 4000);
+        modweebShowStatus('تعذر توليد القالب: ' + (e.message || 'تحقق من إعداد النموذج'), 5000);
     } finally {
         if (prog) prog.style.display = 'none';
         if (btn) { btn.disabled = false; btn.textContent = 'توليد وإدراج'; }
@@ -2510,17 +2557,7 @@ async function smartGenerate(){
     const { systemPrompt, userPrompt } = window.modweebPrompts.smartAssistant({ prompt: prompt.trim(), topic, language: lang, format: fmt });
 
     try {
-        const raw = await window.modweebAI.call({
-            systemPrompt, userPrompt, maxTokens: 2000,
-            serverFallback: async () => {
-                const r = await fetch(AI_BASE + '/smart-assistant', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ prompt: prompt.trim(), topic: topic || undefined, language: lang, format: fmt })
-                });
-                const d = await r.json();
-                return d.html || d.result || '';
-            }
-        });
+        const raw = await window.modweebAI.call({ systemPrompt, userPrompt, maxTokens: 2000 });
         const cleaned = String(raw)
             .replace(/^\s*```html[\r\n]*/im, '')
             .replace(/^\s*```[\r\n]*/im, '')

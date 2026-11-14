@@ -875,3 +875,68 @@ button#btnAiSlug:disabled svg {
     stroke: var(--notifC) !important;
     opacity: .5 !important;
 }
+
+
+/* ============================================================
+   UX refresh: nested panels, sticky navigation and mobile actions
+   ============================================================ */
+.sheet-header{position:sticky;top:0;z-index:30;background:var(--contentB);}
+.sheet-head-title{display:flex;align-items:center;gap:8px;min-width:0}
+.sheet-head-title h3{margin:0}
+.sheet-back-button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--contentL);border-radius:50%;background:var(--contentBa);color:var(--bodyC);font-size:20px;line-height:1;cursor:pointer;flex:0 0 auto}
+.ai-popup-tabs,.smart-assistant-tabs,.blogger-publish-tabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;overflow-x:auto;padding:8px 12px;background:var(--contentB);border-bottom:1px solid var(--contentL);scrollbar-width:thin}
+.ai-popup-tab,.smart-assistant-tab,.blogger-publish-tab,.seo-inner-tab{flex:1 0 auto;min-height:36px;padding:7px 12px;border:1px solid var(--contentL);border-radius:8px;background:var(--contentBa);color:var(--notifC);font:inherit;font-size:.78rem;cursor:pointer;white-space:nowrap}
+.ai-popup-tab.active,.smart-assistant-tab.active,.blogger-publish-tab.active,.seo-inner-tab.active{background:var(--linkC);border-color:var(--linkC);color:#fff}
+.ai-popup-panel[hidden],.smart-assistant-panel[hidden],.blogger-publish-panel[hidden],.seo-inner-panel[hidden]{display:none!important}
+.ai-settings-panel,.blogger-settings-panel{max-height:min(68dvh,620px);overflow:auto;overscroll-behavior:contain}
+.ai-settings-panel>.sheet-body,.blogger-settings-panel>.sheet-body{max-height:none!important;overflow:visible!important;padding:10px 14px!important}
+.ai-settings-panel>.sheet-footer,.blogger-settings-panel>.sheet-footer{position:sticky;bottom:0;z-index:10;background:var(--contentB);border-top:1px solid var(--contentL)}
+.ai-settings-panel .aiagent-warn,.blogger-settings-panel .aiagent-warn{margin:0 0 10px}
+.seo-tabs{position:sticky;top:0;z-index:22;background:var(--contentB);padding-top:5px;padding-bottom:7px;box-shadow:0 4px 8px rgba(0,0,0,.06)}
+.seo-inner-tabs{position:sticky;top:44px;z-index:18;display:flex;gap:6px;padding:6px 0;background:var(--contentB)}
+.seo-inner-panel{display:block}
+.seo-keyword-discover-row{display:flex;align-items:center;gap:7px}
+.seo-keyword-discover-row input{flex:1;min-width:0}
+.seo-discover-btn{width:38px;height:38px;flex:0 0 38px;border:0;border-radius:50%;background:var(--linkC);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.ai-inline-help{display:block;margin-top:5px;color:var(--notifC);font-size:.72rem;line-height:1.5}
+.smart-insert-mode-label{font-size:.7rem;color:var(--notifC)}
+.smart-insert-mode{max-width:130px;min-height:34px;border:1px solid var(--contentL);border-radius:7px;background:var(--contentB);color:var(--bodyC);padding:4px 7px}
+.smart-assistant-footer{flex-wrap:wrap}
+.ai-progress-under-header{position:sticky;top:52px;z-index:25;background:var(--contentB);border-bottom:1px solid var(--contentL)}
+@media(max-width:600px){
+  .ai-popup-tab,.smart-assistant-tab,.blogger-publish-tab,.seo-inner-tab{min-height:34px;padding:6px 9px;font-size:.72rem}
+  .smart-insert-mode-label{display:none}
+  .smart-insert-mode{max-width:110px;font-size:.7rem}
+  #aiSettingsPanel .sheet-footer,#bloggerSettingsPanel .sheet-footer{flex-wrap:wrap}
+}
+
+
+/* AI article media tools */
+.ai-media-card{margin:12px 14px 16px;padding:14px;border:1px solid var(--contentL);border-radius:14px;background:var(--contentBa);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.ai-gen-card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ai-gen-card-head h4{margin:0 0 3px;font-size:.95rem;color:var(--bodyC)}
+.ai-gen-card-head p{margin:0;color:var(--notifC);font-size:.72rem;line-height:1.45}
+.ai-gen-card-icon{display:grid;place-items:center;width:38px;height:38px;flex:0 0 38px;border-radius:11px;background:color-mix(in srgb,var(--linkC) 14%,transparent);color:var(--linkC);font-size:.65rem;font-weight:800;letter-spacing:.04em}
+.ai-gen-inline{display:grid;grid-template-columns:1.3fr 1fr;gap:8px;margin:8px 0}
+.ai-gen-select{min-width:0;width:100%;min-height:38px;border:1px solid var(--contentL);border-radius:8px;padding:6px 8px;background:var(--contentB);color:var(--bodyC);font:inherit;font-size:.78rem}
+.ai-gen-status{margin-top:8px;color:var(--notifC);font-size:.7rem;line-height:1.5}
+.ai-media-card>.modweeb-gen-btn{width:100%;justify-content:center}
+@media(max-width:520px){.ai-media-card{margin:10px 10px 14px;padding:11px}.ai-gen-inline{grid-template-columns:1fr}.ai-gen-select{min-height:36px}}
+
+.ai-gen-subcard{display:block;margin:9px 0;padding:10px;border:1px solid var(--contentL);border-radius:10px;background:var(--contentBa)}
+.ai-gen-subcard[hidden]{display:none!important}
+.ai-gen-subcard>summary.ai-gen-subcard-title{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;font-weight:650;color:var(--bodyC)}
+.ai-gen-subcard>summary.ai-gen-subcard-title::-webkit-details-marker{display:none}
+.ai-gen-subcard>summary.ai-gen-subcard-title::after{content:'+';display:grid;place-items:center;width:22px;height:22px;border:1px solid var(--contentL);border-radius:50%;color:var(--linkC);font-size:16px;line-height:1}
+.ai-gen-subcard[open]>summary.ai-gen-subcard-title::after{content:'−'}
+.ai-gen-subcard[open]>summary.ai-gen-subcard-title{padding-bottom:8px;margin-bottom:9px;border-bottom:1px solid var(--contentL)}
+.ai-cloud-keys-content{padding:6px 0 0}
+.aiagent-tab{display:inline-flex;align-items:center;gap:6px}
+.aiagent-tab-state{font-size:.62rem;opacity:.72;font-weight:500}
+.aiagent-tab.has-key .aiagent-tab-state{opacity:1}
+
+.sheet-head-title{display:flex;align-items:center;gap:8px;min-width:0}
+.sheet-head-title h3{margin:0}
+.sheet-back-button{width:30px;height:30px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--contentL);border-radius:50%;background:var(--contentBa);color:var(--bodyC);font-size:1.15rem;cursor:pointer}
+.sheet-back-button[hidden]{display:none!important}
+.sheet-head-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}

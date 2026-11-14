@@ -1,138 +1,198 @@
-/* ═══════════════════════════════════════════════════════════
-     البرومبت الرئيسي — توليد المقال الكامل (نسخة v3.3 مع H3/H4 إلزامية)
-     ═══════════════════════════════════════════════════════════ */
-  function buildArticlePrompt(params){
-    const {
-      topic, mainKeyword = '', keywords = '', customRequest = '',
-      writingMode = 'default',
-      tone = 'professional', size = 'md', language = 'ar', country = 'ar',
-      pov = 'we', readingEase = 'easy',
-      articleType = 'guide', opening = 'brief',
-      hasConclusion = true, hasTables = false, hasH3 = true, hasH4 = true, hasLists = true,
-      hasItalics = false, hasQuotes = true, hasKeyPoints = true,
-      hasInstructions = false, hasBold = true,
-      hasImages = false, hasYoutube = false
-    } = params;
+/* تعليمات توليد المحتوى — تحافظ على واجهة window.modweebPrompts الحالية. */
+function buildArticlePrompt(params) {
+  const {
+    topic, mainKeyword = '', keywords = '', customRequest = '',
+    writingMode = 'default',
+    tone = 'professional', size = 'md', language = 'ar', country = 'ar',
+    pov = 'neutral', readingEase = 'easy',
+    articleType = 'guide', opening = 'brief',
+    hasConclusion = true, hasTables = false, hasH3 = true, hasH4 = true, hasLists = true,
+    hasItalics = false, hasQuotes = true, hasKeyPoints = true,
+    hasInstructions = false, hasBold = true,
+    hasNotes = false, hasAlerts = false, hasBlur = false, hasCode = false,
+    hasImages = false, hasYoutube = false, youtubeReference = ''
+  } = params;
 
-    const writingModeGuide  = WRITING_MODE_MAP[writingMode] || '';
-    const langInstruction   = language === 'ar'
-      ? 'اكتب جميع المحتويات باللغة العربية الفصحى المعاصرة'
-      : 'Write all content in fluent, natural English';
+  const writingModeGuide = WRITING_MODE_MAP[writingMode] || WRITING_MODE_MAP.default;
+  const langInstruction = language === 'ar'
+    ? 'اكتب جميع المحتويات باللغة العربية الفصحى المعاصرة.'
+    : 'Write all content in fluent, natural English.';
+  const sizeGuide = SIZE_MAP[size] || SIZE_MAP.md;
+  const toneGuide = TONE_MAP[tone] || TONE_MAP.professional;
+  const readingGuide = READING_MAP[readingEase] || READING_MAP.easy;
+  const povGuide = POV_MAP[pov] || POV_MAP.neutral;
+  const countryGuide = COUNTRY_MAP[country] || COUNTRY_MAP.ar;
+  const articleTypeGuide = ARTICLE_TYPE_MAP[articleType] || ARTICLE_TYPE_MAP.guide;
+  const openingGuide = OPENING_MAP[opening] || OPENING_MAP.brief;
 
-    const sizeMap          = SIZE_MAP[size] || SIZE_MAP.md;
-    const toneGuide        = TONE_MAP[tone] || TONE_MAP.professional;
-    const readingGuide     = READING_MAP[readingEase] || READING_MAP.easy;
-    const povGuide         = POV_MAP[pov] || POV_MAP.we;
-    const countryGuide     = COUNTRY_MAP[country] || COUNTRY_MAP.ar;
-    const articleTypeGuide = ARTICLE_TYPE_MAP[articleType] || ARTICLE_TYPE_MAP.guide;
-    const openingGuide     = OPENING_MAP[opening] || OPENING_MAP.brief;
+  const preferences = [];
+  if (hasH3) preferences.push('يمكن استخدام H3 لتقسيم قسم طويل أو فكرة فرعية حقيقية؛ ليس مطلوباً في كل H2.');
+  if (hasH4) preferences.push('استخدم H4 نادراً عند وجود تفرعات واضحة داخل H3، ولا تضفه لاستكمال تسلسل شكلي.');
+  if (hasLists) preferences.push('القوائم أو الخطوات مناسبة فقط للمعلومات التي تصبح أوضح بهذا الشكل.');
+  if (hasBold) preferences.push('أبرز بالمهم من النص عند الحاجة، باعتدال.');
+  if (hasItalics) preferences.push('استخدم التمييز المائل عند حاجة تحريرية فعلية.');
+  if (hasQuotes) preferences.push('لا تدرج اقتباساً إلا إذا ورد نصه ومصدره في المدخلات أو كانا موثقين فيها؛ لا تنشئ اقتباسات منسوبة.');
+  if (hasKeyPoints) preferences.push('يمكن إضافة نقاط موجزة إذا كانت تلخص فائدة حقيقية، لا كعنصر إلزامي.');
+  if (hasInstructions) preferences.push('أضف تنبيهاً فقط عند وجود تحذير محدد ومفيد تدعمه المعلومات المتاحة.');
+  if (hasTables) preferences.push('الجدول اختياري عند مقارنة بيانات أو خيارات واضحة؛ لا تخترع قيماً لملئه.');
+  if (hasImages) preferences.push('أدرج image فقط عند توافر رابط/أصل صورة صالح أو تعليمات صريحة؛ لا تنشئ روابط أو عناصر نائبة.');
+  if (hasNotes) preferences.push('أدرج note بنمط وعنوان مناسبين (noteTitle) فقط حيث تضيف ملاحظة أو نصيحة قيمة.');
+  if (hasAlerts) preferences.push('أدرج alert عند الحاجة فقط، واختر alertStyle وalertTitle بدقة؛ لا تحول كل فقرة إلى تنبيه.');
+  if (hasBlur) preferences.push('استخدم spoiler بنمط blur لإخفاء نص اختياري فقط إذا كان مناسباً (مثلاً إجابة/حرق)، ولا تخفِ معلومات أساسية.');
+  if (hasCode) preferences.push('أضف مثال code فقط إذا كان الموضوع تقنياً ويتطلب مثالاً؛ يجب أن يكون سليماً، محدود النطاق، وموسوماً بلغته.');
+  if (hasYoutube) preferences.push('لا تخترع روابط أو معرّفات فيديو. سيضيف التطبيق فيديو YouTube بعد التوليد فقط إذا زوّده المستخدم برابط/معرّف صالح.');
+  if (hasConclusion) preferences.push('اختم عند الحاجة بخلاصة قصيرة نافعة؛ لا تفرض دعوة تسويقية لاتخاذ إجراء.');
 
-    /* ── بناء قائمة العناصر المطلوبة ── */
-    const elements = [];
+  const typeCatalog = `أنواع sections المدعومة وحقولها. استخدم النوع والحقول المدرجة فقط، ولا تضف مفاتيح HTML أو أنواعاً أخرى:
+- basics: {"type":"basics","metaDescription":"وصف دقيق موجز"}
+- heading: {"type":"heading","content":"...","headingLevel":"h1|h2|h3|h4|h5|h6","headingBefore":"اختياري","headingAfter":"اختياري"}
+- paragraph: {"type":"paragraph","content":"...","paragraphStyle":"normal|indent|dropcap|ref","refSource":"مطلوب فقط عند paragraphStyle=ref"}
+- toc: {"type":"toc","tocLabel":"...","tocStyle":"automatic|manual","tocManualItems":[{"text":"...","id":"..."}]}
+- note: {"type":"note","content":"...","noteStyle":"info|warning|question","noteTitle":"عنوان قصير اختياري"}
+- alert: {"type":"alert","content":"...","alertStyle":"info|warning|success|error|tip|question","alertOutlined":false,"alertTitle":"عنوان قصير اختياري"}
+- blockquote: {"type":"blockquote","content":"نص اقتباس موثق في المدخلات فقط","quoteAuthor":"مصدر مذكور فقط","quoteStyle":"normal|s1|s2"}
+- steps: {"type":"steps","steps":["...","..."]}
+- list: {"type":"list","listItems":["...","..."],"listStyle":"default|s1"}
+- keyPoints: {"type":"keyPoints","items":["...","..."]}
+- table: {"type":"table","tableRows":N,"tableCols":N,"tableData":[["...","..."]],"tableClasses":"bordered stripped hovered sticky"}
+- accordion: {"type":"accordion","summary":"...","content":"...","accordionType":"ac|ac alt|sp|group","accordions":[{"summary":"...","content":"...","alt":false}]}
+- spoiler: {"type":"spoiler","content":"نص اختياري مخفي","accordionType":"blur","spoilerBlurText":"عنوان أو تلميح قصير"}
+- faq: {"type":"faq","faqItems":[{"question":"...","answer":"..."}]}
+- code: {"type":"code","codeContent":"...","codeLanguage":"html|css|js|json","codeComment":"اختياري","codeSource":"اختياري","codeLines":"اختياري","codeCopy":true,"codeHighlight":true,"codeSyntax":true}
+- mark: {"type":"mark","markText":"...","markClass":"|block|red|gray|orange|blue|green|gold|purple"}
+- image: {"type":"image","imageStyle":"standard|full|figure|grid|scroll|lazyload|showall","imageUrl":"...","imageAlt":"وصف بديل دقيق","imageLightbox":true,"imageCaptionStyle":"figure|table","imageDisableCaption":false,"caption":"عند figure","gridUrls":"روابط فعلية، رابط في كل سطر عند grid/scroll/showall"}
+- lazyYt: {"type":"lazyYt","youtubeId":"معرّف فعلي","youtubeMode":"lazy|defer","ratio":"16/9|4/3"}
 
-    /* 🔴 قواعد العناوين — إلزامية */
-    if (hasH3) elements.push('🔴 H3 إلزامي 100%: كل قسم H2 يجب أن يحتوي على <heading h3> واحد على الأقل (لا استثناءات). ضعه مباشرة بعد فقرة التمهيد الأولى داخل القسم، قبل أي محتوى آخر.');
-    if (hasH4) elements.push('🔴 H4 إلزامي 80%: كل h3 يحتوي 3 فقرات أو أكثر يجب أن يحتوي على <heading h4> واحد على الأقل لتفصيل النقاط الفرعية.');
-    if (hasH3 && hasH4) elements.push('🔴 تسلسل العناوين إلزامي: H1 → H2 → H3 → H4 دون تخطي أي مستوى. ممنوع وضع H4 مباشرة بعد H2 بدون H3 بينهما.');
+الهيكل: عنوان h1 واحد، ثم أقسام h2 عند الحاجة. يجوز أن يتبع h2 نص أو عنصر مناسب مباشرة؛ أضف h3/h4 فقط إذا حسّنا الفهم، ولا تُلزم كل قسم بمستويات فرعية أو بعدد ثابت من العناوين. لا تدرج عناصر تنسيق لمجرد التنويع.`;
 
-    if (hasLists)        elements.push('أضف قوائم نقطية (list type) أو مرقمة (steps type) لعرض المعلومات المتعددة');
-    if (hasBold)         elements.push('استخدم <b>النص العريض</b> لإبراز الكلمات والعبارات المهمة');
-    if (hasItalics)      elements.push('استخدم <em>النص المائل</em> للتأكيد والاقتباسات القصيرة');
-    if (hasQuotes)       elements.push('أضف blockquote لاقتباس من خبير أو مصدر موثوق');
-    if (hasKeyPoints)    elements.push('أضف عنصر keyPoints بعد فقرة المقدمة مباشرةً يحتوي 5-7 نقاط ملخصة');
-    if (hasInstructions) elements.push('أضف تنبيهات warning للتعليمات والأخطاء الشائعة');
-    if (hasTables)       elements.push('أضف جدولاً مقارناً (table type) عند المقارنة بين خيارات');
-    if (hasImages)       elements.push("أضف صوراً HTML مضمنة في paragraph.content بعد كل 2-3 أقسام H2 (استخدم src='ai-placeholder')");
-    if (hasYoutube)      elements.push('أضف فيديو يوتيوب HTML مضمن في paragraph.content في منتصف المقال');
-    if (hasConclusion)   elements.push('اختم المقال بخاتمة قوية تلخص أبرز النقاط وتدعو القارئ لاتخاذ إجراء');
+  const systemPrompt = [
+    'أنت محرر محتوى دقيق ونافع للناس. ' + langInstruction,
+    'أنشئ محتوى أصلياً موثوقاً يجيب حاجة القارئ، لا نصاً للتلاعب بترتيب البحث. المقاس المطلوب إشارة مرنة إلى عمق التغطية لا حد أدنى للطول أو عدد الأقسام.',
+    'الجمهور: ' + countryGuide + '. نوع المقال: ' + articleTypeGuide + '. النبرة: ' + toneGuide + '. سهولة القراءة: ' + readingGuide + '. منظور السرد: ' + povGuide + '. نطاق التغطية: ' + sizeGuide,
+    'اكتب بطبيعية ووضوح، بعناوين دقيقة تصف المحتوى. استخدم المصطلحات والكلمات المفتاحية حين تلائم السياق دون تكرار قسري. لا تضف أقساماً أو أسئلة شائعة أو قوائم أو جداول لملء قالب.',
+    'الدقة والثقة: لا تختلق تجربة أو خبرة شخصية، أو سيرة/صفة خبير، أو إحصاء أو دراسة أو اقتباس أو مصدر أو رابط أو خاصية منتج. لا تعرض الرأي كحقيقة. اعتمد على المدخلات؛ وإذا لم تتوفر معلومة لازمة فصرّح بحدودها أو تجنب الادعاء، واطلب التحقق من المعلومات الحديثة عند ملاءمة السياق.',
+    'الافتتاحية تفضيل تحريري لا قالب إلزامي: ' + openingGuide + '. لا تبدأ بإحصاء أو حقيقة إلا إذا كانت واردة بوضوح في المدخلات، ولا تقدّم قصة توضيحية خيالية على أنها حدث حقيقي أو تجربة الكاتب.',
+    'وضع الكتابة: ' + writingModeGuide,
+    preferences.length ? 'عناصر اختيارية، أدرج ما يخدم الموضوع والقارئ فقط: ' + preferences.join(' ') : '',
+    'توزيع note وalert وtable وlist وsteps وfaq وblockquote وmark وaccordion وcode وimage وlazyYt اختياري تماماً: لا تستخدم أياً منها إلا إذا أضاف فائدة واضحة. استخدم FAQ فقط عند وجود أسئلة مفيدة وإجابات مدعومة، وcode فقط إذا كان الموضوع يحتاج مثالاً صحيحاً، ولا تختلق مصادر أو بيانات أو وسائط.',
+    'مخطط الأنواع وحقول القالب المدعومة:', typeCatalog,
+    'الإخراج: أعد JSON صالحاً فقط بالمفاتيح title وmetaDescription وtags وsections. يجب أن تكون sections مصفوفة من الأنواع والحقول المدعومة أعلاه. لا تضف HTML أو حقولاً جديدة أو Markdown خارج JSON. اجعل العنوان والوصف دقيقين وغير مضللين، ولا تفرض طولاً معيارياً لهما. اجعل الوسوم وثيقة الصلة بلا حشو. لا تضف فقرة مصادر افتراضية.'
+  ].filter(Boolean).join('\n\n');
 
-    const typeCatalog = "أنواع الأقسام المتاحة (27 نوعاً — JSON sections)\n══════════════════════════════════════════\n\n━━━ 1) الهيكل والأساسيات ━━━\n\n1. basics\n   { \"type\":\"basics\", \"metaDescription\":\"140-160 حرف\" }\n\n2. heading\n   { \"type\":\"heading\", \"content\":\"...\", \"headingLevel\":\"h1\"|\"h2\"|\"h3\"|\"h4\"|\"h5\"|\"h6\", \n     \"headingBefore\":\"(اختياري) ★ \", \"headingAfter\":\"(اختياري) ✓\" }\n\n   ⚠️ قواعد استخدام كل مستوى:\n   • h1: واحد فقط — العنوان الرئيسي في بداية المقال\n   • h2: 5-15 عنواناً حسب الحجم — الأقسام الرئيسية\n   • h3: إلزامي داخل كل H2 — عنوان واحد على الأقل يفصّل محتواه\n   • h4: إلزامي داخل كل H3 يحتوي 3 فقرات أو أكثر\n   • h5/h6: نادراً ما تُستخدم (فقط في المقالات lg مع تسلسل عميق)\n\n3. paragraph\n   { \"type\":\"paragraph\", \"content\":\"...\", \n     \"paragraphStyle\":\"normal\"|\"indent\"|\"dropcap\"|\"ref\",\n     \"refSource\":\"(عند paragraphStyle=ref فقط)\" }\n\n4. toc\n   { \"type\":\"toc\", \"tocLabel\":\"جدول المحتويات\", \n     \"tocStyle\":\"automatic\"|\"manual\",\n     \"tocManualItems\":[{\"text\":\"...\",\"id\":\"...\"}] }\n\n━━━ 2) الملاحظات والتنبيهات ━━━\n\n5. note\n   { \"type\":\"note\", \"content\":\"...\", \n     \"noteStyle\":\"info\"|\"warning\"|\"question\" }\n\n6. alert\n   { \"type\":\"alert\", \"content\":\"...\", \n     \"alertStyle\":\"info\"|\"warning\"|\"success\"|\"error\"|\"tip\"|\"question\",\n     \"alertOutlined\":false }\n\n7. blockquote\n   { \"type\":\"blockquote\", \"content\":\"...\", \"quoteAuthor\":\"...\", \n     \"quoteStyle\":\"normal\"|\"s1\"|\"s2\" }\n\n━━━ 3) القوائم والمحتوى المنظم ━━━\n\n8. steps\n   { \"type\":\"steps\", \"steps\":[\"الخطوة 1\",\"الخطوة 2\",\"الخطوة 3\"] }\n\n9. list\n   { \"type\":\"list\", \"listItems\":[\"عنصر 1\",\"عنصر 2\",\"عنصر 3\"], \n     \"listStyle\":\"default\"|\"s1\" }\n\n10. keyPoints\n    { \"type\":\"keyPoints\", \"items\":[\"نقطة 1\",\"نقطة 2\",\"نقطة 3\"] }\n\n━━━ 4) الجداول ━━━\n\n11. table\n    { \"type\":\"table\", \"tableRows\":N, \"tableCols\":N, \"tableData\":[[...]], \n      \"tableClasses\":\"bordered stripped hovered sticky\" }\n\n━━━ 5) الأكورديون والإخفاء ━━━\n\n12. accordion\n    { \"type\":\"accordion\", \"summary\":\"...\", \"content\":\"...\", \n      \"accordionType\":\"ac\"|\"ac alt\"|\"sp\"|\"group\",\n      \"accordions\":[{\"summary\":\"\",\"content\":\"\",\"alt\":false}],\n      \"spoilerBlurText\":\"(عند accordionType=blur فقط)\" }\n\n13. faq\n    { \"type\":\"faq\", \"faqItems\":[{\"question\":\"...\",\"answer\":\"...\"}] }\n\n━━━ 6) الأزرار والروابط ━━━\n\n14. button\n    { \"type\":\"button\", \"buttonText\":\"...\", \"buttonUrl\":\"...\", \n      \"buttonOutlined\":false, \"buttonIcon\":\"\"|\"dl\"|\"demo\" }\n\n15. link\n    { \"type\":\"link\", \"linkText\":\"...\", \"linkUrl\":\"...\", \n      \"linkStyle\":\"extL\"|\"alt\"|\"sec\"|\"button\"|\"buttonLn\" }\n\n16. downloadBox\n    { \"type\":\"downloadBox\", \"fileName\":\"file.zip\", \"fileSize\":\"200KB\", \n      \"downloadFile\":\"...\" }\n\n━━━ 7) الأكواد ━━━\n\n17. code\n    { \"type\":\"code\", \"codeContent\":\"...\", \n      \"codeLanguage\":\"html\"|\"css\"|\"js\"|\"json\",\n      \"codeComment\":\".html\", \"codeSource\":\"src/index.html\",\n      \"codeLines\":\"2,4\", \"codeCopy\":true, \n      \"codeHighlight\":true, \"codeSyntax\":true }\n\n18. codeTabs\n    { \"type\":\"codeTabs\", \n      \"tabHtml\":\"<div>...</div>\", \"tabCss\":\"body{...}\", \n      \"tabJs\":\"console.log()\", \"tabJson\":\"{}\" }\n\n19. inlineCode\n    { \"type\":\"inlineCode\", \"inlineCode\":\"console.log()\" }\n\n20. kbd\n    { \"type\":\"kbd\", \"kbdText\":\"Ctrl+A\" }\n\n━━━ 8) التمييز ━━━\n\n21. mark\n    { \"type\":\"mark\", \"markText\":\"...\", \n      \"markClass\":\"\"|\"block\"|\"red\"|\"gray\"|\"orange\"|\"blue\"|\"green\"|\"gold\"|\"purple\" }\n\n━━━ 9) الصور والوسائط ━━━\n\n22. image\n    { \"type\":\"image\", \n      \"imageStyle\":\"standard\"|\"full\"|\"figure\"|\"grid\"|\"scroll\"|\"lazyload\"|\"showall\",\n      \"imageUrl\":\"...\", \"imageAlt\":\"...\", \n      \"imageLightbox\":true, \"imageCaptionStyle\":\"figure\"|\"table\",\n      \"imageDisableCaption\":false,\n      \"caption\":\"(عند figure)\", \"gridUrls\":\"(عند grid/scroll/showall — كل رابط في سطر)\" }\n\n23. lazyYt\n    { \"type\":\"lazyYt\", \"youtubeId\":\"...\", \n      \"youtubeMode\":\"lazy\"|\"defer\", \"ratio\":\"16/9\"|\"4/3\" }\n\n24. audioPlayer\n    { \"type\":\"audioPlayer\", \"audioUrl\":\"...\", \n      \"audioPreload\":\"metadata\"|\"none\"|\"auto\" }\n\n25. videoPlayer\n    { \"type\":\"videoPlayer\", \"videoUrl\":\"...\", \n      \"videoPoster\":\"(اختياري)\", \n      \"videoPreload\":\"metadata\"|\"none\"|\"auto\" }\n\n━━━ 10) المنشورات ذات الصلة ━━━\n\n26. relatedManual\n    { \"type\":\"relatedManual\", \"relatedTitle\":\"...\", \n      \"relatedLinks\":[{\"text\":\"...\",\"url\":\"...\"}] }\n\n27. relatedAuto\n    { \"type\":\"relatedAuto\", \"relatedAutoLabel\":\"منشورات ذات صلة\", \n      \"relatedMax\":6, \"relatedDataLabel\":\"(اختياري)\",\n      \"relatedSortBy\":\"updated\"|\"published\", \n      \"relatedRandom\":true }\n\n══════════════════════════════════════════";
-    const systemPrompt = [
-      'أنت محرر محتوى دقيق ومفيد. اكتب باللغة ' + (language === 'ar' ? 'العربية الفصحى المعاصرة' : 'الإنجليزية الطبيعية') + '.',
-      'أنشئ محتوى أصلياً يجيب عن حاجة القارئ بوضوح، ولا تعد بترتيب أو نتيجة SEO. اعتبر المقاس المحدد تقديراً مرناً لا حداً إلزامياً.',
-      'الجمهور: ' + countryGuide + '. نوع المقال: ' + articleTypeGuide + '. النبرة: ' + toneGuide + '. سهولة القراءة: ' + readingGuide + '. منظور السرد: ' + povGuide + '.',
-      'إرشادات التحرير: ابدأ مباشرة بما يفيد القارئ، استخدم عناوين وصفية وتسلسلاً منطقياً، وضمّن الكلمات المفتاحية طبيعياً عند صلتها بالموضوع. لا تكررها لتحقيق كثافة رقمية ولا تضف مقدمة أو FAQ أو جدولاً لمجرد استيفاء قالب.',
-      'الدقة والثقة: لا تختلق خبرة أو تجربة شخصية أو إحصائية أو دراسة أو اقتباس أو مصدر أو رابط أو ميزة منتج. ميّز الحقائق عن الرأي، واطلب/اذكر التحقق عندما تعتمد الإجابة على معلومة حديثة أو غير متاحة. لا تنسب تجربة مباشرة للكاتب.',
-      mainKeyword ? 'الكلمة/العبارة الأساسية التي ينبغي استعمالها طبيعياً عند الملاءمة: ' + mainKeyword : '',
-      keywords ? 'مصطلحات مساعدة (استخدم المناسب منها دون حشو): ' + keywords : '',
-      openingGuide ? 'اقتراح الافتتاح: ' + openingGuide + '، إذا كان ملائماً للسياق.' : '',
-      writingModeGuide ? 'توجيه أسلوب إضافي: ' + writingModeGuide : '',
-      elements.length ? 'عناصر تنسيق مفضلة عند فائدتها فقط: ' + elements.join('؛ ') : '',
-      'العناوين: استخدم عنواناً رئيسياً واحداً، ثم H2 للأقسام، وأضف H3/H4 فقط حين تساعد على تنظيم الفكرة. لا تفرض عدداً ثابتاً للعناوين أو فقرات متكررة.',
-      'مخطط الأنواع والخصائص التي يقبلها قالب المقال:', typeCatalog,
-      'الإخراج: أعد JSON صالحاً فقط بالمفاتيح title وmetaDescription وtags وsections. يجب أن تكون sections مصفوفة عناصر من الأنواع الموثقة أعلاه. اجعل العنوان والوصف دقيقين وغير مضللين، واجعل tags ذات صلة من دون حشو. لا تضف إشعاراً ترويجياً عن الأداة أو فقرة مصادر افتراضية. إذا كانت معلومات مطلوبة غير متاحة، لا تعوّضها باختلاقها.'
-    ].filter(Boolean).join('\n\n');
-    const userPrompt = [
-      `اكتب مقالاً مفيداً وأصيلاً يجيب عن نية القارئ حول: ${topic}`,
-      mainKeyword ? `الكلمة المفتاحية الرئيسية: ${mainKeyword}` : '',
-      keywords    ? `الكلمات المفتاحية الداعمة: ${keywords}` : '',
-      customRequest ? `تعليمات إضافية: ${customRequest}` : ''
-    ].filter(Boolean).join('\n');
+  const userPrompt = [
+    `اكتب مقالاً مفيداً وأصيلاً يجيب عن نية القارئ حول: ${topic}`,
+    mainKeyword ? `الكلمة/العبارة الأساسية (استخدمها طبيعياً عند الملاءمة): ${mainKeyword}` : '',
+    keywords ? `مصطلحات مساعدة (استخدم المناسب منها بلا حشو): ${keywords}` : '',
+    hasYoutube && youtubeReference ? `مرجع فيديو قدّمه المستخدم؛ لا تغير معرّفه أو تستبدله: ${youtubeReference}` : '',
+    customRequest ? `تعليمات إضافية: ${customRequest}` : ''
+  ].filter(Boolean).join('\n');
 
-    return { systemPrompt, userPrompt };
-  }
+  return { systemPrompt, userPrompt };
+}
 
-  /* خرائط إعدادات المقال التي يعتمد عليها buildArticlePrompt */
-  const WRITING_MODE_MAP = {
-    default: 'اكتب بأسلوب متوازن وواضح، مع تقديم قيمة عملية للقارئ.',
-    seo: 'اكتب بخبرة SEO مع نية بحث واضحة، عناوين دقيقة، وتوزيع طبيعي للكلمات المفتاحية دون حشو.',
-    human: 'اكتب بصوت بشري طبيعي ودافئ، بجمل متنوعة وأمثلة واقعية، وتجنب العبارات الآلية المتكررة.',
-    news: 'اكتب بأسلوب صحفي محايد، افصل الحقائق عن التوقعات، ولا تختلق تواريخ أو تصريحات.',
-    affiliate: 'اكتب مراجعة/دليلاً شفافاً يوضح الفوائد والقيود ومعايير الاختيار، دون ادعاءات غير موثقة.',
-    adsense: 'اكتب محتوى أصلياً مفيداً للقارئ، منظمًا وسهل القراءة، مع تجنب الحشو أو تكرار الكلمات.',
-    viral: 'اكتب عنواناً ومقدمة جذابين مع الحفاظ على الدقة وعدم المبالغة أو التضليل.',
-    technical: 'اكتب بدقة تقنية، عرّف المصطلحات، وقدم خطوات وأمثلة قابلة للتحقق.'
-  };
-  const SIZE_MAP = {
-    xs: { words: '600-900', h2: '3-4', sections: '3-4' },
-    sm: { words: '900-1500', h2: '4-6', sections: '4-6' },
-    md: { words: '1500-2400', h2: '6-8', sections: '6-8' },
-    lg: { words: '2400-3600', h2: '8-11', sections: '8-11' }
-  };
-  const TONE_MAP = {
-    professional: 'مهني ورسمي، دقيق ومباشر',
-    educational: 'تعليمي توضيحي، يشرح المفاهيم تدريجياً',
-    casual: 'سهل وودود، قريب من القارئ دون ابتذال',
-    journalistic: 'صحفي تحريري، موضوعي ومتوازن'
-  };
-  const READING_MAP = {
-    simple: 'مبسط جداً، جمل قصيرة ومفردات شائعة',
-    easy: 'سهل وواضح، مع شرح المصطلحات',
-    moderate: 'متوسط، يجمع بين الدقة والوضوح',
-    advanced: 'متقدم، مناسب للقارئ المتخصص'
-  };
-  const POV_MAP = { we: 'ضمير المتكلم الجمع (نحن)', you: 'مخاطبة القارئ مباشرة (أنت)', i: 'ضمير المتكلم المفرد (أنا)', he: 'ضمير الغائب المذكر (هو)', she: 'ضمير الغائب المؤنث (هي)', they: 'ضمير الغائب الجمع (هم)' };
-  const COUNTRY_MAP = { ar: 'جمهور الدول العربية عموماً', sa: 'الجمهور في المملكة العربية السعودية', eg: 'الجمهور في مصر', ae: 'الجمهور في الإمارات العربية المتحدة', ma: 'الجمهور في المغرب', dz: 'الجمهور في الجزائر', iq: 'الجمهور في العراق', global: 'جمهور دولي متنوع' };
-  const ARTICLE_TYPE_MAP = {
-    none: 'مقال عام', guide: 'دليل إرشادي عملي', listicle: 'قائمة مرتبة ومشروحة', review: 'مراجعة متوازنة لمنتج أو خدمة', news: 'مقال إخباري محايد', comparison: 'مقارنة منظمة بمعايير واضحة', casestudy: 'دراسة حالة موثقة', opinion: 'مقال رأي يميز الرأي عن الحقيقة', tutorial: 'درس تعليمي خطوة بخطوة', summary: 'ملخص مركز ومنظم', faqpage: 'صفحة أسئلة وأجوبة مفصلة'
-  };
-  const OPENING_MAP = {
-    brief: 'مقدمة موجزة تحدد الموضوع والفائدة', question: 'سؤال واضح يعبّر عن حاجة القارئ', statistic: 'إحصائية موثوقة فقط؛ إن لم تتوفر فلا تختلق رقماً واستبدلها بحقيقة عامة', fact: 'حقيقة دقيقة مرتبطة مباشرة بالموضوع', quote: 'اقتباس موثق فقط؛ لا تنسب أقوالاً مختلقة', story: 'حكاية قصيرة توضيحية غير مقدمة على أنها واقعة حقيقية', personal: 'افتتاحية إنسانية متعاطفة دون ادعاء تجربة شخصية غير حقيقية'
-  };
+const WRITING_MODE_MAP = {
+  default: 'أسلوب متوازن وواضح يقدّم قيمة عملية للقارئ، بلا حشو.',
+  seo: 'راعِ نية البحث بعناوين دقيقة واستخدام طبيعي للمصطلحات، دون وعود بالترتيب أو حشو.',
+  human: 'اكتب بصوت طبيعي ودافئ وجمل متنوعة؛ لا تدّعِ تجربة بشرية أو شخصية لم يذكرها المستخدم.',
+  news: 'اكتب بأسلوب إخباري محايد، ميّز المؤكد من غير المؤكد، ولا تختلق تواريخ أو تصريحات أو وقائع.',
+  affiliate: 'قدّم مراجعة أو دليلاً شفافاً يوضح المزايا والقيود ومعايير الاختيار المتاحة؛ لا تختلق استخداماً أو ادعاءات، واذكر الإفصاح التجاري فقط إذا قدمته المدخلات.',
+  adsense: 'اكتب محتوى أصلياً نافعاً وسهل القراءة ومتوافقاً مع الإعلانات، دون إطالة أو تكرار مصطنع.',
+  viral: 'اجعل الصياغة جذابة ومشوقة بلا مبالغة أو إثارة مضللة أو ادعاءات غير مدعومة.',
+  technical: 'اكتب بدقة تقنية، واشرح المصطلحات والخطوات والأمثلة القابلة للتحقق؛ لا تزعم اختباراً لم يُجرَ.'
+};
+const SIZE_MAP = {
+  xs: 'تغطية موجزة تلبي الحاجة الأساسية دون حذف ما يلزم للفهم.',
+  sm: 'تغطية قصيرة تشرح النقاط الضرورية للموضوع.',
+  md: 'تغطية متوازنة بقدر ما يحتاجه الموضوع.',
+  lg: 'تغطية موسعة فقط إذا كانت التفاصيل الإضافية نافعة وذات صلة.'
+};
+const TONE_MAP = {
+  professional: 'مهني ورسمي، دقيق ومباشر',
+  educational: 'تعليمي توضيحي، يشرح المفاهيم تدريجياً',
+  casual: 'سهل وودود، قريب من القارئ دون ابتذال',
+  journalistic: 'صحفي تحريري، موضوعي ومتوازن'
+};
+const READING_MAP = {
+  simple: 'مبسط جداً، جمل قصيرة ومفردات شائعة',
+  easy: 'سهل وواضح، مع شرح المصطلحات',
+  moderate: 'متوسط، يجمع بين الدقة والوضوح',
+  advanced: 'متقدم، مناسب للقارئ المتخصص'
+};
+const POV_MAP = {
+  neutral: 'محايد؛ تجنب ضمائر المتكلم والمخاطب ما لم تقتضِ الجملة ذلك.',
+  you: 'مخاطبة القارئ مباشرة بصيغة أنت عند ملاءمتها، دون افتعال.',
+  we: 'ضمير المتكلم الجمع نحن عند ملاءمته، دون ادعاء تجربة مشتركة أو خبرة غير واردة.',
+  i: 'ضمير المتكلم المفرد أنا عند ملاءمته، دون ادعاء تجربة شخصية غير واردة.',
+  he: 'ضمير الغائب المذكر عند ملاءمته.',
+  she: 'ضمير الغائب المؤنث عند ملاءمته.',
+  they: 'ضمير الغائب الجمع عند ملاءمته.'
+};
+const COUNTRY_MAP = {
+  ar: 'جمهور الدول العربية عموماً', sa: 'الجمهور في المملكة العربية السعودية',
+  eg: 'الجمهور في مصر', ae: 'الجمهور في الإمارات العربية المتحدة',
+  ma: 'الجمهور في المغرب', dz: 'الجمهور في الجزائر', iq: 'الجمهور في العراق',
+  global: 'جمهور دولي متنوع'
+};
+const ARTICLE_TYPE_MAP = {
+  none: 'مقال عام', guide: 'دليل إرشادي عملي', tutorial: 'شرح تعليمي خطوة بخطوة',
+  comparison: 'مقارنة منظمة بمعايير واضحة', review: 'مراجعة متوازنة لمنتج أو خدمة',
+  list: 'قائمة مرتبة ومشروحة عند ملاءمتها', listicle: 'قائمة مرتبة ومشروحة عند ملاءمتها',
+  news: 'مقال إخباري محايد', faq: 'صفحة أسئلة وأجوبة مفيدة', faqpage: 'صفحة أسئلة وأجوبة مفيدة',
+  opinion: 'مقال رأي يميز الرأي عن الحقيقة', casestudy: 'دراسة حالة موثقة بالمدخلات',
+  summary: 'ملخص مركز ومنظم'
+};
+const OPENING_MAP = {
+  brief: 'ابدأ مباشرة بتوضيح الموضوع وفائدته للقارئ',
+  direct: 'ابدأ مباشرة بالجواب أو الفائدة الأساسية',
+  question: 'ابدأ بسؤال واضح يعبر عن حاجة القارئ',
+  fact: 'ابدأ بحقيقة دقيقة ذات صلة إذا كانت موجودة في المدخلات فقط',
+  inputFact: 'ابدأ بحقيقة دقيقة واردة في المدخلات فقط',
+  statistic: 'لا تستخدم إحصاءً إلا إذا ورد موثقاً في المدخلات؛ وإلا فابدأ مباشرة دون رقم',
+  quote: 'استخدم اقتباساً موثقاً وارداً في المدخلات فقط، وإلا فلا تفتعل اقتباساً',
+  story: 'استخدم قصة افتراضية قصيرة للتوضيح فقط، وصرّح بأنها مثال خيالي لا واقعة حقيقية',
+  fictionalStory: 'استخدم قصة افتراضية قصيرة للتوضيح فقط، وصرّح بأنها مثال خيالي لا واقعة حقيقية',
+  personal: 'ابدأ بتعاطف إنساني دون ادعاء تجربة شخصية غير حقيقية'
+};
 
-  function promptLanguage(language){ return language === 'en' ? 'English' : 'العربية الفصحى'; }
-  window.modweebPrompts = {
-    article: params => buildArticlePrompt(params || {}),
-    suggestTitles: ({title = '', language = 'ar', count = 10} = {}) => ({
-      systemPrompt: `أنت محرر عناوين SEO. اقترح عناوين دقيقة وجذابة وغير مضللة باللغة ${promptLanguage(language)}. أعد JSON صالحاً فقط بهذا الشكل: {"suggestions":["..."]}. لا تضف شروحاً.`,
-      userPrompt: `اقترح ${Math.max(1, Math.min(20, Number(count) || 10))} عناوين مختلفة للموضوع التالي، مع الحفاظ على معناه وتجنب الادعاءات غير المدعومة:\n${title}`
-    }),
-    keywords: ({topic = '', language = 'ar'} = {}) => ({
-      systemPrompt: `أنت متخصص SEO. أخرج JSON صالحاً فقط بالشكل {"keywords":["..."]}. أدرج كلمات مفتاحية رئيسية وفرعية وعبارات بحث طويلة ذات صلة باللغة ${promptLanguage(language)}، دون تكرار أو حشو.`,
-      userPrompt: `أنشئ من 8 إلى 12 كلمة أو عبارة مفتاحية مناسبة لهذا الموضوع:\n${topic}`
-    }),
-    improveText: ({text = '', action = 'rewrite', language = 'ar'} = {}) => {
-      const instructions = { rewrite: 'أعد صياغة النص مع الحفاظ على المعنى', summarize: 'لخّص النص مع إبقاء أهم الأفكار', expand: 'وسّع النص بإضافة شرح مفيد دون اختلاق حقائق', simplify: 'بسّط النص للقارئ العام', shorten: 'اختصر النص مع الحفاظ على النقاط الأساسية', fix: 'صحح الأخطاء اللغوية والإملائية فقط قدر الإمكان' };
-      return { systemPrompt: `أنت محرر لغوي محترف. اكتب باللغة ${promptLanguage(language)}. أعد النص الناتج فقط دون مقدمات أو علامات اقتباس، ولا تضف حقائق غير موجودة.`, userPrompt: `${instructions[action] || instructions.rewrite}:\n\n${text}` };
-    },
-    seoMeta: ({topic = '', mainKeyword = '', language = 'ar', articleText = ''} = {}) => ({
-      systemPrompt: `أنت خبير SEO. أعد JSON صالحاً فقط بالحقول metaTitle وmetaDescription وslug وkeywords (مصفوفة). اكتب باللغة ${promptLanguage(language)}، واجعل الوصف دقيقاً ولا تضف ادعاءات غير موجودة في النص.`,
-      userPrompt: `الموضوع: ${topic}\nالكلمة المفتاحية: ${mainKeyword}\nالنص المتاح: ${articleText}\nأنشئ عنواناً ووصفاً موجزاً وslug مناسباً وكلمات مفتاحية مرتبطة.`
-    }),
-    smartAssistant: ({prompt = '', topic = '', language = 'ar', format = 'html'} = {}) => ({
-      systemPrompt: `أنت مساعد كتابة محتوى. أجب باللغة ${promptLanguage(language)} ونفّذ طلب المستخدم بدقة. ${format === 'html' ? 'عند الحاجة أخرج HTML دلالياً نظيفاً فقط، دون Markdown أو شروح خارج المحتوى.' : 'أخرج نصاً عادياً فقط، دون Markdown أو شروح إضافية.'} لا تختلق حقائق أو مصادر.`,
-      userPrompt: `${topic ? `سياق الموضوع: ${topic}\n` : ''}الطلب: ${prompt}`
-    })
-  };
+function promptLanguage(language) { return language === 'en' ? 'English' : 'العربية الفصحى'; }
+window.modweebPrompts = {
+  article: params => buildArticlePrompt(params || {}),
+  suggestTitles: ({ title = '', language = 'ar', count = 10 } = {}) => ({
+    systemPrompt: `أنت محرر عناوين. اقترح عناوين دقيقة وجذابة وغير مضللة باللغة ${promptLanguage(language)}. أعد JSON صالحاً فقط بهذا الشكل: {"suggestions":["..."]}. لا تضف شروحاً.`,
+    userPrompt: `اقترح ${Math.max(1, Math.min(20, Number(count) || 10))} عناوين مختلفة للموضوع التالي، مع الحفاظ على معناه وتجنب الادعاءات غير المدعومة:\n${title}`
+  }),
+  keywords: ({ topic = '', language = 'ar' } = {}) => ({
+    systemPrompt: `أنت مساعد بحث كلمات مفتاحية. أخرج JSON صالحاً فقط بالشكل {"keywords":["..."]}. اقترح عبارات بحث ذات صلة باللغة ${promptLanguage(language)} دون تكرار أو حشو، ولا تعرضها كبيانات أو أحجام بحث من Google.`,
+    userPrompt: `اقترح عبارات مفتاحية مناسبة لهذا الموضوع دون ادعاء بيانات حجم البحث:\n${topic}`
+  }),
+  improveText: ({ text = '', action = 'rewrite', language = 'ar' } = {}) => {
+    const instructions = {
+      rewrite: 'أعد صياغة النص مع الحفاظ على المعنى',
+      summarize: 'لخّص النص مع إبقاء أهم الأفكار',
+      expand: 'وسّع النص بإضافة شرح مفيد دون اختلاق حقائق',
+      simplify: 'بسّط النص للقارئ العام',
+      shorten: 'اختصر النص مع الحفاظ على النقاط الأساسية',
+      fix: 'صحح الأخطاء اللغوية والإملائية فقط قدر الإمكان'
+    };
+    return {
+      systemPrompt: `أنت محرر لغوي محترف. اكتب باللغة ${promptLanguage(language)}. أعد النص الناتج فقط دون مقدمات أو علامات اقتباس، ولا تضف حقائق أو تجارب أو مصادر غير موجودة.`,
+      userPrompt: `${instructions[action] || instructions.rewrite}:\n\n${text}`
+    };
+  },
+  seoMeta: ({ topic = '', mainKeyword = '', language = 'ar', articleText = '' } = {}) => ({
+    systemPrompt: `أنت محرر بيانات وصفية. أعد JSON صالحاً فقط بالحقول metaTitle وmetaDescription وslug وkeywords (مصفوفة). اكتب باللغة ${promptLanguage(language)}، واجعل النص دقيقاً وموجزاً ولا تضف ادعاءات غير موجودة في النص. لا توجد أطوال إلزامية من Google.`,
+    userPrompt: `الموضوع: ${topic}\nالكلمة المفتاحية: ${mainKeyword}\nالنص المتاح: ${articleText}\nأنشئ عنواناً ووصفاً موجزين وslug مناسباً وكلمات مفتاحية مرتبطة.`
+  }),
+  smartAssistant: ({ prompt = '', topic = '', language = 'ar', format = 'html' } = {}) => ({
+    systemPrompt: `أنت مساعد كتابة محتوى. أجب باللغة ${promptLanguage(language)} ونفّذ طلب المستخدم بدقة. ${format === 'html' ? 'عند الحاجة أخرج HTML دلالياً نظيفاً فقط، دون Markdown أو شروح خارج المحتوى.' : 'أخرج نصاً عادياً فقط، دون Markdown أو شروح إضافية.'} لا تختلق حقائق أو تجارب أو مصادر.`,
+    userPrompt: `${topic ? `سياق الموضوع: ${topic}\n` : ''}الطلب: ${prompt}`
+  }),
+  smartArticleEdit: ({ prompt = '', topic = '', language = 'ar', scope = 'article', content = '' } = {}) => ({
+    systemPrompt: `أنت محرر HTML دقيق. اكتب باللغة ${promptLanguage(language)}، وحافظ على المعنى والحقائق والروابط والبنية غير المستهدفة، ولا تضف معلومات أو مصادر غير موجودة. أعد JSON صالحاً فقط بلا Markdown. ${scope === 'selection'
+      ? 'المخطط المطلوب: {"replacementHtml":"..."}. حرر المقطع المحدد فقط بصيغة HTML دلالية سليمة.'
+      : 'المخطط المطلوب: {"findHtml":"...","replacementHtml":"..."}. findHtml يجب أن يكون مقتطفاً متصلاً وحرفياً من HTML المدخل ومميزاً بوضوح، وreplacementHtml هو النسخة المعدلة لهذا المقتطف فقط. لا تعد كامل المقال ولا تحذف أجزاء أخرى.'}`,
+    userPrompt: `${topic ? `سياق الموضوع: ${topic}\n` : ''}الطلب: ${prompt}\n\n${scope === 'selection' ? 'المقطع المحدد:' : 'HTML المقال الحالي (اختر أصغر مقطع متصل يحقق التعديل):'}\n${content}`
+  })
+};
 
 export {};

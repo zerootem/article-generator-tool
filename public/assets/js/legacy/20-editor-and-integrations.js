@@ -29,7 +29,7 @@ window.closeAllModweebMenus = function(){
   };
   const state = {
     editor: null, lines: null, preview: null, initialized: false, dirty: false,
-    selection: {start: 0, end: 0}, ranges: [], previousEditorValue: '', draft: null, draftId: null, draftInserted: false,
+    selection: {start: 0, end: 0}, ranges: [], previousEditorValue: '', draft: null, draftId: null, draftInserted: false, rawHTMLDraft: null,
     history: [], historyIndex: -1, historyTimer: null, syncing: false, targetRange: null
   };
   const labels = {
@@ -379,9 +379,26 @@ window.closeAllModweebMenus = function(){
     const form = document.getElementById('unifiedElementForm');
     if (form) form.innerHTML = modweebRenderEditor(state.draft);
   }
+  function openRawHTMLFallback(range){
+    state.draft = null; state.draftId = null; state.targetRange = range; state.draftInserted = false;
+    state.rawHTMLDraft = range.raw;
+    const title = document.getElementById('unifiedElementTitle');
+    if (title) title.textContent = 'تحرير HTML الخام';
+    const hint = document.getElementById('unifiedElementHelp');
+    if (hint) hint.textContent = 'يُعرض المحتوى كنص، ويستبدل النطاق المحدد فقط عند الحفظ.';
+    const form = document.getElementById('unifiedElementForm');
+    if (form) {
+      form.innerHTML = '<label for="unifiedRawHTML" class="mw-field-label">HTML للعنصر المحدد</label><textarea id="unifiedRawHTML" spellcheck="false" dir="ltr" style="width:100%;min-height:240px;font-family:monospace;white-space:pre;tab-size:2"></textarea>';
+      form.querySelector('#unifiedRawHTML').value = range.raw;
+    }
+    openSheet('unifiedElementSheet');
+    const rawEditor = document.getElementById('unifiedRawHTML');
+    if (rawEditor) rawEditor.focus();
+  }
   function openElementSheet(type, option){
     closeMenus();
     if (document.activeElement === state.editor) updateCursorInfo();
+    state.rawHTMLDraft = null;
     const range = selectedRange(type);
     const existing = range ? modweebBlocks.find(b => b.id === range.id) : null;
     const draft = existing ? clone(existing) : newDraft(type, option);
@@ -400,10 +417,27 @@ window.closeAllModweebMenus = function(){
   }
   function discardDraft(){
     if (state.draftInserted && state.draftId) modweebBlocks = modweebBlocks.filter(b => b.id !== state.draftId);
-    state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false;
+    state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false; state.rawHTMLDraft = null;
     closeSheet('unifiedElementSheet');
   }
   function saveDraft(){
+    if (state.rawHTMLDraft !== null && state.targetRange) {
+      const rawEditor = document.getElementById('unifiedRawHTML');
+      const replacement = rawEditor ? rawEditor.value : state.rawHTMLDraft;
+      const range = state.targetRange, value = state.editor.value;
+      const next = value.slice(0, range.start) + replacement + value.slice(range.end);
+      state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false; state.rawHTMLDraft = null;
+      commitHTML(next, true);
+      if (state.editor) {
+        const cursor = Math.min(range.start + replacement.length, next.length);
+        state.editor.focus();
+        state.editor.setSelectionRange(cursor, cursor);
+        updateCursorInfo();
+      }
+      closeSheet('unifiedElementSheet');
+      modweebShowStatus('تم حفظ HTML للعنصر المحدد');
+      return;
+    }
     if (!state.draft) return;
     const draft = clone(state.draft);
     const chunk = prettyHTML(modweebRenderPreviewItem(draft) || '');
@@ -425,7 +459,7 @@ window.closeAllModweebMenus = function(){
       const insertAt = state.ranges.filter(r => r.end <= index).length;
       modweebBlocks.splice(insertAt, 0, draft);
     }
-    state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false;
+    state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false; state.rawHTMLDraft = null;
     commitHTML(next, true);
     closeSheet('unifiedElementSheet');
     modweebShowStatus('تم حفظ ' + (labels[draft.type] || 'العنصر'));
@@ -458,6 +492,8 @@ window.closeAllModweebMenus = function(){
       modweebBlocks = [];
       commitHTML('', true);
       modweebArticleHTML = '';
+      if (typeof window.modweebResetEditorState === 'function') window.modweebResetEditorState();
+      if (typeof window.modweebResetArticleContent === 'function') window.modweebResetArticleContent();
       modweebShowStatus('تم مسح المقال');
     }, () => {}, 'مسح المقال', 'إلغاء');
   }
@@ -542,7 +578,7 @@ window.closeAllModweebMenus = function(){
       const incoming = Array.isArray(nextBlocks) ? clone(nextBlocks) : [];
       const base = options.mode === 'append' ? clone(modweebBlocks || []) : [];
       modweebBlocks = base.concat(incoming);
-      state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false;
+      state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false; state.rawHTMLDraft = null;
       const html = htmlFromBlocks();
       renderEditor(html, false);
       pushHistory(html, true);
@@ -552,44 +588,92 @@ window.closeAllModweebMenus = function(){
     window.modweebCommitHTML = function(html, options){
       if (options === undefined) options = {};
       const value = String(html || '');
-      state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false;
+      state.draft = null; state.draftId = null; state.targetRange = null; state.draftInserted = false; state.rawHTMLDraft = null;
       renderEditor(value, false);
       pushHistory(value, true);
       if (options.save !== false) window.saveToLocalStorage();
       return value;
     };
+    window.modweebResetEditorState = function(){
+      clearTimeout(state.historyTimer);
+      state.historyTimer = null;
+      state.history = [''];
+      state.historyIndex = 0;
+      state.ranges = [];
+      state.selection = {start: 0, end: 0};
+      state.previousEditorValue = '';
+      state.dirty = false;
+      state.draft = null; state.draftId = null; state.targetRange = null;
+      state.draftInserted = false; state.rawHTMLDraft = null;
+      modweebBlocks = [];
+      if (state.editor) renderEditor('', false);
+    };
   }
   function findElementRange(value, position){
-    const tagPattern = /<!--[\s\S]*?-->|<\/?[a-z][^>]*>/gi;
-    const stack = [];
-    let result = null;
+    const html = String(value || '');
+    const stack = [], candidates = [];
     const voidTags = /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i;
-    let m;
-    while ((m = tagPattern.exec(value || ''))) {
-      const token = m[0];
-      if (token.indexOf('<!--') === 0 || /^<!/i.test(token)) continue;
-      const closing = /^<\//.test(token);
-      const nm = token.match(/^<\/?\s*([a-z0-9-]+)/i);
-      if (!nm) continue;
-      const name = nm[1].toLowerCase();
+    const blockStart = /^(address|article|aside|blockquote|div|dl|fieldset|footer|form|h[1-6]|header|hr|main|nav|ol|pre|section|table|ul)$/i;
+    const closesOpen = {p:/^p$/i, li:/^li$/i, dt:/^(dt|dd)$/i, dd:/^(dt|dd)$/i, option:/^option$/i, tr:/^tr$/i, tbody:/^tr$/i, thead:/^tr$/i, tfoot:/^tr$/i, td:/^(td|th)$/i, th:/^(td|th)$/i};
+    let i = 0;
+    while (i < html.length) {
+      const lt = html.indexOf('<', i);
+      if (lt < 0) break;
+      if (html.startsWith('<!--', lt)) {
+        const close = html.indexOf('-->', lt + 4), end = close < 0 ? html.length : close + 3;
+        if (position >= lt && position <= end) candidates.push({start:lt,end,raw:html.slice(lt,end),name:'#comment'});
+        i = end; continue;
+      }
+      let j = lt + 1, quote = '';
+      for (; j < html.length; j++) {
+        const ch = html[j];
+        if (quote) { if (ch === quote) quote = ''; continue; }
+        if (ch === '"' || ch === "'") { quote = ch; continue; }
+        if (ch === '>') break;
+      }
+      if (j >= html.length) break;
+      const token = html.slice(lt, j + 1);
+      const nm = token.match(/^<\s*(\/?)\s*([a-z][a-z0-9:-]*)\b/i);
+      if (!nm) { i = j + 1; continue; }
+      const closing = !!nm[1], name = nm[2].toLowerCase();
       if (closing) {
-        for (let i = stack.length - 1; i >= 0; i--) {
-          if (stack[i].name === name) {
-            const open = stack.splice(i, 1)[0];
-            const end = m.index + token.length;
-            if (position >= open.start && position <= end && (!result || end - open.start < result.end - result.start)) {
-              result = {start: open.start, end, raw: value.slice(open.start, end), name};
-            }
-            break;
+        for (let k = stack.length - 1; k >= 0; k--) {
+          if (stack[k].name !== name) continue;
+          const open = stack.splice(k, 1)[0], end = j + 1;
+          candidates.push({start:open.start,end,raw:html.slice(open.start,end),name,parentName:open.parentName});
+          break;
+        }
+      } else {
+        const closeRule = blockStart.test(name) ? /^p$/i : closesOpen[name];
+        if (closeRule) {
+          for (let k = stack.length - 1; k >= 0; k--) {
+            if (closeRule.test(stack[k].name)) { stack.splice(k); break; }
           }
         }
-      } else if (!voidTags.test(name) && !/\/\s*>$/.test(token)) {
-        stack.push({name, start: m.index});
-      } else if (position >= m.index && position <= m.index + token.length) {
-        result = {start: m.index, end: m.index + token.length, raw: token, name};
+        if (voidTags.test(name) || /\/\s*>$/.test(token)) candidates.push({start:lt,end:j + 1,raw:token,name,parentName:stack.length ? stack[stack.length - 1].name : ''});
+        else stack.push({name,start:lt,parentName:stack.length ? stack[stack.length - 1].name : ''});
       }
+      i = j + 1;
     }
-    return result;
+    const containing = candidates.filter(c => position >= c.start && position <= c.end);
+    if (!containing.length) return null;
+    const ranked = containing.map(candidate => {
+      if (candidate.name === '#comment') return {candidate,mapping:{type:'rawHTML'},priority:0};
+      const holder = document.createElement('div');
+      holder.innerHTML = candidate.raw;
+      const el = holder.firstElementChild;
+      let mapping = el ? mapHTMLTagToBlockType(el.tagName.toLowerCase(), el) : null;
+      if (candidate.name === 'code' && candidate.parentName === 'pre') mapping = null;
+      if (mapping && mapping.type === 'basics') return {candidate,mapping:{type:'rawHTML'},priority:0};
+      const wrapper = el && (el.tagName.toLowerCase() === 'figure' || el.tagName.toLowerCase() === 'pre' || (el.tagName.toLowerCase() === 'table' && el.classList.contains('tr-caption-container')) || (el.tagName.toLowerCase() === 'div' && ['table','alert','showH','zmImg','dlBox','psImg','glImg','pre','tabs'].some(cls => el.classList.contains(cls))));
+      return {candidate,mapping,priority:wrapper ? 0 : 1};
+    });
+    ranked.sort((a,b) => {
+      if (!!a.mapping !== !!b.mapping) return a.mapping ? -1 : 1;
+      if (a.mapping && a.priority !== b.priority) return a.priority - b.priority;
+      return (a.candidate.end - a.candidate.start) - (b.candidate.end - b.candidate.start);
+    });
+    return ranked[0].candidate;
   }
   function init(){
     const editor = document.getElementById('unifiedCodeEditor');
@@ -662,18 +746,20 @@ window.closeAllModweebMenus = function(){
   const pos = editor.selectionStart || 0;
   const range = findElementRange(editor.value, pos);
   if (!range) { modweebShowStatus('ضع المؤشر داخل عنصر HTML قابل للتحرير'); return; }
+  if (range.name === '#comment') { openRawHTMLFallback(range); return; }
   const holder = document.createElement('div');
   holder.innerHTML = range.raw;
   const el = holder.firstElementChild;
   if (!el) { modweebShowStatus('تعذر قراءة العنصر'); return; }
   const mapped = mapHTMLTagToBlockType(el.tagName.toLowerCase(), el);
-  if (!mapped) { modweebShowStatus('نوع العنصر غير مدعوم للتعديل'); return; }
+  if (!mapped || mapped.type === 'rawHTML') { openRawHTMLFallback(range); return; }
   const draft = modweebTemplateDefaultBlock({ id: 'edit-' + Date.now(), type: mapped.type });
   populateBlockProperties(draft, el, mapped);
   state.draft = draft;
   state.draftId = draft.id;
   state.targetRange = range;
   state.draftInserted = false;
+  state.rawHTMLDraft = null;
   const title = document.getElementById('unifiedElementTitle');
   if (title) title.textContent = 'تعديل ' + (labels[mapped.type] || mapped.type);
   const hint = document.getElementById('unifiedElementHelp');
@@ -698,7 +784,7 @@ document.addEventListener('click', e => {
 
 /* إغلاق عند الضغط على Escape + اختصار Ctrl+S */
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeMenus(); if (state.draft) discardDraft(); }
+  if (e.key === 'Escape') { closeMenus(); if (state.draft || state.rawHTMLDraft !== null) discardDraft(); }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); window.saveToLocalStorage(); }
 });
 
@@ -730,9 +816,10 @@ window.addEventListener('scroll', closeMenus, { passive: true, capture: true });
    ============================================================ */
 function convertHTMLToBlocks(e){}
 function mapHTMLTagToBlockType(tag, el){
-  const cls = el.className || '';
+  const cls = el.classList ? Array.from(el.classList) : String(el.className || '').split(/\s+/).filter(Boolean);
   const par = el.parentElement;
-  const pcls = par && par.className || '';
+  const pcls = par && par.classList ? Array.from(par.classList) : String(par && par.className || '').split(/\s+/).filter(Boolean);
+  if (tag === 'style' || (tag === 'div' && el.hasAttribute('hidden'))) return {type:'rawHTML'};
   const rules = [
     /* العناوين */
     {tag:/^h[1-6]$/, type:'heading'},
@@ -747,6 +834,7 @@ function mapHTMLTagToBlockType(tag, el){
     {tag:'p', class:'note wr', type:'note', props:{noteStyle:'warning'}},
     {tag:'p', class:'note qs', type:'note', props:{noteStyle:'question'}},
     {tag:'p', class:'note',    type:'note', props:{noteStyle:'info'}},
+    {tag:'p', type:'paragraph'},
     {tag:'div', class:'alert tip outline',      type:'alert', props:{alertStyle:'tip',      alertOutlined:true}},
     {tag:'div', class:'alert tip',              type:'alert', props:{alertStyle:'tip'}},
     {tag:'div', class:'alert question outline', type:'alert', props:{alertStyle:'question', alertOutlined:true}},
@@ -768,10 +856,14 @@ function mapHTMLTagToBlockType(tag, el){
 
     /* الصور */
     {tag:'figure', type:'image', props:{imageStyle:'figure'}},
+    {tag:'table', class:'tr-caption-container', type:'image', props:{imageStyle:'figure'}},
     {tag:'img',  class:'full',               type:'image', props:{imageStyle:'full'}},
-    {tag:'img',  parentClass:'psImg grImg',  type:'image', props:{imageStyle:'grid'}},
+    {tag:'img',  parentClass:'grImg',        type:'image', props:{imageStyle:'grid'}},
     {tag:'img',  parentClass:'glImg',        type:'image', props:{imageStyle:'scroll'}},
-    {tag:'div',  class:'zmImg',              type:'image'},
+    {tag:'div',  class:'zmImg',              type:'image', props:{imageStyle:'standard'}},
+    {tag:'div',  class:'psImg grImg',         type:'image', props:{imageStyle:'grid'}},
+    {tag:'div',  class:'psImg hdImg',         type:'image', props:{imageStyle:'showall'}},
+    {tag:'div',  class:'glImg',               type:'image', props:{imageStyle:'scroll'}},
     {tag:'img',  class:'lazyload',           type:'image', props:{imageStyle:'lazyload'}},
     {tag:'img',  type:'image',               props:{imageStyle:'standard'}},
 
@@ -788,6 +880,7 @@ function mapHTMLTagToBlockType(tag, el){
 
     /* الجدول */
     {tag:'div', class:'table', type:'table'},
+    {tag:'table', type:null},
 
     /* القوائم */
     {tag:'ol', class:'steps',    type:'steps'},
@@ -796,6 +889,7 @@ function mapHTMLTagToBlockType(tag, el){
     {tag:'div', class:'kp-wrap', type:'keyPoints'},
 
     /* الأكواد */
+    {tag:'div', class:'pre tabs', type:'codeTabs'},
     {tag:'pre', parentClass:'pre tabs', type:'codeTabs'},
     {tag:'pre', type:'code'},
     {tag:'kbd', type:'kbd'},
@@ -805,6 +899,7 @@ function mapHTMLTagToBlockType(tag, el){
     /* الإخفاء والأكورديون */
     {tag:'span', class:'spoiler', type:'accordion', props:{accordionType:'blur'}},
     {tag:'details', class:'sp toc', type:'toc'},
+    {tag:'details', class:'sp arp', type:'relatedAuto'},
     {tag:'details', class:'sp',     type:'accordion', props:{accordionType:'sp'}},
     {tag:'details', class:'ac alt', type:'accordion', props:{accordionType:'ac alt'}},
     {tag:'details', class:'ac',     type:'accordion', props:{accordionType:'ac'}},
@@ -813,7 +908,6 @@ function mapHTMLTagToBlockType(tag, el){
 
     /* المحتويات والمنشورات ذات الصلة */
     {tag:'div',    class:'pRelate', type:'relatedManual'},
-    {tag:'details', class:'sp arp', type:'relatedAuto'},
 
     /* الوسائط */
     {tag:'div', class:'lazyYt',  type:'lazyYt', props:{youtubeMode:'lazy'}},
@@ -832,12 +926,13 @@ function mapHTMLTagToBlockType(tag, el){
     const tagOk = r.tag instanceof RegExp ? r.tag.test(tag) : r.tag === tag;
     if (!tagOk) continue;
     if (r.type === null) return null;
-    const classOk  = !r.class        || cls.split(/\s+/).includes(r.class.split(' ')[0]) && r.class.split(' ').every(c => cls.includes(c));
-    const parentOk = !r.parentClass  || pcls.includes(r.parentClass);
+    const classOk  = !r.class        || r.class.split(/\s+/).every(c => cls.includes(c));
+    const parentOk = !r.parentClass  || r.parentClass.split(/\s+/).every(c => pcls.includes(c));
+    const parentTagOk = !r.parentTag || (par && par.tagName.toLowerCase() === r.parentTag);
     const itemOk   = r.itemscope === undefined || el.hasAttribute('itemscope') === r.itemscope;
     const hiddenOk = r.hidden    === undefined || el.hasAttribute('hidden') === r.hidden;
     const childOk  = !r.hasChildClass || !!el.querySelector('.' + r.hasChildClass);
-    if (classOk && parentOk && itemOk && hiddenOk && childOk) {
+    if (classOk && parentOk && parentTagOk && itemOk && hiddenOk && childOk) {
       return {type: r.type, props: r.props || {}};
     }
   }
@@ -903,6 +998,7 @@ function populateBlockProperties(b, el, mapped){
             b.noteStyle = props.noteStyle || 'info';
             const clone = el.cloneNode(true);
             const bTag = clone.querySelector('b');
+            if (bTag) b.noteTitle = bTag.textContent.trim();
             if (bTag) bTag.remove();
             b.content = clone.innerHTML.replace(/^\s*<br\s*\/?>/i, '').trim();
             break;
@@ -910,16 +1006,17 @@ function populateBlockProperties(b, el, mapped){
 
         /* ─── alert ─── */
         case 'alert': {
-            const c = el.className;
-            b.alertStyle = c.includes('warning') ? 'warning'
-                         : c.includes('success') ? 'success'
-                         : c.includes('error')   ? 'error'
-                         : c.includes('tip')     ? 'tip'
-                         : c.includes('question')? 'question'
+            const has = name => el.classList.contains(name);
+            b.alertStyle = has('warning') ? 'warning'
+                         : has('success') ? 'success'
+                         : has('error')   ? 'error'
+                         : has('tip')     ? 'tip'
+                         : has('question')? 'question'
                          : 'info';
-            b.alertOutlined = c.includes('outline');
+            b.alertOutlined = has('outline');
             const clone = el.cloneNode(true);
             const bTag = clone.querySelector('b');
+            if (bTag) b.alertTitle = bTag.textContent.trim();
             if (bTag) bTag.remove();
             b.content = clone.innerHTML.trim();
             break;
@@ -929,7 +1026,7 @@ function populateBlockProperties(b, el, mapped){
         case 'image': {
             let img = tag === 'img' ? el : el.querySelector('img');
             if (img) {
-                b.imageUrl  = img.getAttribute('src') || '';
+                b.imageUrl  = img.getAttribute('data-src') || img.getAttribute('src') || '';
                 b.imageAlt  = img.getAttribute('alt') || '';
                 b.imageWidth  = img.getAttribute('width')  || '1280';
                 b.imageHeight = img.getAttribute('height') || '720';
@@ -967,7 +1064,7 @@ function populateBlockProperties(b, el, mapped){
             b.tableRows = data.length || 2;
             b.tableCols = data[0] ? data[0].length : 2;
             b.tableData = data.length ? data : [['',''],['','']];
-            b.tableClasses = el.className.replace(/\btable\b/, '').trim() || 'bordered stripped hovered';
+            b.tableClasses = Array.from(el.classList).filter(c => c !== 'table').join(' ') || 'bordered stripped hovered';
             break;
         }
 
@@ -999,7 +1096,7 @@ function populateBlockProperties(b, el, mapped){
         /* ─── code ─── */
         case 'code': {
             const codeEl = el.querySelector('code') || el;
-            b.codeContent = codeEl.textContent.trim();
+            b.codeContent = codeEl.textContent;
             const langCls = codeEl.className || '';
             if (langCls.includes('language-css'))  b.codeLanguage = 'css';
             else if (langCls.includes('language-js')) b.codeLanguage = 'js';
@@ -1208,15 +1305,12 @@ async function aiGenTitle() {
     const box = document.getElementById('suggestTitles');
 
     try {
-        const r = await fetch(AI_BASE + '/suggest-titles', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ title: topic, language: 'ar', count: 5 })
-        });
-        const data = await r.json();
-        if (data.error) throw new Error(data.error);
+        if (!window.modweebAI?.call || !window.modweebPrompts?.suggestTitles) throw new Error('خدمة الذكاء الاصطناعي غير مهيأة');
+        const { systemPrompt, userPrompt } = window.modweebPrompts.suggestTitles({ title: topic, language: 'ar', count: 5 });
+        const raw = await window.modweebAI.call({ systemPrompt, userPrompt, maxTokens: 800, jsonMode: true });
+        const data = window.modweebAI.parseJSON(raw) || {};
 
-        const list = Array.isArray(data.suggestions) ? data.suggestions : [];
+        const list = Array.isArray(data.suggestions) ? data.suggestions.filter(t => typeof t === 'string').slice(0, 10) : [];
         box.innerHTML = '';
 if (!list.length) {
     const empty = document.createElement('div');
@@ -1286,13 +1380,10 @@ async function aiGenLabels() {
     const box = document.getElementById('suggestLabels');
 
     try {
-        const r = await fetch(AI_BASE + '/generate-keywords', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ topic, language: 'ar', count: 5 })
-        });
-        const data = await r.json();
-        if (data.error) throw new Error(data.error);
+        if (!window.modweebAI?.call || !window.modweebPrompts?.keywords) throw new Error('خدمة الذكاء الاصطناعي غير مهيأة');
+        const request = window.modweebPrompts.keywords({ topic, language: (document.getElementById('aiLanguage')?.value || 'ar') });
+        const raw = await window.modweebAI.call({ systemPrompt: request.systemPrompt, userPrompt: request.userPrompt, maxTokens: 700, jsonMode: true });
+        const data = window.modweebAI.parseJSON(raw) || {};
 
         let kws = Array.isArray(data.keywords) ? data.keywords : String(data.keywords || '').split(',').map(s => s.trim());
         kws = kws.filter(Boolean).slice(0, 5);
@@ -1338,13 +1429,10 @@ async function aiGenMeta() {
         // استخدام نص المقال إذا كان موجوداً
         const articleText = (window.modweebArticleHTML || '').replace(/<[^>]+>/g, ' ').slice(0, 1500);
 
-        const r = await fetch(AI_BASE + '/seo-meta', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ topic, mainKeyword: topic, language: 'ar', articleText })
-        });
-        const data = await r.json();
-        if (data.error) throw new Error(data.error);
+        if (!window.modweebAI?.call || !window.modweebPrompts?.seoMeta) throw new Error('خدمة الذكاء الاصطناعي غير مهيأة');
+        const request = window.modweebPrompts.seoMeta({ topic, mainKeyword: topic, language: (document.getElementById('aiLanguage')?.value || 'ar'), articleText });
+        const raw = await window.modweebAI.call({ systemPrompt: request.systemPrompt, userPrompt: request.userPrompt, maxTokens: 800, jsonMode: true });
+        const data = window.modweebAI.parseJSON(raw) || {};
 
         const suggestions = [];
         if (data.metaDescription) suggestions.push(data.metaDescription);
@@ -3075,7 +3163,14 @@ async function decryptText(payload) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'aiagent-tab' + (id === currentProvider ? ' active' : '') + (state.keys[id] ? ' has-key' : '');
-      btn.innerHTML = '<span class="dot"></span>' + p.name;
+      btn.setAttribute('aria-pressed', String(id === currentProvider));
+      btn.setAttribute('aria-label', p.name + (state.keys[id] ? ' — مفتاح محفوظ ومشفّر' : ' — لا يوجد مفتاح محفوظ'));
+      btn.title = state.keys[id] ? 'مفتاح محفوظ ومشفّر على هذا المتصفح' : 'لا يوجد مفتاح محفوظ لهذا المزود';
+      const dot = document.createElement('span'); dot.className = 'dot'; dot.setAttribute('aria-hidden', 'true');
+      const name = document.createElement('span'); name.textContent = p.name;
+      const status = document.createElement('small'); status.className = 'aiagent-tab-state';
+      status.textContent = state.keys[id] ? 'محفوظ' : 'غير محفوظ';
+      btn.append(dot, name, status);
       btn.addEventListener('click', () => {
         currentProvider = id;
         renderTabs();
