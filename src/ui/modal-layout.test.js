@@ -68,4 +68,21 @@ describe('modal navigation and compact footer regressions', () => {
     expect(css).toContain('.ai-bottom-sheet .ai-gen-card:has(details.ai-gen-subcard)');
     expect(css).not.toMatch(/details\s+\*\s*\{\s*border:\s*0/);
   });
+  it('keeps the SEO footer and navigation within the SEO modal div stack', () => {
+    const markup = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '');
+    const stack = [], parents = {};
+    for (const match of markup.matchAll(/<\/?div\b[^>]*>/gi)) {
+      const tag = match[0];
+      if (tag.startsWith('</')) { stack.pop(); continue; }
+      const id = tag.match(/\bid="([^"]+)"/)?.[1] || '';
+      if (id) parents[id] = [...stack];
+      if (tag.includes('class="seo-tabs"')) parents.seoNavigation = [...stack];
+      stack.push(id);
+    }
+    expect(parents.seoFooter).toContain('seoAssistantSheet');
+    expect(parents.seoNavigation).toContain('seoAssistantSheet');
+    expect(parents['seoTab-score']).toContain('seoAssistantSheet');
+  });
 });

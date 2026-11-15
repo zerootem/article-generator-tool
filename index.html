@@ -544,12 +544,11 @@
     <h3>SEO Assistant</h3>
     <button class="sheet-close-btn" onclick="closeSheet('seoAssistantSheet')"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </div>
-    <!-- 13.1 | تبويبات SEO -->
-    <div class="seo-tabs" role="tablist" aria-label="أقسام مساعد SEO">
-      <button class="seo-tab-btn active" role="tab" data-tab="score" aria-selected="true" onclick="seoSwitchTab('score',this)">التقييم التحريري</button>
+  <div class="seo-tabs" role="tablist" aria-label="تبويبات مساعد SEO">
+      <button class="seo-tab-btn active" role="tab" data-tab="score" aria-selected="true" aria-label="التقييم التحريري" title="التقييم التحريري" onclick="seoSwitchTab('score',this)">التقييم</button>
       <button class="seo-tab-btn" role="tab" data-tab="meta" aria-selected="false" onclick="seoSwitchTab('meta',this)">العنوان والوصف</button>
-      <button class="seo-tab-btn" role="tab" data-tab="tips" aria-selected="false" onclick="seoSwitchTab('tips',this)">الكلمة والتوصيات</button>
-    </div>
+      <button class="seo-tab-btn" role="tab" data-tab="tips" aria-selected="false" aria-label="الكلمة والتوصيات" title="الكلمة والتوصيات" onclick="seoSwitchTab('tips',this)">الكلمات</button>
+  </div>
 
   <div class="sheet-body">
 
@@ -1182,14 +1181,13 @@
   <div class="sheet-body">
     <p id="successMessage" style="margin:0 0 0.75rem 0; font-size:0.9rem;">تم نشر المقال بنجاح.</p>
     <div class="seo-meta-field">
-  <label>Slug (رابط المقال) <span id="successSlugLength" style="color:var(--notifC)">معطّل</span></label>
-  <input type="text" id="successSlugPreview" dir="ltr" placeholder="يُنشأ تلقائياً" disabled style="direction:ltr;opacity:.6;cursor:not-allowed">
-  <p style="font-size:.65rem;color:var(--notifC);margin:4px 0 0">هذه الميزة معطّلة — يعتمد التوليد على عنوان المقال</p>
+      <label for="publishedUrlInput">رابط المنشور</label>
+      <input type="text" inputmode="url" id="publishedUrlInput" dir="ltr" placeholder="رابط المنشور بعد نجاح النشر" readonly>
 </div>
   </div>
   <div class="sheet-footer">
     <button onclick="copyPublishedUrl()" class="action-btn cancel">نسخ الرابط</button>
-    <button onclick="window.open(document.getElementById('publishedUrlInput').value, '_blank')" class="action-btn primary">فتح الرابط</button>
+    <button onclick="openPublishedUrl()" class="action-btn primary">فتح الرابط</button>
   </div>
 </div>
 
@@ -1203,7 +1201,7 @@
     <button class="sheet-close-btn" onclick="closeSheet('failureSheet')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
   </div>
   <div class="sheet-body">
-    <div style="color:var(--failTx); background:var(--contentBa); border-radius:8px; padding:12px; font-size:0.9rem; line-height:1.6;" id="failureMessage">حدث خطأ أثناء النشر.</div>
+    <div style="color:var(--failTx); background:var(--contentBa); border-radius:8px; padding:12px; font-size:0.9rem; line-height:1.6;" id="failureMessage" role="alert">حدث خطأ أثناء النشر.</div>
   </div>
   <div class="sheet-footer">
     <button class="action-btn primary" onclick="closeSheet('failureSheet')">حسناً</button>

@@ -2662,9 +2662,31 @@ function showSuccessPopup(url, type){
     openSheet('successSheet');
 }
 function closeSuccessPopup(){ closeSheet('successSheet'); }
-function copyPublishedUrl(){
+async function copyPublishedUrl(){
     const i = document.getElementById('publishedUrlInput');
-    if (i) { i.select(); i.setSelectionRange(0, 99999); document.execCommand('copy'); modweebShowStatus('تم نسخ الرابط', 1500); }
+    if (!i || !i.value) { modweebShowStatus('لا يوجد رابط لنسخه'); return; }
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(i.value);
+        } else {
+            i.select(); i.setSelectionRange(0, i.value.length);
+            if (!document.execCommand('copy')) throw new Error('Clipboard unavailable');
+        }
+        modweebShowStatus('تم نسخ الرابط', 1500);
+    } catch (error) {
+        i.select();
+        modweebShowStatus('تعذر النسخ التلقائي؛ انسخ الرابط المحدد يدوياً', 3000);
+    }
+}
+function openPublishedUrl(){
+    const i = document.getElementById('publishedUrlInput');
+    try {
+        const url = new URL(i ? i.value : '');
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('Invalid URL');
+        window.open(url.href, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+        modweebShowStatus('رابط المنشور غير صالح');
+    }
 }
 
 function sanitizeSlugEnglish(raw){

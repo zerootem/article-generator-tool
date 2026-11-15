@@ -3,6 +3,7 @@ import { workerAI } from './ai/worker-client';
 import './prompts/index.js';
 import { installArticleAssistant } from './ai/article-assistant';
 import { installMediaTools } from './ai/media-tools';
+import { installModalDensity } from './ui/modal-density';
 
 export interface WorkerAIRequest {
   systemPrompt: string;
@@ -357,7 +358,6 @@ syncProviderSettings();
     if (button) { button.disabled = false; button.textContent = '✦'; }
   }
 };
-
-
 installArticleAssistant();
 installMediaTools();
+installModalDensity();
