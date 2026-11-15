@@ -209,9 +209,8 @@ aiSettingsToggle?.addEventListener('click', (event) => {
 (window as any).openBloggerSettingsFromPublish = () => {
   const sheet = byId('bloggerPublishSheet');
   if (!sheet?.classList.contains('show')) (window as any).openSheet?.('bloggerPublishSheet');
-  const keyButton = byId('bloggerHeaderSettingsBtn') as HTMLButtonElement | null;
-  if (keyButton) keyButton.click();
-  else (window as any).setBloggerPublishTab('settings');
+  if (typeof (window as any).openBloggerSettings === 'function') return (window as any).openBloggerSettings();
+  (window as any).setBloggerPublishTab('settings');
 };
 (window as any).setBloggerPublishTab = (name: 'compose' | 'settings') => {
   const panel = byId(name === 'settings' ? 'bloggerSettingsPanel' : 'bloggerComposePanel');
@@ -222,7 +221,18 @@ aiSettingsToggle?.addEventListener('click', (event) => {
   if (keyButton) keyButton.setAttribute('aria-pressed', String(name === 'settings'));
   const title = byId('bloggerPublishTitle');
   if (title) title.textContent = name === 'settings' ? 'إعدادات بلوجر وربط المدونة' : 'نشر إلى بلوجر';
+  (window as any)._bloggerPublishTab = name;
 };
+const bloggerHeaderSettingsToggle = byId('bloggerHeaderSettingsBtn') as HTMLButtonElement | null;
+bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
+  event.preventDefault();
+  if ((window as any)._bloggerPublishTab === 'settings') {
+    (window as any).setBloggerPublishTab('compose');
+    return;
+  }
+  if (typeof (window as any).openBloggerSettings === 'function') void (window as any).openBloggerSettings();
+  else (window as any).setBloggerPublishTab('settings');
+});
 (window as any).bloggerHeaderBack = () => (window as any).setBloggerPublishTab('compose');
 
 (window as any).setSmartAssistantTab = (name: 'assistant' | 'edit' | 'improve', activeButton?: HTMLElement | null) => {

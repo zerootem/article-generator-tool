@@ -4084,12 +4084,10 @@ function setStatus(msg, type){
     }
     if (typeof window.setBloggerPublishTab === 'function') window.setBloggerPublishTab('settings');
   }
+  window.openBloggerSettings = open;
 
-  // ============ ربط الأزرار ============
+  // ============ ربط الأزرار ==========
   function bind(){
-    const btn = document.getElementById('bloggerHeaderSettingsBtn');
-    if (btn) btn.addEventListener('click', open);
-
     // زر الحفظ الرئيسي (حفظ الكل)
     const saveBtn = document.getElementById('bloggerSettingsSaveBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveAll);
