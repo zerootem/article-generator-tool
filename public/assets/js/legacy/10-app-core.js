@@ -2605,6 +2605,8 @@ const BLOGGER_CONFIG = {
 };
 
 async function refreshAccessToken(){
+    // Avoid an invalid OAuth request during startup before Blogger settings load.
+    if (!String(BLOGGER_CONFIG.REFRESH_TOKEN || '').trim()) return false;
     modweebShowStatus("جاري تجديد الصلاحية", 2000);
     const p = new URLSearchParams();
     p.append("client_id", BLOGGER_CONFIG.CLIENT_ID);
