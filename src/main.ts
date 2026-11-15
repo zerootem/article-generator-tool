@@ -125,16 +125,26 @@ const movePanel = (sourceSelector: string, target: HTMLElement | null) => {
 };
 
 const aiSettingsPanel = byId('aiSettingsPanel');
+const aiSettingsSource = byId('aiAgentSheet');
 movePanel('#aiAgentSheet > .sheet-body', aiSettingsPanel);
 movePanel('#aiAgentSheet > .sheet-footer', aiSettingsPanel);
+aiSettingsSource?.remove();
 
 const bloggerSettingsPanel = byId('bloggerSettingsPanel');
+const bloggerSettingsSource = byId('bloggerSettingsSheet');
 movePanel('#bloggerSettingsSheet > .sheet-body', bloggerSettingsPanel);
 movePanel('#bloggerSettingsSheet > .sheet-footer', bloggerSettingsPanel);
+bloggerSettingsSource?.remove();
 
 const smartImprovePanel = byId('smartImprovePanel');
-movePanel('#improveTextSheet > .sheet-body', smartImprovePanel);
-movePanel('#improveTextSheet > .sheet-footer', smartImprovePanel);
+const smartImproveFooter = byId('smartImproveFooter');
+const improveTextSource = byId('improveTextSheet');
+const improveTextBody = document.querySelector<HTMLElement>('#improveTextSheet > .sheet-body');
+if (improveTextBody && smartImprovePanel) {
+  Array.from(improveTextBody.childNodes).forEach((node) => smartImprovePanel.appendChild(node));
+}
+movePanel('#improveTextSheet > .sheet-footer', smartImproveFooter);
+improveTextSource?.remove();
 
 const keywordPanel = byId('seoKeywordPanel');
 const keywordHost = byId('seoKeywordHost');
@@ -175,36 +185,33 @@ function syncProviderSettings(): void {
 }
 
 (window as any).setAIPopupTab = (name: 'generate' | 'settings') => {
-  const button = byId(name === 'settings' ? 'aiSettingsTab' : 'aiGenerateTab');
   const panel = byId(name === 'settings' ? 'aiSettingsPanel' : 'aiGeneratePanel');
-  selectTab('.ai-popup-tab', button, '.ai-popup-panel', panel);
+  selectTab('.ai-popup-tab', null, '.ai-popup-panel', panel);
   const footer = byId('aiGenerateFooter');
   if (footer) footer.hidden = name !== 'generate';
-  const back = byId('aiHeaderBack');
-  if (back) back.hidden = name !== 'settings';
+  const keyButton = byId('aiSettingsToggle');
+  if (keyButton) keyButton.setAttribute('aria-pressed', String(name === 'settings'));
   if (name === 'settings') syncProviderSettings();
   (window as any)._aiPopupTab = name;
 };
 (window as any).aiHeaderBack = () => (window as any).setAIPopupTab('generate');
 
-(window as any).openAgent = () => {
-  (window as any).openAIPopup?.();
-  (window as any).setAIPopupTab('settings');
-};
 (window as any).openBloggerSettingsFromPublish = () => {
-  if (!byId('bloggerPublishSheet')?.classList.contains('show')) (window as any).openSheet?.('bloggerPublishSheet');
-  (window as any).setBloggerPublishTab('settings');
+  const sheet = byId('bloggerPublishSheet');
+  if (!sheet?.classList.contains('show')) (window as any).openSheet?.('bloggerPublishSheet');
+  const keyButton = byId('bloggerHeaderSettingsBtn') as HTMLButtonElement | null;
+  if (keyButton) keyButton.click();
+  else (window as any).setBloggerPublishTab('settings');
 };
-(window as any).setBloggerPublishTab = (name: 'compose' | 'settings', activeButton?: HTMLElement | null) => {
-  const button = activeButton || document.querySelector<HTMLElement>(`.blogger-publish-tab[onclick*="'${name}'"]`);
+(window as any).setBloggerPublishTab = (name: 'compose' | 'settings') => {
   const panel = byId(name === 'settings' ? 'bloggerSettingsPanel' : 'bloggerComposePanel');
-  selectTab('.blogger-publish-tab', button, '.blogger-publish-panel', panel);
+  selectTab('.blogger-publish-tab', null, '.blogger-publish-panel', panel);
   const footer = byId('bloggerComposeFooter');
   if (footer) footer.hidden = name !== 'compose';
-  const settingsTab = byId('bloggerSettingsTab');
-  if (settingsTab) settingsTab.hidden = name !== 'settings';
-  const back = byId('bloggerHeaderBack');
-  if (back) back.hidden = name !== 'settings';
+  const keyButton = byId('bloggerHeaderSettingsBtn');
+  if (keyButton) keyButton.setAttribute('aria-pressed', String(name === 'settings'));
+  const title = byId('bloggerPublishTitle');
+  if (title) title.textContent = name === 'settings' ? 'إعدادات بلوجر وربط المدونة' : 'نشر إلى بلوجر';
 };
 (window as any).bloggerHeaderBack = () => (window as any).setBloggerPublishTab('compose');
 
@@ -215,9 +222,13 @@ function syncProviderSettings(): void {
   selectTab('.smart-assistant-tab', button, '.smart-assistant-panel', panel);
   const improveMode = name === 'improve';
   const back = byId('smartHeaderBack');
-  if (back) back.hidden = name === 'assistant';
+  if (back) back.hidden = name === 'assistant' || name === 'improve';
+  const improveBack = byId('smartImproveBackBtn');
+  if (improveBack) improveBack.hidden = name !== 'improve';
   const footer = byId('smartGenerateFooter');
   if (footer) footer.hidden = improveMode;
+  const improveFooter = byId('smartImproveFooter');
+  if (improveFooter) improveFooter.hidden = !improveMode;
   const insertMode = byId('smartInsertMode');
   const insertLabel = document.querySelector<HTMLElement>('.smart-insert-mode-label');
   if (insertMode) insertMode.hidden = name !== 'assistant';

@@ -1367,7 +1367,7 @@ async function aiGenerateArticle(){
     const activeProvider = window.modweebAI.getActiveProvider();
     if (!noKeyMode && window.modweebAgent && !window.modweebAgent.hasKey(activeProvider)) {
         modweebShowStatus('أضف مفتاح API للمزود المختار أولاً؛ فتح الإعدادات…', 2500);
-        setTimeout(() => { const setupBtn = document.getElementById('modweebAIAgentBtn'); if (setupBtn) setupBtn.click(); }, 450);
+        setTimeout(() => { if (typeof window.openAgent === 'function') window.openAgent(); }, 450);
         return;
     }
 
@@ -1439,10 +1439,10 @@ async function aiGenerateArticle(){
     } catch(e) {
         if (e.message === 'no_key'){
             modweebShowStatus('لا يوجد مفتاح API محفوظ للمزود المختار؛ افتح إعدادات المزود وأضف المفتاح', 4500);
-            setTimeout(() => { const setupBtn = document.getElementById('modweebAIAgentBtn'); if (setupBtn) setupBtn.click(); }, 500);
+            setTimeout(() => { if (typeof window.openAgent === 'function') window.openAgent(); }, 500);
         } else if (e.message === 'agent_locked'){
             modweebShowStatus('مفتاح المزود محفوظ لكن الخزنة مقفلة؛ افتحها بكلمة المرور ثم أعد التوليد', 4500);
-            setTimeout(() => { const setupBtn = document.getElementById('modweebAIAgentBtn'); if (setupBtn) setupBtn.click(); }, 500);
+            setTimeout(() => { if (typeof window.openAgent === 'function') window.openAgent(); }, 500);
         } else if (String(e.message || '') === 'puter_sdk_unavailable'){
             modweebShowStatus('تعذر تحميل مكتبة Puter؛ تحقق من الإنترنت ثم أعد تحميل الصفحة', 6000);
         } else if (String(e.message || '').startsWith('puter_error:')){
@@ -1815,7 +1815,7 @@ function setWritingMode(mode, el){
     document.querySelectorAll('.writing-mode-btn').forEach(x => x.classList.remove('active'));
     if (el) el.classList.add('active');
 }
-function openAIPopup(){ closeAllSheets(); const p = document.getElementById('aiPopup'); if (p) p.classList.add('show'); const ov = document.getElementById('aiOverlay'); if (ov) ov.classList.add('active'); document.body.style.overflow = 'hidden'; }
+function openAIPopup(){ closeAllSheets(); const p = document.getElementById('aiPopup'); if (p) p.classList.add('show'); const ov = document.getElementById('aiOverlay'); if (ov) ov.classList.add('active'); document.body.style.overflow = 'hidden'; if (typeof window.setAIPopupTab === 'function') window.setAIPopupTab('generate'); }
 function closeAIPopup(){ const p = document.getElementById('aiPopup'); if (p) p.classList.remove('show'); const ov = document.getElementById('aiOverlay'); if (ov) ov.classList.remove('active'); document.body.style.overflow = ''; const s = document.getElementById('titleSuggestions'); if (s) s.style.display = 'none'; const b = document.getElementById('aiProgressBar'); if (b) b.style.display = 'none'; const btn = document.getElementById('aiGenerateBtn'); if (btn){btn.disabled=false;btn.style.opacity='1';} }
 
 /* ============================================================

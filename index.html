@@ -61,14 +61,6 @@
         <svg viewBox="0 0 24 24"><path d="M3 5H15M9 3V5M10.0482 14.5C8.52083 12.9178 7.28073 11.0565 6.41187 9M12.5 18H19.5M11 21L16 11L21 21M12.7511 5C11.7831 10.7702 8.06969 15.6095 3 18.129"/></svg>
       </button>
 
-      <button class="modweeb-translate-btn" id="modweebAIAgentBtn" title="وكيل الذكاء الاصطناعي" type="button" aria-label="AI Agent">
-        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="18" cy="5" r="3"/></svg>
-      </button>
-
-      <button class="modweeb-translate-btn" id="modweebBloggerSettingsBtn" title="إعدادات بلوجر" type="button" aria-label="Blogger Settings">
-        <svg viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>
-      </button>
-
       <button class="modweeb-translate-btn" id="statsToolbarBtn" title="الإحصائيات" onclick="openSheet('statsSheet')" type="button" aria-label="Statistics">
         <svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>
       </button>
@@ -244,8 +236,8 @@
       </div>
     </details>
   </div>
-  <div class="sheet-footer" style="gap:6px;flex-wrap:wrap">
-    <button onclick="closeSheet('aiAgentSheet')" class="modweeb-gen-btn">إغلاق</button>
+  <div class="sheet-footer ai-agent-settings-footer" style="gap:6px;flex-wrap:wrap">
+    <button type="button" id="aiSettingsBackBtn" class="sheet-back-footer-btn" onclick="aiHeaderBack()" aria-label="العودة إلى توليد المقال" title="العودة إلى التوليد"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>رجوع للتوليد</span></button>
      <button class="modweeb-gen-btn danger" id="aiagentClearBtn">حذف المفتاح</button>
 <button class="modweeb-gen-btn secondary" id="aiagentTestBtn">اختبار الاتصال</button>
 <button class="modweeb-gen-btn primary" id="aiagentSaveBtn">حفظ مشفَّر</button>
@@ -353,7 +345,7 @@
      ============================================================ -->
 <div id="templateSetupSheet" class="ai-bottom-sheet">
   <div class="sheet-header">
-    <div class="sheet-head-title"><button type="button" class="sheet-back-button" onclick="openSheet('templatesSheet')" aria-label="العودة إلى مكتبة القوالب" title="رجوع">←</button><h3 id="templateSetupTitle">إعداد القالب</h3></div>
+    <div class="sheet-head-title"><h3 id="templateSetupTitle">إعداد القالب</h3></div>
     <button class="sheet-close-btn" onclick="closeSheet('templateSetupSheet')"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </div>
   <div class="sheet-body">
@@ -392,7 +384,8 @@
     </div>
 
   </div>
-  <div class="sheet-footer" style="gap:6px">
+  <div class="sheet-footer template-setup-footer" style="gap:6px">
+    <button type="button" class="sheet-back-footer-btn" onclick="openSheet('templatesSheet')" aria-label="العودة إلى مكتبة القوالب" title="العودة إلى القوالب"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>القوالب</span></button>
     <button onclick="closeSheet('templateSetupSheet')" class="modweeb-gen-btn">إلغاء</button>
     <button onclick="templateGenerateAndInsert()" id="tmplSetupGenBtn" class="modweeb-gen-btn primary">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L13.5 8.5H19L14.5 11.5L16 17L12 14L8 17L9.5 11.5L5 8.5H10.5L12 3Z"/></svg> توليد وإدراج
@@ -468,7 +461,7 @@
 <div id="smartAssistantSheet" class="ai-bottom-sheet">
   <div class="sheet-header">
     <h3>المساعد الذكي والتحرير</h3>
-    <div class="sheet-head-actions"><button type="button" id="smartHeaderBack" class="sheet-back-button" onclick="smartHeaderBack()" aria-label="رجوع" title="رجوع" hidden>→</button><button class="sheet-close-btn" onclick="closeSheet('smartAssistantSheet')"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-head-actions"><button class="sheet-close-btn" onclick="closeSheet('smartAssistantSheet')" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
   </div>
   <div class="smart-assistant-tabs" role="tablist" aria-label="أوضاع المساعد">
     <button type="button" class="smart-assistant-tab active" aria-selected="true" onclick="setSmartAssistantTab('assistant',this)">إنشاء محتوى</button>
@@ -523,7 +516,8 @@
     <div id="smartEditHint" class="ai-inline-help" role="status">سيتم حفظ التغيير في سجل التراجع قبل تطبيقه.</div>
   </div>
   <div id="smartImprovePanel" class="sheet-body smart-assistant-panel" hidden></div>
-  <div class="sheet-footer smart-assistant-footer" id="smartGenerateFooter" style="gap:6px;flex-wrap:wrap">
+  <div class="sheet-footer smart-assistant-footer" id="smartGenerateFooter">
+    <button type="button" id="smartHeaderBack" class="sheet-back-footer-btn" onclick="smartHeaderBack()" aria-label="العودة إلى إنشاء المحتوى" title="رجوع" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>رجوع</span></button>
     <button onclick="closeSheet('smartAssistantSheet')" class="modweeb-gen-btn">إغلاق</button>
     <div class="smart-fmt-toggle">
       <button type="button" class="smart-fmt-btn active" id="smartFormatHtmlBtn" onclick="smartSetFormat('html')">HTML</button>
@@ -535,6 +529,7 @@
     <button onclick="smartCopyResult()" id="smartCopyBtn" class="modweeb-gen-btn secondary" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> نسخ</button>
     <button onclick="smartGenerate()" id="smartGenBtn" class="modweeb-gen-btn primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L13.5 8.5H19L14.5 11.5L16 17L12 14L8 17L9.5 11.5L5 8.5H10.5L12 3Z"/></svg> توليد</button>
   </div>
+  <div class="sheet-footer smart-assistant-footer" id="smartImproveFooter" hidden></div>
 </div>
 
 
@@ -549,10 +544,10 @@
   <div class="sheet-body">
 
     <!-- 13.1 | تبويبات SEO -->
-    <div class="seo-tabs">
-      <button class="seo-tab-btn active" onclick="seoSwitchTab('score',this)">التقييم التحريري</button>
-      <button class="seo-tab-btn" onclick="seoSwitchTab('meta',this)">العنوان والوصف</button>
-      <button class="seo-tab-btn" onclick="seoSwitchTab('tips',this)">الكلمة والتوصيات</button>
+    <div class="seo-tabs" role="tablist" aria-label="أقسام مساعد SEO">
+      <button class="seo-tab-btn active" role="tab" aria-selected="true" onclick="seoSwitchTab('score',this)">التقييم التحريري</button>
+      <button class="seo-tab-btn" role="tab" aria-selected="false" onclick="seoSwitchTab('meta',this)">العنوان والوصف</button>
+      <button class="seo-tab-btn" role="tab" aria-selected="false" onclick="seoSwitchTab('tips',this)">الكلمة والتوصيات</button>
     </div>
 
     <!-- 13.2 | تبويب التقييم -->
@@ -735,7 +730,7 @@
 
   </div>
   <div class="sheet-footer">
-    <button onclick="closeSheet('improveTextSheet')" class="modweeb-gen-btn">إغلاق</button>
+    <button type="button" id="smartImproveBackBtn" class="sheet-back-footer-btn" onclick="smartHeaderBack()" aria-label="العودة إلى المساعد الذكي" title="رجوع"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>رجوع</span></button>
     <button onclick="copyImproveResult()" class="modweeb-gen-btn" id="copyImproveBtn" style="display:none">نسخ النتيجة</button>
     <button onclick="applyImproveResult()" class="modweeb-gen-btn secondary" id="applyImproveBtn" style="display:none">تطبيق على المحرر</button>
     <button onclick="runImproveText()" id="improveRunBtn" class="modweeb-gen-btn primary">تحسين</button>
@@ -749,19 +744,18 @@
 <div id="aiPopup" class="ai-bottom-sheet">
   <div class="sheet-header">
     <h3>مركز الذكاء الاصطناعي</h3>
-    <div class="sheet-head-actions"><button type="button" id="aiHeaderBack" class="sheet-back-button" onclick="aiHeaderBack()" aria-label="رجوع" title="رجوع" hidden>→</button><button class="sheet-close-btn" onclick="closeAIPopup()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-head-actions"><button type="button" id="aiSettingsToggle" class="sheet-icon-button" aria-label="إعدادات ومفاتيح الذكاء الاصطناعي" title="إعدادات ومفاتيح AI" aria-controls="aiSettingsPanel" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="5"/><path d="m11.5 11.5 9-9"/><path d="m16 7 2 2"/><path d="m18.5 4.5 2 2"/></svg></button><button class="sheet-close-btn" onclick="closeAIPopup()" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
   </div>
   <div id="aiProgressBar" class="ai-progress-under-header" style="display:none;padding:8px 14px 0;">
     <div style="font-size:0.8rem;color:var(--linkC);margin-bottom:5px;font-weight:500;"><span id="aiProgressText">جاري توليد المقال...</span></div>
     <div style="height:5px;background:var(--contentL);border-radius:3px;overflow:hidden"><div style="height:100%;width:40%;background:var(--linkC);border-radius:3px;animation:aiSlide 1.4s ease-in-out infinite alternate"></div></div>
     <div style="font-size:0.7rem;color:var(--notifC);margin-top:5px">قد يستغرق التوليد بعض الوقت</div>
   </div>
-  <div class="ai-popup-tabs" role="tablist" aria-label="أقسام الذكاء الاصطناعي">
-    <button type="button" id="aiGenerateTab" class="ai-popup-tab active" role="tab" aria-selected="true" onclick="setAIPopupTab('generate')">توليد المقال</button>
-    <button type="button" id="aiSettingsTab" class="ai-popup-tab" role="tab" aria-selected="false" onclick="setAIPopupTab('settings')">النموذج والمفاتيح</button>
-  </div>
-  <div id="aiGeneratePanel" class="sheet-body ai-popup-panel active" role="tabpanel" aria-labelledby="aiGenerateTab">
+  <div id="aiGeneratePanel" class="sheet-body ai-popup-panel active" role="region" aria-label="إعدادات إنشاء المقال">
 
+    <details class="ai-form-section" open>
+      <summary class="ai-form-section-title">الموضوع ومحتوى المقال</summary>
+      <div class="ai-form-section-content">
     <!-- 15.1 | الكلمة المفتاحية الرئيسية -->
     <div class="sheet-field">
       <label>الكلمة المفتاحية الرئيسية <small style="color:var(--linkC);font-weight:400">(محور SEO)</small></label>
@@ -833,6 +827,11 @@
       <textarea id="aiCustomRequest" dir="rtl" placeholder="مثال: ركّز على الاستخدام العملي..." rows="2" style="resize:vertical;max-height:80px;"></textarea>
     </div>
 
+      </div>
+    </details>
+    <details class="ai-form-section">
+      <summary class="ai-form-section-title">الأسلوب واللغة وبنية المقال</summary>
+      <div class="ai-form-section-content">
     <!-- 15.6 | حجم ونوع المقال -->
     <div class="fields-row">
       <div class="sheet-field">
@@ -930,6 +929,11 @@
       </div>
     </div>
 
+      </div>
+    </details>
+    <details class="ai-form-section">
+      <summary class="ai-form-section-title">عناصر المقال</summary>
+      <div class="ai-form-section-content">
     <!-- 15.10 | عناصر المقال -->
     <div class="sheet-field">
       <label>عناصر المقال</label>
@@ -958,19 +962,22 @@
       </div>
     </div>
 
-    <section class="ai-gen-card ai-media-card" aria-labelledby="aiImageGenerationTitle">
-      <div class="ai-gen-card-head"><div class="ai-gen-card-icon" aria-hidden="true">IMG</div><div><h4 id="aiImageGenerationTitle">إنشاء صورة للمقال</h4><p>توليد اختياري عبر Puter ثم إدراجه كعنصر صورة في المحرر.</p></div></div>
-      <div class="sheet-field"><label for="aiImagePrompt">وصف الصورة أو الفكرة</label><textarea id="aiImagePrompt" rows="2" dir="rtl" placeholder="اتركه فارغاً لإنشاء وصف مناسب من موضوع المقال..."></textarea></div>
-      <div class="ai-gen-inline">
-        <select id="aiImageModel" class="ai-gen-select" aria-label="نموذج توليد الصورة"><option value="gpt-image-2.6-flare">GPT Image — افتراضي</option><option value="gemini-3.1-flash-image">Gemini Flash Image</option><option value="@cf/black-forest-labs/flux-1-schnell">FLUX Schnell</option></select>
-        <select id="aiImageRatio" class="ai-gen-select" aria-label="أبعاد الصورة"><option value="16:9">أفقي 16:9</option><option value="1:1">مربع 1:1</option><option value="3:2">أفقي 3:2</option></select>
       </div>
-      <button type="button" id="aiGenerateImageBtn" class="modweeb-gen-btn primary" onclick="generatePuterImageAndInsert()">توليد صورة وإدراجها</button>
-      <div id="aiImageStatus" class="ai-gen-status" role="status" aria-live="polite">قد يتطلب Puter تسجيل الدخول؛ راجع سياسة الاستخدام والتكلفة. بعض روابط الصور المولّدة مؤقتة.</div>
-    </section>
+    </details>
+    <details class="ai-form-section ai-image-section">
+      <summary class="ai-form-section-title">صورة المقال (اختياري)</summary>
+      <div class="ai-image-fields">
+        <div class="sheet-field ai-image-prompt-field"><label for="aiImagePrompt">وصف الصورة أو الفكرة</label><textarea id="aiImagePrompt" rows="1" dir="rtl" placeholder="اتركه فارغاً لاشتقاق الوصف من موضوع المقال..."></textarea></div>
+        <div class="ai-image-inline">
+          <div class="sheet-field"><label for="aiImageModel">نموذج الصورة</label><select id="aiImageModel" class="ai-gen-select" aria-label="نموذج توليد الصورة"><option value="gpt-image-2.6-flare">GPT Image — افتراضي</option><option value="gemini-3.1-flash-image">Gemini Flash Image</option><option value="@cf/black-forest-labs/flux-1-schnell">FLUX Schnell</option></select></div>
+          <div class="sheet-field"><label for="aiImageRatio">الأبعاد</label><select id="aiImageRatio" class="ai-gen-select" aria-label="أبعاد الصورة"><option value="16:9">أفقي 16:9</option><option value="1:1">مربع 1:1</option><option value="3:2">أفقي 3:2</option></select></div>
+        </div>
+        <div class="ai-image-actions"><button type="button" id="aiGenerateImageBtn" class="modweeb-gen-btn secondary" onclick="generatePuterImageAndInsert()">توليد الصورة وإدراجها</button><span class="ai-gen-status" id="aiImageStatus" role="status" aria-live="polite">قد يتطلب Puter تسجيل الدخول؛ بعض روابط الصور مؤقتة.</span></div>
+      </div>
+    </details>
 
   </div>
-  <div id="aiSettingsPanel" class="ai-popup-panel ai-settings-panel" role="tabpanel" aria-labelledby="aiSettingsTab" hidden></div>
+  <div id="aiSettingsPanel" class="ai-popup-panel ai-settings-panel" role="region" aria-label="إعدادات الذكاء الاصطناعي والمفاتيح" hidden></div>
   <div class="sheet-footer" id="aiGenerateFooter">
     <button onclick="closeAIPopup()" class="modweeb-gen-btn">إغلاق</button>
     <button onclick="aiGenerateArticle()" id="aiGenerateBtn" class="modweeb-gen-btn primary">توليد المقال</button>
@@ -983,20 +990,13 @@
      ============================================================ -->
 <div id="bloggerPublishSheet" class="ai-bottom-sheet">
   <div class="sheet-header">
-    <h3>نشر إلى بلوجر</h3>
+    <h3 id="bloggerPublishTitle">نشر إلى بلوجر</h3>
     <div style="display:flex;gap:6px;align-items:center">
-      <button type="button" id="bloggerHeaderBack" class="sheet-back-button" onclick="bloggerHeaderBack()" aria-label="رجوع" title="رجوع" hidden>→</button>
-      <button class="sheet-close-btn" onclick="openBloggerSettingsFromPublish()" title="إعدادات الاتصال" style="background:var(--linkL)!important;border-color:var(--linkC)!important;color:var(--linkC)!important">
-        <svg viewBox="0 0 24 24" style="width:15px;height:15px"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>
-      </button>
+      <button type="button" id="bloggerHeaderSettingsBtn" class="sheet-icon-button" title="إعدادات الاتصال والمفاتيح" aria-label="إعدادات الاتصال والمفاتيح" aria-controls="bloggerSettingsPanel" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="5"/><path d="m11.5 11.5 9-9"/><path d="m16 7 2 2"/><path d="m18.5 4.5 2 2"/></svg></button>
       <button class="sheet-close-btn" onclick="closeSheet('bloggerPublishSheet')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
   </div>
-  <div class="blogger-publish-tabs" role="tablist" aria-label="واجهة بلوجر">
-    <button type="button" class="blogger-publish-tab active" aria-selected="true" onclick="setBloggerPublishTab('compose',this)">بيانات النشر</button>
-    <button type="button" id="bloggerSettingsTab" class="blogger-publish-tab" aria-selected="false" onclick="setBloggerPublishTab('settings',this)" hidden>المفاتيح والاتصال</button>
-  </div>
-  <div class="sheet-body blogger-publish-panel active" id="bloggerComposePanel">
+  <div class="sheet-body blogger-publish-panel active" id="bloggerComposePanel" role="region" aria-label="بيانات النشر">
 
     <!-- 16.1 | بيانات المدونة والنوع -->
     <div class="fields-row">
@@ -1070,7 +1070,7 @@
     <div id="publishStatus"></div>
 
   </div>
-  <div id="bloggerSettingsPanel" class="blogger-publish-panel blogger-settings-panel" hidden></div>
+  <div id="bloggerSettingsPanel" class="blogger-publish-panel blogger-settings-panel" role="region" aria-label="إعدادات بلوجر" hidden></div>
   <div class="sheet-footer" id="bloggerComposeFooter">
     <button onclick="closeSheet('bloggerPublishSheet')" class="action-btn cancel">إلغاء</button>
     <button onclick="publishToBlogger()" class="action-btn primary">نشر الآن</button>
@@ -1099,8 +1099,8 @@
     <div class="aiagent-status" id="bloggerSettingsStatus"></div>
 
   </div>
-  <div class="sheet-footer" style="gap:6px;flex-wrap:wrap">
-    <button onclick="closeSheet('bloggerSettingsSheet')" class="modweeb-gen-btn">إغلاق</button>
+  <div class="sheet-footer blogger-settings-footer" style="gap:6px;flex-wrap:wrap">
+    <button type="button" id="bloggerSettingsBackBtn" class="sheet-back-footer-btn" onclick="bloggerHeaderBack()" aria-label="العودة إلى بيانات النشر" title="العودة إلى بيانات النشر"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>العودة للنشر</span></button>
     <button class="modweeb-gen-btn danger" id="bloggerSettingsClearBtn" style="display:none">حذف الكل</button>
 <button class="modweeb-gen-btn secondary" id="bloggerSettingsTestBtn">اختبار الاتصال</button>
 <button class="modweeb-gen-btn primary" id="bloggerSettingsSaveBtn">حفظ مشفَّر</button>

@@ -3378,16 +3378,18 @@ function openAgent(){
     window.modweebAI.refreshModeUI();
   }
   setTimeout(renderActiveProviderSelect, 100);
-  if (typeof openSheet === 'function') openSheet('aiAgentSheet');
+  const popup = document.getElementById('aiPopup');
+  if ((!popup || !popup.classList.contains('show')) && typeof window.openAIPopup === 'function') window.openAIPopup();
+  if (typeof window.setAIPopupTab === 'function') window.setAIPopupTab('settings');
 }
 
   // ============ ربط الأزرار ============
   function bind(){
-    const btn = document.getElementById('modweebAIAgentBtn');
-if (btn) btn.addEventListener('click', () => {
-    openAgent();
-    refreshLockScreen();
-});
+    const btn = document.getElementById('aiSettingsToggle');
+    if (btn) btn.addEventListener('click', () => {
+      openAgent();
+      refreshLockScreen();
+    });
 
     const saveBtn = document.getElementById('aiagentSaveBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveProvider);
@@ -4081,12 +4083,16 @@ function setStatus(msg, type){
     await renderTabs();
     await renderProvider();
     setStatus('', '');
-    if (typeof openSheet === 'function') openSheet('bloggerSettingsSheet');
+    const publishSheet = document.getElementById('bloggerPublishSheet');
+    if (!publishSheet || !publishSheet.classList.contains('show')) {
+      if (typeof openSheet === 'function') openSheet('bloggerPublishSheet');
+    }
+    if (typeof window.setBloggerPublishTab === 'function') window.setBloggerPublishTab('settings');
   }
 
   // ============ ربط الأزرار ============
   function bind(){
-    const btn = document.getElementById('modweebBloggerSettingsBtn');
+    const btn = document.getElementById('bloggerHeaderSettingsBtn');
     if (btn) btn.addEventListener('click', open);
 
     // زر الحفظ الرئيسي (حفظ الكل)
@@ -4118,8 +4124,7 @@ function setStatus(msg, type){
 
   // ============ واجهة عامة ============
   window.openBloggerSettingsFromPublish = function(){
-    if (typeof closeSheet === 'function') closeSheet('bloggerPublishSheet');
-    setTimeout(open, 320);
+    open();
   };
 
   if (document.readyState === 'loading'){

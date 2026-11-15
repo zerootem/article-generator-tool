@@ -319,15 +319,14 @@ export function installArticleAssistant(): void {
     w.openSheet = routed;
   }
 
-  const configureReturn = (panelId: string, label: string, action: () => void) => {
-    const button = byId(panelId)?.querySelector<HTMLButtonElement>('.sheet-footer button:first-child');
+  const configureReturn = (buttonId: string, action: () => void) => {
+    const button = byId(buttonId) as HTMLButtonElement | null;
     if (!button) return;
-    button.textContent = label;
     button.onclick = (event) => { event.preventDefault(); action(); };
   };
-  configureReturn('aiSettingsPanel', 'العودة إلى التوليد', () => w.setAIPopupTab?.('generate'));
-  configureReturn('bloggerSettingsPanel', 'العودة إلى النشر', () => w.setBloggerPublishTab?.('compose'));
-  configureReturn('smartImprovePanel', 'العودة للمساعد', () => w.setSmartAssistantTab?.('assistant'));
+  configureReturn('aiSettingsBackBtn', () => w.setAIPopupTab?.('generate'));
+  configureReturn('bloggerSettingsBackBtn', () => w.setBloggerPublishTab?.('compose'));
+  configureReturn('smartImproveBackBtn', () => w.setSmartAssistantTab?.('assistant'));
 
   const originalOpenSmart = w.openSmartAssistant;
   w.openSmartAssistant = (mode: SmartMode = 'assistant') => {
