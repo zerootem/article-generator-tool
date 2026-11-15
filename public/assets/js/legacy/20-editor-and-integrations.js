@@ -2924,6 +2924,7 @@ async function setupMasterPassword(password) {
   _agentMasterKey = key;
   _agentSessionId = Date.now();
   await migrateLegacyAgentKeys(key);
+  window.dispatchEvent(new Event("modweebVaultChanged"));
   return true;
 }
 
@@ -2940,6 +2941,7 @@ async function unlockWithPassword(password) {
   _agentMasterKey = key;
   _agentSessionId = Date.now();
   await migrateLegacyAgentKeys(key);
+  window.dispatchEvent(new Event("modweebVaultChanged"));
   return true;
 }
 
@@ -2947,6 +2949,8 @@ async function unlockWithPassword(password) {
 function lockAgent() {
   _agentMasterKey = null;
   _agentSessionId = null;
+  state.decrypted = {};
+  window.dispatchEvent(new Event("modweebVaultChanged"));
 }
 
 /* --- تشفير/فك تشفير باستخدام مفتاح محدد --- */
@@ -3524,10 +3528,28 @@ if (footer) footer.insertBefore(lockBtn, footer.firstChild);
   };
 
   // expose crypto للاستخدام من وحدات أخرى (Blogger settings)
+  window.addEventListener('modweebVaultChanged', () => {
+    if (!_agentMasterKey) {
+      const input = document.getElementById('aiagentKeyInput');
+      if (input) input.value = '';
+    }
+    refreshLockScreen();
+  });
   window.modweebCrypto = {
     encrypt: encryptText,
     decrypt: decryptText,
-    isUnlocked: () => !!_agentMasterKey
+    isUnlocked: () => !!_agentMasterKey,
+    hasPassword: hasMasterPassword,
+    setup: async (password) => {
+      if (hasMasterPassword()) throw new Error('الخزنة موجودة بالفعل؛ استخدم كلمة المرور الحالية.');
+      loadStore();
+      return setupMasterPassword(password);
+    },
+    unlock: async (password) => {
+      loadStore();
+      return unlockWithPassword(password);
+    },
+    lock: lockAgent
   };
 })();
 
@@ -3539,6 +3561,10 @@ if (footer) footer.insertBefore(lockBtn, footer.firstChild);
 (function initBloggerSettings(){
   const STORAGE_KEY = 'modweebBloggerSettings_v1';
   let currentField = 'blogId';
+  let drafts = {};
+  let savedValues = {};
+  let saving = false;
+  let providerVersion = 0;
 
   // ============ تعريف الحقول مع التعليمات ============
   const FIELDS = {
@@ -3756,31 +3782,53 @@ const decrypt = async (t) => {
   return window.modweebCrypto ? window.modweebCrypto.decrypt(t) : '';
 };
 
-  // ============ تحميل/حفظ ============
-  async function loadSettings(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return {};
-      const enc = JSON.parse(raw);
-      const out = {};
-      for (const key of Object.keys(enc)){
-        out[key] = await decrypt(enc[key]);
-      }
-      return out;
-    }catch(e){ return {}; }
-  }
-
-  async function saveSettings(obj){
-    try{
-      const enc = {};
-      for (const key of Object.keys(obj)){
-        if (obj[key]) enc[key] = await encrypt(obj[key]);
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(enc));
-    }catch(e){
-      setStatus('لم تُحفظ الإعدادات. افتح القفل بكلمة المرور الرئيسية ثم حاول مرة أخرى.', 'err');
-      throw e;
+  // ============ تحميل/حفظ: preserve ciphertext, fail closed on damaged data ============
+  function readStoredPayloads(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    let record;
+    try { record = JSON.parse(raw); } catch(e) {
+      throw new Error('بيانات Blogger المحفوظة غير قابلة للقراءة؛ لم تُغيّر أو تُحذف.');
     }
+    if (!record || typeof record !== 'object' || Array.isArray(record) ||
+        Object.values(record).some(value => typeof value !== 'string')) {
+      throw new Error('صيغة بيانات Blogger غير صالحة؛ لم تُستبدل الإعدادات القديمة.');
+    }
+    return record;
+  }
+  async function loadSettings(){
+    const enc = readStoredPayloads();
+    if (!window.modweebCrypto?.isUnlocked()) return {};
+    const out = {};
+    for (const key of FIELD_ORDER){
+      if (!enc[key]) continue;
+      const value = await decrypt(enc[key]);
+      if (!value) throw new Error('تعذر فتح أحد حقول Blogger المحفوظة؛ لن تُستبدل البيانات القديمة.');
+      out[key] = value;
+    }
+    return out;
+  }
+  async function saveSettings(updates){
+    if (!window.modweebCrypto?.isUnlocked()) {
+      throw new Error('افتح الخزنة بكلمة المرور الرئيسية من هذه النافذة قبل الحفظ.');
+    }
+    // Merge into the original encrypted record, never replace it with a partial read.
+    const enc = { ...readStoredPayloads() };
+    for (const key of FIELD_ORDER){
+      if (!Object.prototype.hasOwnProperty.call(updates, key) || !updates[key]) continue;
+      enc[key] = await encrypt(updates[key]);
+    }
+    if (!window.modweebCrypto?.isUnlocked()) throw new Error('أُغلقت الخزنة أثناء الحفظ؛ افتحها وحاول مجدداً.');
+    const serialized = JSON.stringify(enc);
+    localStorage.setItem(STORAGE_KEY, serialized);
+    if (localStorage.getItem(STORAGE_KEY) !== serialized) throw new Error('لم يثبت المتصفح حفظ البيانات؛ اسمح بتخزين بيانات الموقع ثم حاول مجدداً.');
+  }
+  function captureCurrentField(){
+    const input = document.getElementById('bgs_currentField');
+    if (!input || !input.dataset.field) return;
+    const id = input.dataset.field;
+    const value = input.value.trim();
+    if (input.dataset.dirty === 'true' || (value && value !== savedValues[id])) drafts[id] = value;
   }
 
   // ============ رسم التبويبات ============
@@ -3788,11 +3836,14 @@ const decrypt = async (t) => {
     const wrap = document.getElementById('bloggerSettingsTabs');
     if (!wrap) return;
     const settings = await loadSettings();
+    savedValues = settings;
+    const stored = readStoredPayloads();
+    const unlocked = window.modweebCrypto?.isUnlocked();
 
     wrap.innerHTML = '';
     FIELD_ORDER.forEach(id => {
       const f = FIELDS[id];
-      const hasValue = !!(settings[id] && String(settings[id]).trim());
+      const hasValue = !!stored[id];
 
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -3819,15 +3870,15 @@ const decrypt = async (t) => {
       }
 
       btn.addEventListener('click', () => {
+        captureCurrentField();
         currentField = id;
-        renderTabs();
-        renderProvider();
+        void refreshFields();
       });
       wrap.appendChild(btn);
     });
 
     // الملخص العلوي
-    renderOverview(settings);
+    renderOverview(unlocked ? settings : Object.fromEntries(FIELD_ORDER.map(id => [id, !!stored[id]])));
   }
 
   // ============ ملخص الاكتمال ============
@@ -3865,8 +3916,11 @@ const decrypt = async (t) => {
     const wrap = document.getElementById('bloggerSettingsProvider');
     if (!f || !wrap) return;
 
+    const version = ++providerVersion;
     const settings = await loadSettings();
-    const currentValue = settings[f.id] || '';
+    if (version !== providerVersion || f.id !== currentField) return;
+    savedValues = settings;
+    const currentValue = Object.prototype.hasOwnProperty.call(drafts, f.id) ? drafts[f.id] : (settings[f.id] || '');
 
     // بناء محتوى الحقل
     wrap.innerHTML = `
@@ -3879,7 +3933,7 @@ const decrypt = async (t) => {
                  dir="ltr"
                  autocomplete="off"
                  spellcheck="false"
-                 value="${currentValue.replace(/"/g,'&quot;')}">
+                 data-field="${f.id}" value="">
           <button type="button" class="toggle-vis" id="bgs_toggleVis" title="إظهار/إخفاء">
             <svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           </button>
@@ -3894,6 +3948,8 @@ const decrypt = async (t) => {
 
     // ربط زر الإظهار/الإخفاء
     const input = document.getElementById('bgs_currentField');
+    input.value = currentValue;
+    input.dataset.dirty = Object.prototype.hasOwnProperty.call(drafts, f.id) ? 'true' : 'false';
     const toggle = document.getElementById('bgs_toggleVis');
     if (toggle && input){
       // إذا كان الحقل من نوع password، ابدأ مخفياً
@@ -3914,12 +3970,14 @@ const decrypt = async (t) => {
 
     // تحديث الحالة عند الكتابة
     input.addEventListener('input', () => {
+      input.dataset.dirty = 'true';
+      drafts[f.id] = input.value.trim();
       updateFieldStatus(input.value);
     });
 
     // أزرار الحفظ/الحذف
     const clearBtn = document.getElementById('bloggerSettingsClearBtn');
-    if (clearBtn) clearBtn.style.display = FIELD_ORDER.some(id => settings[id]) ? 'inline-flex' : 'none';
+    if (clearBtn) clearBtn.style.display = FIELD_ORDER.some(id => readStoredPayloads()[id]) ? 'inline-flex' : 'none';
 
     setStatus('', '');
   }
@@ -3932,79 +3990,58 @@ const decrypt = async (t) => {
       statusEl.textContent = '';
       return;
     }
-    statusEl.textContent = ' محفوظ';
-    statusEl.style.color = 'var(--success, #16a34a)';
+    const saved = v === (savedValues[currentField] || '');
+    statusEl.textContent = saved ? 'محفوظ' : 'غير محفوظ — اضغط حفظ';
+    statusEl.style.color = saved ? 'var(--success, #16a34a)' : 'var(--notifC)';
   }
 
-  // ============ حفظ الحقل الحالي ============
-  async function saveCurrentField(){
-    const input = document.getElementById('bgs_currentField');
-    if (!input) return false;
-    const val = input.value.trim();
-    if (!val){
-      setStatus(' الرجاء إدخال القيمة أولاً', 'err');
+  // ============ حفظ المسودات دون فقد البيانات عند تبديل التبويب ============
+  async function persistDrafts(onlyCurrent){
+    if (saving) return false;
+    captureCurrentField();
+    const ids = onlyCurrent ? [currentField] : FIELD_ORDER;
+    const updates = Object.fromEntries(ids.filter(id => drafts[id] && drafts[id] !== savedValues[id]).map(id => [id, drafts[id]]));
+    if (!window.modweebCrypto?.isUnlocked()) {
+      refreshVaultUI();
+      setStatus('افتح الخزنة بكلمة المرور الرئيسية من هذه النافذة قبل الحفظ.', 'err');
+      document.getElementById('bloggerVaultPassword')?.focus();
       return false;
     }
-
-    const settings = await loadSettings();
-    settings[currentField] = val;
+    const button = document.getElementById('bloggerSettingsSaveBtn');
+    saving = true;
+    if (button) button.disabled = true;
     try {
-      await saveSettings(settings);
+      // An unreadable existing field blocks the write rather than silently losing it.
+      const existing = await loadSettings();
+      if (!Object.keys(updates).length && !Object.keys(existing).length) {
+        setStatus('الرجاء إدخال قيمة على الأقل', 'err');
+        return false;
+      }
+      if (Object.keys(updates).length) await saveSettings(updates);
+      savedValues = { ...existing, ...updates };
+      for (const id of Object.keys(updates)) {
+        if (drafts[id] === updates[id]) delete drafts[id];
+      }
+      syncToApp(savedValues);
+      await renderTabs();
+      updateFieldStatus(document.getElementById('bgs_currentField')?.value);
+      const count = FIELD_ORDER.filter(id => savedValues[id]).length;
+      setStatus(count === FIELD_ORDER.length ? 'جميع بيانات Blogger محفوظة ومشفرة' : 'تم الحفظ مشفراً: ' + count + ' من ' + FIELD_ORDER.length + ' حقول', 'ok');
+      return true;
     } catch(e) {
-      setStatus(e.message || 'افتح القفل قبل حفظ الإعدادات', 'err');
+      setStatus(e.message || 'تعذر الحفظ في المتصفح؛ تأكد من السماح بتخزين بيانات الموقع.', 'err');
       return false;
+    } finally {
+      saving = false;
+      if (button) button.disabled = false;
     }
-    syncToApp(settings);
-
-    // تحديث التبويبات
-    await renderTabs();
-
-    setStatus(' تم حفظ "' + FIELDS[currentField].label + '" مشفَّراً', 'ok');
-    setTimeout(() => setStatus('', ''), 2500);
-    return true;
   }
-
-// حفظ الحقل الحالي ثم عرض حالة الاكتمال
-async function saveAll(){
-  // 1) احفظ الحقل الحالي إن وُجدت قيمة
-  const input = document.getElementById('bgs_currentField');
-  if (input && input.value.trim()){
-    const ok = await saveCurrentField();
-    if (!ok) return;
-  }
-
-  // 2) اقرأ الإعدادات بعد الحفظ
-  const settings = await loadSettings();
-  const filled = FIELD_ORDER.filter(id =>
-    settings[id] && String(settings[id]).trim()
-  );
-  const missing = FIELD_ORDER.filter(id =>
-    FIELDS[id].required && !(settings[id] && String(settings[id]).trim())
-  );
-
-  // 3) اعرض النتيجة المناسبة
-  if (missing.length === 0){
-    setStatus(' جميع المفاتيح محفوظة ومشفَّرة', 'ok');
-  } else if (filled.length > 0){
-    setStatus(
-      ' تم حفظ ' + filled.length + ' حقل , متبقي: ' +
-      missing.map(id => FIELDS[id].shortLabel).join('، '),
-      'ok'
-    );
-  } else {
-    setStatus(' الرجاء إدخال قيمة على الأقل', 'err');
-  }
-  setTimeout(() => setStatus('', ''), 4000);
-}
-
-  // ============ قراءة القيم (من الحفظ) ============
+  async function saveCurrentField(){ return persistDrafts(true); }
+  async function saveAll(){ return persistDrafts(false); }
   async function readAll(){
+    captureCurrentField();
     const settings = await loadSettings();
-    // أضف قيمة الحقل الحالي إن لم تكن محفوظة
-    const input = document.getElementById('bgs_currentField');
-    if (input && input.value.trim()){
-      settings[currentField] = input.value.trim();
-    }
+    for (const id of FIELD_ORDER) if (drafts[id]) settings[id] = drafts[id];
     return settings;
   }
 
@@ -4013,10 +4050,10 @@ async function saveAll(){
     try{
       if (typeof BLOGGER_CONFIG !== 'undefined'){
         if (settings.blogId)       BLOGGER_CONFIG.BLOG_ID       = settings.blogId;
-        if (settings.apiKey)       BLOGGER_CONFIG.API_KEY       = settings.apiKey;
+        BLOGGER_CONFIG.API_KEY = settings.apiKey || '';
         if (settings.clientId)     BLOGGER_CONFIG.CLIENT_ID     = settings.clientId;
-        if (settings.clientSecret) BLOGGER_CONFIG.CLIENT_SECRET = settings.clientSecret;
-        if (settings.refreshToken) BLOGGER_CONFIG.REFRESH_TOKEN = settings.refreshToken;
+        BLOGGER_CONFIG.CLIENT_SECRET = settings.clientSecret || '';
+        BLOGGER_CONFIG.REFRESH_TOKEN = settings.refreshToken || '';
       }
       const blogIdInput = document.getElementById('bloggerBlogId');
       if (blogIdInput && settings.blogId) blogIdInput.value = settings.blogId;
@@ -4042,6 +4079,8 @@ function setStatus(msg, type){
     if (!confirm('هل تريد حذف جميع المفاتيح المحفوظة؟')) return;
     try{
       localStorage.removeItem(STORAGE_KEY);
+      drafts = {}; savedValues = {};
+      syncToApp({});
       setStatus(' تم حذف جميع المفاتيح', 'ok');
       await renderTabs();
       await renderProvider();
@@ -4073,21 +4112,88 @@ function setStatus(msg, type){
     }
   }
 
-  // ============ فتح النافذة ============
-  async function open(){
-    await renderTabs();
-    await renderProvider();
-    setStatus('', '');
-    const publishSheet = document.getElementById('bloggerPublishSheet');
-    if (!publishSheet || !publishSheet.classList.contains('show')) {
-      if (typeof openSheet === 'function') openSheet('bloggerPublishSheet');
+  // ============ نفس خزنة AI، متاحة مباشرة داخل Blogger ============
+  function refreshVaultUI(){
+    const vault = window.modweebCrypto;
+    const unlocked = !!vault?.isUnlocked();
+    const needsSetup = vault ? !vault.hasPassword() : false;
+    const form = document.getElementById('bloggerVaultForm');
+    const state = document.getElementById('bloggerVaultState');
+    const confirm = document.getElementById('bloggerVaultConfirmWrap');
+    const button = document.getElementById('bloggerVaultUnlockBtn');
+    const lock = document.getElementById('bloggerVaultLockBtn');
+    if (form) form.hidden = unlocked;
+    if (state) state.textContent = unlocked ? 'الخزنة مفتوحة — الحفظ مشفر' : 'الخزنة مقفلة';
+    if (confirm) confirm.hidden = !needsSetup;
+    if (button) { button.textContent = needsSetup ? 'إنشاء الخزنة' : 'فتح الخزنة'; button.disabled = !vault; }
+    if (lock) lock.hidden = !unlocked;
+    const input = document.getElementById('bloggerVaultPassword');
+    if (input) input.autocomplete = needsSetup ? 'new-password' : 'current-password';
+  }
+  async function refreshFields(){
+    try { await renderTabs(); await renderProvider(); }
+    catch(e) { setStatus(e.message || 'تعذر قراءة إعدادات Blogger؛ لم تُحذف البيانات.', 'err'); }
+  }
+  async function unlockVault(){
+    const input = document.getElementById('bloggerVaultPassword');
+    const confirm = document.getElementById('bloggerVaultConfirm');
+    const button = document.getElementById('bloggerVaultUnlockBtn');
+    const message = document.getElementById('bloggerVaultMessage');
+    if (button?.disabled) return;
+    captureCurrentField();
+    if (button) button.disabled = true;
+    try {
+      const vault = window.modweebCrypto;
+      if (!vault) throw new Error('تعذر تهيئة الخزنة؛ أعد تحميل الأداة.');
+      if (!vault.hasPassword()) {
+        if (input.value.length < 8) throw new Error('كلمة المرور يجب أن تكون 8 أحرف على الأقل.');
+        if (input.value !== confirm.value) throw new Error('كلمتا المرور غير متطابقتين.');
+        await vault.setup(input.value);
+      } else await vault.unlock(input.value);
+      input.value = ''; confirm.value = '';
+      if (message) message.textContent = '';
+      refreshVaultUI();
+      await refreshFields();
+      setStatus('الخزنة مفتوحة؛ اضغط حفظ لتثبيت المدخلات الجديدة.', 'ok');
+    } catch(e) {
+      if (message) message.textContent = e.message || 'تعذر فتح الخزنة.';
+      input.value = ''; confirm.value = '';
+    } finally {
+      if (button) button.disabled = false;
     }
+  }
+  async function onVaultChanged(){
+    try {
+      if (!window.modweebCrypto?.isUnlocked()) {
+        drafts = {}; savedValues = {}; ++providerVersion;
+        const input = document.getElementById('bgs_currentField');
+        if (input) { input.value = ''; input.dataset.dirty = 'false'; }
+        syncToApp({});
+      } else {
+        const settings = await loadSettings();
+        const old = readStoredPayloads();
+        if (FIELD_ORDER.some(id => old[id]?.startsWith(BLOG_PREFIX) || old[id]?.startsWith('plain:'))) await saveSettings(settings);
+        syncToApp(settings);
+      }
+      refreshVaultUI();
+      await refreshFields();
+    } catch(e) { setStatus(e.message || 'تعذر فتح بيانات Blogger؛ لم تُستبدل.', 'err'); }
+  }
+  async function open(){
+    captureCurrentField();
+    const publishSheet = document.getElementById('bloggerPublishSheet');
+    if (!publishSheet || !publishSheet.classList.contains('show')) openSheet('bloggerPublishSheet');
     if (typeof window.setBloggerPublishTab === 'function') window.setBloggerPublishTab('settings');
+    try { refreshVaultUI(); await refreshFields(); }
+    catch(e) { setStatus(e.message || 'تعذر الوصول إلى التخزين المحلي.', 'err'); }
   }
   window.openBloggerSettings = open;
 
   // ============ ربط الأزرار ==========
   function bind(){
+    document.getElementById('bloggerVaultUnlockBtn')?.addEventListener('click', unlockVault);
+    document.getElementById('bloggerVaultLockBtn')?.addEventListener('click', () => window.modweebCrypto?.lock());
+    window.addEventListener('modweebVaultChanged', onVaultChanged);
     // زر الحفظ الرئيسي (حفظ الكل)
     const saveBtn = document.getElementById('bloggerSettingsSaveBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveAll);
@@ -4098,10 +4204,15 @@ function setStatus(msg, type){
 
     // زر اختبار الاتصال
     const testBtn = document.getElementById('bloggerSettingsTestBtn');
-    if (testBtn) testBtn.addEventListener('click', test);
+    if (testBtn) testBtn.addEventListener('click', () => {
+      test().catch(e => setStatus(e.message || 'تعذر قراءة إعدادات الاتصال.', 'err'));
+    });
 
     // زر حفظ عند الضغط على Enter في الحقل
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && ['bloggerVaultPassword', 'bloggerVaultConfirm'].includes(e.target?.id)) {
+        e.preventDefault(); void unlockVault(); return;
+      }
       if (e.key === 'Enter' && e.target && e.target.id === 'bgs_currentField'){
         e.preventDefault();
         saveCurrentField();
@@ -4110,8 +4221,10 @@ function setStatus(msg, type){
 
     // تحميل المفاتيح عند بدء التشغيل ومزامنتها
     (async () => {
-      const settings = await loadSettings();
-      if (settings.blogId) syncToApp(settings);
+      try {
+        const settings = await loadSettings();
+        if (settings.blogId) syncToApp(settings);
+      } catch(e) { setStatus(e.message || 'تعذر تحميل إعدادات Blogger.', 'err'); }
     })();
   }
 

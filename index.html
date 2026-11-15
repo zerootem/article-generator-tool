@@ -1096,6 +1096,25 @@
       <span>جميع المفاتيح تُشفَّر بـ AES-GCM وتُحفظ محلياً في متصفحك. لن تُرسل لأي خادم وسيط.</span>
     </div>
 
+    <div class="blogger-vault">
+      <div class="blogger-vault-heading">
+        <span id="bloggerVaultState">الخزنة مقفلة</span>
+        <button type="button" id="bloggerVaultLockBtn" class="modweeb-gen-btn secondary" hidden>قفل</button>
+      </div>
+      <div id="bloggerVaultForm" class="blogger-vault-form">
+        <p>نفس كلمة المرور الرئيسية لمفاتيح AI. افتح الخزنة هنا لحفظ بيانات Blogger واستعادتها.</p>
+        <div class="aiagent-field">
+          <label for="bloggerVaultPassword">كلمة المرور الرئيسية</label>
+          <input id="bloggerVaultPassword" type="password" autocomplete="current-password" dir="ltr" placeholder="8 أحرف على الأقل">
+        </div>
+        <div class="aiagent-field" id="bloggerVaultConfirmWrap" hidden>
+          <label for="bloggerVaultConfirm">تأكيد كلمة المرور الجديدة</label>
+          <input id="bloggerVaultConfirm" type="password" autocomplete="new-password" dir="ltr">
+        </div>
+        <button type="button" id="bloggerVaultUnlockBtn" class="modweeb-gen-btn primary">فتح الخزنة</button>
+        <div id="bloggerVaultMessage" role="status" aria-live="polite"></div>
+      </div>
+    </div>
     <div class="blogger-overview" id="bloggerOverview"></div>
     <div class="aiagent-tabs" id="bloggerSettingsTabs"></div>
     <div class="aiagent-provider" id="bloggerSettingsProvider"></div>

@@ -1575,3 +1575,13 @@ html body .ai-bottom-sheet :is(.mw-ai-mini-btn, .mw-tool-mini-btn) svg {
   fill: none !important;
   stroke-width: 1.8;
 }
+
+/* Blogger reuses the existing encrypted vault; unlocking is available in place. */
+.blogger-vault { padding: 7px 0; border-bottom: 1px solid var(--contentL); }
+.blogger-vault-heading { display: flex; align-items: center; justify-content: space-between; gap: 7px; font-size: 11.5px; font-weight: 650; }
+.blogger-vault-form { display: flex; flex-direction: column; align-items: stretch; gap: 7px; margin-top: 7px; }
+.blogger-vault-form p { margin: 0; font-size: 11px; line-height: 1.5; color: var(--notifC); }
+.blogger-vault-form > button { align-self: flex-start; }
+#bloggerVaultMessage { font-size: 11px; line-height: 1.4; color: var(--danger); overflow-wrap: anywhere; }
+#bloggerVaultMessage:empty { display: none; }
+#bloggerVaultForm[hidden], #bloggerVaultConfirmWrap[hidden], #bloggerVaultLockBtn[hidden] { display: none !important; }
