@@ -1585,3 +1585,9 @@ html body .ai-bottom-sheet :is(.mw-ai-mini-btn, .mw-tool-mini-btn) svg {
 #bloggerVaultMessage { font-size: 11px; line-height: 1.4; color: var(--danger); overflow-wrap: anywhere; }
 #bloggerVaultMessage:empty { display: none; }
 #bloggerVaultForm[hidden], #bloggerVaultConfirmWrap[hidden], #bloggerVaultLockBtn[hidden] { display: none !important; }
+
+/* UI direction follows its local locale, not the article's generation language. */
+html[lang="en"] .ai-bottom-sheet .sheet-header h3,
+html[lang="en"] .ai-bottom-sheet label,
+html[lang="en"] .ai-bottom-sheet .aiagent-help { text-align: start; }
+html[dir="ltr"] .sheet-back-footer-btn svg { transform: rotate(180deg); }

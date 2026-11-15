@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" translate="no" class="notranslate">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
+<meta name="google" content="notranslate">
 <title>مولد المقالات</title>
 <style id="ai-generation-settings-style">
 .ai-gen-card{margin:12px 0 16px;padding:14px;border:1px solid var(--contentL);border-radius:14px;background:var(--contentBa);box-shadow:0 6px 20px rgba(0,0,0,.06)}
@@ -126,12 +127,7 @@
 </div>
 
 
-<!-- ============================================================
-     05 | Google Translate , مخفي (يُستخدم فقط للتفعيل)
-     ============================================================ -->
-<div id="google_translate_element" style="display:none"></div>
-<script src="/assets/js/legacy/00-bootstrap.js"></script>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
+<!-- UI language switching is implemented locally in src/i18n; no translation widget. -->
 
 
 <!-- ============================================================
@@ -1393,7 +1389,7 @@
         <small id="unifiedPreviewMeta">تتحدث أثناء التحرير</small>
         <span>معاينة مباشرة</span>
       </div>
-      <div id="unifiedPreview" class="unified-preview"><div class="unified-empty">أضف عنصراً من الشريط لبدء المقال</div></div>
+      <div id="unifiedPreview" class="unified-preview"><div class="unified-empty" data-ui-copy>أضف عنصراً من الشريط لبدء المقال</div></div>
     </section>
 
   </div>

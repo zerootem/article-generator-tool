@@ -1,9 +1,1 @@
-//<![CDATA[
-function googleTranslateElementInit(){
-  new google.translate.TranslateElement({
-    pageLanguage: 'ar',
-    includedLanguages: 'ar,en',
-    autoDisplay: false
-  }, 'google_translate_element');
-}
-//]]>
+// Retired: interface language is provided locally by src/i18n/index.ts.

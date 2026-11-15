@@ -210,7 +210,7 @@ window.closeAllModweebMenus = function(){
   function updatePreview(){
     const html = state.editor ? state.editor.value : (modweebArticleHTML || '');
     const t = document.getElementById('unifiedPreview');
-    if (t) t.innerHTML = html.trim() ? '<div class="modweeb-preview-content">' + html + '</div>' : '<div class="unified-empty">أضف عنصراً من الشريط لبدء المقال</div>';
+    if (t) t.innerHTML = html.trim() ? '<div class="modweeb-preview-content">' + html + '</div>' : '<div class="unified-empty" data-ui-copy>أضف عنصراً من الشريط لبدء المقال</div>';
     const meta = document.getElementById('unifiedPreviewMeta');
     if (meta) meta.textContent = (html.match(/<[^/!][^>]*>/g) || []).length + ' عنصر HTML';
     updateFooter();
@@ -2172,30 +2172,12 @@ apply(hidden, true); // التهيئة الأولية بدون تنبيه
     ];
     const GLOBE_ICON = '<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>';
 
-    /* ===== قراءة اللغة الحالية ===== */
+    /* UI locale is local and synchronous; it never translates article data. */
     function getCurrentLang(){
-      const m = document.cookie.match(/(?:^|; )googtrans=([^;]*)/);
-      if (!m) return 'ar';
-      const val = decodeURIComponent(m[1]);
-      const parts = val.split('/');
-      const code = parts[parts.length - 1] || 'ar';
-      return code === 'auto' ? 'ar' : code;
+      return window.modweebI18n?.getLanguage() || 'ar';
     }
-
-    /* ===== منطق الترجمة الأصلي , بدون أي تغيير ===== */
     function selectLang(code){
-      const domainPart = '.' + location.hostname;
-      document.cookie = 'googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      document.cookie = 'googtrans=; path=/; domain=' + domainPart + '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-
-      if (code === 'ar'){
-        location.reload();
-        return;
-      }
-      const v = '/ar/' + code;
-      document.cookie = 'googtrans=' + v + '; path=/';
-      document.cookie = 'googtrans=' + v + '; domain=' + domainPart + '; path=/';
-      location.reload();
+      window.modweebI18n?.setLanguage(code === 'en' ? 'en' : 'ar');
     }
 
     /* ===== بناء القائمة بنفس نمط قائمة الأوضاع ===== */
@@ -2207,14 +2189,14 @@ apply(hidden, true); // التهيئة الأولية بدون تنبيه
       menu.setAttribute('data-translate-menu', '1');
 
       const current = getCurrentLang();
-      let html = '<div class="menu-section-title">اللغة</div>';
+      let html = '<div class="menu-section-title">' + (window.modweebI18n?.translate('اللغة') || 'اللغة') + '</div>';
 
       LANGS.forEach(lang => {
         html += '<div>'
               +   '<button type="button" data-lang="' + lang.code + '"'
               +           (lang.code === current ? ' class="is-active"' : '') + '>'
               +     '<span class="mw-theme-icon"><svg viewBox="0 0 24 24">' + GLOBE_ICON + '</svg></span>'
-              +     '<span class="mw-theme-label">' + lang.name + '</span>'
+              +     '<span class="mw-theme-label" data-ui-language-name lang="' + lang.code + '">' + lang.name + '</span>'
               +     '<span class="mw-theme-check"></span>'
               +   '</button>'
               + '</div>';
@@ -2260,6 +2242,7 @@ apply(hidden, true); // التهيئة الأولية بدون تنبيه
       document.body.appendChild(currentMenu);
 
       requestAnimationFrame(() => {
+        if (!currentMenu) return;
         const rect     = button.getBoundingClientRect();
         const menuRect = currentMenu.getBoundingClientRect();
         const menuW    = menuRect.width  || 120;
