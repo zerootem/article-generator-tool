@@ -1887,11 +1887,17 @@ function copyImproveResult(){
    20. SEO Assistant
    ============================================================ */
 function seoSwitchTab(tab, el){
-    document.querySelectorAll('.seo-tab-btn').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.seo-tab-panel').forEach(x => x.classList.remove('active'));
-    if (el) el.classList.add('active');
-    const p = document.getElementById('seoTab-' + tab);
-    if (p) p.classList.add('active');
+    const activeButton = document.querySelector(`.seo-tab-btn[data-tab="${tab}"]`) || el;
+    document.querySelectorAll('.seo-tab-btn').forEach(x => {
+        const active = x === activeButton;
+        x.classList.toggle('active', active);
+        x.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('.seo-tab-panel').forEach(x => x.classList.toggle('active', x.id === 'seoTab-' + tab));
+    const footer = document.getElementById('seoFooter');
+    if (footer) footer.dataset.tab = tab;
+    const generate = document.getElementById('seoGenerateMetaBtn');
+    if (generate) generate.hidden = tab !== 'meta';
     if (tab === 'meta') {
         const titleField = document.getElementById('seoMetaTitle');
         const descField = document.getElementById('seoMetaDesc');
@@ -2125,7 +2131,7 @@ async function seoGenerateMeta(){
     if (!topic) { modweebShowStatus('أدخل موضوع المقال أو الكلمة أولاً'); return; }
     const progress = document.getElementById('seoMetaProgressBar');
     if (progress) progress.style.display = 'block';
-    seoSwitchTab('meta', document.querySelectorAll('.seo-tab-btn')[2]);
+    seoSwitchTab('meta');
     const lang = (document.getElementById('aiLanguage')||{}).value || 'ar';
     try {
         const articleText = seoGetArticleText().slice(0, 2000);
@@ -2428,7 +2434,7 @@ async function exportArticle(format){
     generateFullHTML();
     const title = (document.getElementById('aiTopic')||{}).value || 'article';
     if (format === 'html') {
-        const cssLink = document.querySelector('link[data-export-css]');
+        const cssLink = document.querySelector('link[data-export-css]') || document.querySelector('link[rel="stylesheet"][href$=".css"]');
         let appCss = '';
         if (cssLink) {
             try {

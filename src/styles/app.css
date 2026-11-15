@@ -1112,7 +1112,7 @@ button#btnAiSlug:disabled svg {
   flex: 0 0 auto;
   margin: 0;
   padding: 0 10px;
-  border: 1px solid var(--contentL);
+  border: 0;
   border-radius: 10px;
   background: var(--contentBa);
   box-shadow: none;
@@ -1205,41 +1205,45 @@ button#btnAiSlug:disabled svg {
 /* SEO navigation stays beneath the fixed title bar while its panel scrolls. */
 #seoAssistantSheet > .sheet-body { position: relative; }
 #seoAssistantSheet .seo-tabs {
-  position: sticky !important;
-  top: 0 !important;
+  position: relative !important;
+  top: auto !important;
   z-index: 22;
+  flex: 0 0 auto;
   display: flex;
-  gap: 5px;
-  margin: -1px -1px 9px;
-  padding: 6px 1px 8px;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 12px;
   border-bottom: 1px solid var(--contentL);
   background: var(--contentB);
-  box-shadow: 0 4px 9px rgba(0, 0, 0, .06);
+  isolation: isolate;
 }
 #seoAssistantSheet .seo-tab-btn {
   min-width: 0;
   min-height: 34px;
   flex: 1 1 0;
   padding: 6px 7px;
+  margin: 0;
+  border: 1px solid var(--contentL);
   border-radius: 8px;
+  background: var(--contentBs);
+  color: var(--bodyC);
   font-size: .7rem;
   line-height: 1.2;
 }
+#seoAssistantSheet .seo-tab-btn.active {
+  background: var(--linkC);
+  color: var(--white);
+  border-color: var(--linkC);
+}
 #seoAssistantSheet .seo-inner-tabs {
   position: sticky !important;
-  top: 43px !important;
+  top: 0 !important;
   z-index: 18;
   background: var(--contentB);
 }
-#seoAssistantSheet .sheet-footer { display: flex; flex-wrap: wrap; gap: 6px; }
+#seoAssistantSheet .sheet-footer { display: flex; gap: 6px; }
 
-#smartGenerateFooter,
-#smartImproveFooter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-#smartGenerateFooter .smart-fmt-toggle,
-#smartGenerateFooter #smartInsertMode { grid-column: 1 / -1; }
-#smartGenerateFooter .smart-insert-mode-label { display: none; }
-#smartGenerateFooter #smartInsertMode { max-width: none; width: 100%; }
-#smartGenerateFooter > button { width: 100%; }
 #bloggerComposeFooter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 #bloggerSettingsPanel .sheet-footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #aiGenerateFooter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
@@ -1271,3 +1275,100 @@ button#btnAiSlug:disabled svg {
 #bloggerComposeFooter[hidden],
 #smartGenerateFooter[hidden],
 #smartImproveFooter[hidden] { display: none !important; }
+
+/* Flat, compact action bars. IDs deliberately beat legacy !important sizes. */
+#smartAssistantSheet > .sheet-footer,
+#seoAssistantSheet > .sheet-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px !important;
+  padding: 7px 12px max(7px, env(safe-area-inset-bottom)) !important;
+}
+#smartAssistantSheet .sheet-footer > button,
+#seoAssistantSheet .sheet-footer > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 5px;
+  width: auto !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  border-radius: 7px;
+  font: 600 11.5px/1.2 Geist, sans-serif !important;
+  white-space: nowrap;
+}
+.ai-bottom-sheet .sheet-footer .sheet-back-footer-btn {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 32px;
+  min-height: 32px;
+  gap: 5px;
+  padding: 0 10px;
+  border: 1px solid var(--contentL);
+  background: var(--contentBa);
+  color: var(--bodyC);
+  font: 600 11.5px/1.2 Geist, sans-serif;
+}
+.ai-bottom-sheet .sheet-footer .sheet-back-footer-btn svg {
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  max-width: 14px;
+  flex: 0 0 14px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8;
+}
+.ai-bottom-sheet .sheet-footer .sheet-back-footer-btn span { display: inline; }
+#smartAssistantSheet .sheet-footer > button[hidden],
+#seoAssistantSheet .sheet-footer > button[hidden] { display: none !important; }
+#smartGenerateFooter[data-mode="edit"] #smartCloseBtn { display: none !important; }
+#seoFooter:not([data-tab="meta"]) #seoApplyBtn,
+#seoFooter[data-tab="meta"] #seoAnalyzeBtn { display: none !important; }
+
+/* Output choices belong to the creation tab, not to the pinned action footer. */
+.smart-output-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+.smart-output-options .smart-insert-mode-label { display: none; }
+.smart-output-options .smart-fmt-toggle { display: flex; gap: 4px; }
+.smart-output-options .smart-fmt-btn {
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+.smart-output-options .smart-insert-mode {
+  flex: 1 1 120px;
+  width: auto;
+  max-width: 180px;
+  min-width: 0;
+  height: 32px;
+  min-height: 32px;
+  padding: 4px 8px;
+  font: 500 11px/1.2 Geist, sans-serif;
+}
+
+/* Remove only the disclosure shell, not input borders or summary separators. */
+.ai-bottom-sheet details.ai-form-section,
+.ai-bottom-sheet details.ai-gen-subcard,
+.ai-bottom-sheet .ai-gen-card:has(details.ai-gen-subcard) {
+  border: 0 !important;
+  box-shadow: none !important;
+}

@@ -104,8 +104,12 @@ const requiredLegacyScripts = [
 
 window.addEventListener('DOMContentLoaded', () => {
   const missing = requiredLegacyScripts.filter((path) => {
-    const absolute = new URL(path, document.baseURI).href;
-    return ![...document.scripts].some((script) => script.src === absolute);
+    const absolute = new URL(path, document.baseURI);
+    return ![...document.scripts].some((script) => {
+      if (!script.src) return false;
+      const actual = new URL(script.src);
+      return actual.origin === absolute.origin && actual.pathname === absolute.pathname;
+    });
   });
   if (missing.length > 0) {
     console.error('Article Generator failed to load required modules:', missing);
@@ -143,7 +147,10 @@ const improveTextBody = document.querySelector<HTMLElement>('#improveTextSheet >
 if (improveTextBody && smartImprovePanel) {
   Array.from(improveTextBody.childNodes).forEach((node) => smartImprovePanel.appendChild(node));
 }
-movePanel('#improveTextSheet > .sheet-footer', smartImproveFooter);
+const improveActions = document.querySelector<HTMLElement>('#improveTextSheet > .sheet-footer');
+if (improveActions && smartImproveFooter) {
+  Array.from(improveActions.childNodes).forEach((node) => smartImproveFooter.appendChild(node));
+}
 improveTextSource?.remove();
 
 const keywordPanel = byId('seoKeywordPanel');
@@ -246,7 +253,10 @@ bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
   const improveBack = byId('smartImproveBackBtn');
   if (improveBack) improveBack.hidden = name !== 'improve';
   const footer = byId('smartGenerateFooter');
-  if (footer) footer.hidden = improveMode;
+  if (footer) {
+    footer.hidden = improveMode;
+    footer.dataset.mode = name;
+  }
   const improveFooter = byId('smartImproveFooter');
   if (improveFooter) improveFooter.hidden = !improveMode;
   const insertMode = byId('smartInsertMode');
@@ -257,7 +267,7 @@ bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
   if (generateButton) generateButton.textContent = name === 'edit' ? 'إنشاء التعديل' : 'توليد';
   const insertButton = byId('smartInsertBtn');
   if (insertButton) {
-    insertButton.textContent = name === 'edit' ? 'تطبيق التعديل' : 'إدراج في المحرر';
+    insertButton.textContent = name === 'edit' ? 'تطبيق التعديل' : 'إدراج';
     insertButton.style.display = name !== 'improve' && (window as any)._smartLastHTML ? 'inline-flex' : 'none';
   }
   const copyButton = byId('smartCopyBtn');
