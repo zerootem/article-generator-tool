@@ -194,6 +194,16 @@ function syncProviderSettings(): void {
   if (name === 'settings') syncProviderSettings();
   (window as any)._aiPopupTab = name;
 };
+const aiSettingsToggle = byId('aiSettingsToggle') as HTMLButtonElement | null;
+aiSettingsToggle?.addEventListener('click', (event) => {
+  event.preventDefault();
+  if ((window as any)._aiPopupTab === 'settings') {
+    (window as any).setAIPopupTab('generate');
+    return;
+  }
+  if (typeof (window as any).openAgent === 'function') (window as any).openAgent();
+  else (window as any).setAIPopupTab('settings');
+});
 (window as any).aiHeaderBack = () => (window as any).setAIPopupTab('generate');
 
 (window as any).openBloggerSettingsFromPublish = () => {

@@ -3382,15 +3382,10 @@ function openAgent(){
   if ((!popup || !popup.classList.contains('show')) && typeof window.openAIPopup === 'function') window.openAIPopup();
   if (typeof window.setAIPopupTab === 'function') window.setAIPopupTab('settings');
 }
+window.openAgent = function(){ openAgent(); refreshLockScreen(); };
 
-  // ============ ربط الأزرار ============
+  // ============ ربط الأزرار ==========
   function bind(){
-    const btn = document.getElementById('aiSettingsToggle');
-    if (btn) btn.addEventListener('click', () => {
-      openAgent();
-      refreshLockScreen();
-    });
-
     const saveBtn = document.getElementById('aiagentSaveBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveProvider);
 
