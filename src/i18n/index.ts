@@ -1,5 +1,7 @@
 import { staticEnglish } from './static-en';
 import { dynamicEnglish, englishTemplates } from './dynamic-en';
+import { pwaEnglish, publicTitle, publicDescription } from '../pwa/copy';
+import { editorEnglish } from './editor-en';
 
 export type UILanguage = 'ar' | 'en';
 export const UI_LANGUAGE_KEY = 'modweebUILanguage_v1';
@@ -8,7 +10,7 @@ export function validLanguage(value: unknown): UILanguage {
   return value === 'en' ? 'en' : 'ar';
 }
 const english: Record<string, string> = {
-  ...staticEnglish, ...dynamicEnglish,
+  ...staticEnglish, ...dynamicEnglish, ...editorEnglish, ...pwaEnglish,
   'مولد المقالات': 'Article Generator', 'لغة الواجهة': 'Interface language', 'اللغة': 'Language',
   'حفظ': 'Save', 'رجوع': 'Back', 'قفل': 'Lock', 'اختبار': 'Test',
   'إنشاء القفل': 'Create vault', 'تحديث النماذج': 'Refresh models', 'فحص الخادم': 'Check worker',
@@ -86,6 +88,10 @@ export function installInterfaceLanguage(): void {
   }
   function translateAttributes(element: Element): void {
     if (isProtectedContent(element) || element.matches('script,style,code,pre,kbd')) return;
+    // Natural-language fields follow their value when filled and UI direction when empty.
+    // Explicit LTR code, URLs, provider IDs and password fields remain untouched.
+    if (element.matches('input[type="text"][dir="rtl"],input:not([type])[dir="rtl"],textarea[dir="rtl"]') && !element.matches('#unifiedCodeEditor,#unifiedRawHTML')) element.setAttribute('dir', 'auto');
+    if (element.matches('select[dir="rtl"]')) element.removeAttribute('dir');
     const values = attributes.get(element) || new Map<string, OriginalText>();
     for (const name of ['title', 'placeholder', 'aria-label', 'aria-description', ...(element.tagName === 'OPTGROUP' ? ['label'] : [])]) {
       const current = element.getAttribute(name);
@@ -111,7 +117,10 @@ export function installInterfaceLanguage(): void {
     language = next;
     document.documentElement.lang = next;
     document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
-    document.title = translateUiText('مولد المقالات', next);
+    document.getElementById('unifiedShell')?.setAttribute('dir', next === 'ar' ? 'rtl' : 'ltr');
+    document.querySelectorAll('#unifiedPreview,#smartResultContent,#smartEditResultContent,#improveResultBox').forEach(element => element.setAttribute('dir', 'auto'));
+    document.title = translateUiText(publicTitle, next);
+    document.querySelector('meta[name="description"]')?.setAttribute('content', translateUiText(publicDescription, next));
     visit(document.body);
     const button = document.getElementById('modweebTranslateBtn');
     button?.setAttribute('aria-label', translateUiText('لغة الواجهة', next));

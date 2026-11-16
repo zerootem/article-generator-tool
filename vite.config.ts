@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
+import { applicationPWA } from './scripts/pwa-build';
 
 export default defineConfig({
   // GitHub Pages project sites are served below /<repository>/.
@@ -20,7 +21,7 @@ export default defineConfig({
         });
       },
     },
-  }],
+  }, applicationPWA()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,

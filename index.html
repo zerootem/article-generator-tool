@@ -5,7 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <meta name="google" content="notranslate">
-<title>مولد المقالات</title>
+<title>مولد المقالات | محرر محتوى وSEO بالذكاء الاصطناعي</title>
+<meta name="description" content="مولّد مقالات بالعربية والإنجليزية لتحرير المحتوى ومراجعة SEO، مع توليد اختياري بالذكاء الاصطناعي، وتصدير HTML والنشر على بلوجر.">
+<meta name="theme-color" content="#2799e8">
+<meta name="application-name" content="مولد المقالات">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="مولد المقالات">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+<link rel="canonical" href="https://zerootem.github.io/article-generator-tool/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="مولد المقالات | محرر محتوى وSEO بالذكاء الاصطناعي">
+<meta property="og:description" content="تحرير المقالات بالعربية والإنجليزية، وتوليد اختياري بالذكاء الاصطناعي، ومراجعة SEO وتصدير HTML والنشر على بلوجر.">
+<meta property="og:site_name" content="مولد المقالات">
+<meta property="og:locale" content="ar_AR">
+<meta property="og:url" content="https://zerootem.github.io/article-generator-tool/">
+<meta property="og:image" content="https://zerootem.github.io/article-generator-tool/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="أيقونة مولد المقالات: مستند أبيض ونجمة على خلفية زرقاء">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="مولد المقالات | محرر محتوى وSEO بالذكاء الاصطناعي">
+<meta name="twitter:description" content="محرر مقالات عربي وإنجليزي مع توليد AI اختياري، مراجعة SEO، وتصدير HTML ونشر بلوجر.">
+<meta name="twitter:image" content="https://zerootem.github.io/article-generator-tool/icons/icon-512.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"مولد المقالات — Article Generator","url":"https://zerootem.github.io/article-generator-tool/","description":"محرر مقالات بالعربية والإنجليزية مع توليد اختياري بالذكاء الاصطناعي، ومراجعة SEO وتصدير HTML والنشر على بلوجر.","applicationCategory":"ProductivityApplication","operatingSystem":"Web","inLanguage":["ar","en"],"image":"https://zerootem.github.io/article-generator-tool/icons/icon-512.png"}</script>
 <style id="ai-generation-settings-style">
 .ai-gen-card{margin:12px 0 16px;padding:14px;border:1px solid var(--contentL);border-radius:14px;background:var(--contentBa);box-shadow:0 6px 20px rgba(0,0,0,.06)}
 .ai-gen-card-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
@@ -27,8 +55,8 @@
 <link rel="stylesheet" href="/src/styles/app.css" data-export-css>
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js" 
-        integrity="sha256-j5hSaD08Q2VGV8SfCcqdRSKMbYWmDFBLm6WmNCre0fY=" 
+<script src="/vendor/dompurify-3.4.18.min.js"
+        integrity="sha256-gFPuKmoJ+dUPf81vt/BwcvUsfz+pqhIUfKtP6vZe6XA="
         crossorigin="anonymous" defer></script>
         
         
@@ -38,7 +66,8 @@
 <!-- ============================================================
      01 | حاوية الأداة الرئيسية
      ============================================================ -->
-<div class="modweeb-generator">
+<div class="modweeb-generator" role="main" aria-labelledby="appAccessibleTitle">
+<h1 id="appAccessibleTitle" class="app-visually-hidden">مولد المقالات</h1>
 
 <!-- ============================================================
      02 | شريط الحالة العلوي (Sticky- تم نقله)
@@ -64,6 +93,10 @@
 
       <button class="modweeb-translate-btn" id="statsToolbarBtn" title="الإحصائيات" onclick="openSheet('statsSheet')" type="button" aria-label="Statistics">
         <svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>
+      </button>
+
+      <button class="modweeb-translate-btn" id="installAppBtn" title="تثبيت التطبيق" type="button" aria-label="تثبيت التطبيق" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M12 6v9m-4-4 4 4 4-4M9 18h6"/></svg>
       </button>
 
       <!-- 03.2 | أزرار نصية رئيسية -->
@@ -135,6 +168,29 @@
      ============================================================ -->
 <div id="genericOverlay" class="ai-overlay" onclick="closeAllSheets()"></div>
 <div class="ai-overlay" id="aiOverlay" onclick="closeAllSheets()"></div>
+
+<div id="pwaInstallSheet" class="ai-bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="pwaInstallTitle" aria-hidden="true">
+  <div class="sheet-header">
+    <h3 id="pwaInstallTitle">تثبيت التطبيق</h3>
+    <button type="button" class="sheet-close-btn" onclick="closeSheet('pwaInstallSheet')" aria-label="إغلاق النافذة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="sheet-body pwa-install-copy">
+    <p id="pwaInstallStatus" role="status" aria-live="polite">التثبيت غير متاح الآن في هذا المتصفح.</p>
+    <h4>تطبيق ويب مستقل</h4>
+    <p>يفتح التطبيق في نافذة مستقلة بلا شريط عنوان المتصفح، وليس زر إنشاء اختصار.</p>
+    <p>على Android استخدم Chrome مع خدمات Google أو Samsung Internet على جهاز Samsung. من قائمة المتصفح اختر «تثبيت التطبيق» إذا ظهر.</p>
+    <p>إن عرض المتصفح إنشاء اختصار فقط، فهذا ليس التثبيت المستقل المطلوب. افتح الأداة في متصفح يدعم تثبيت PWA.</p>
+    <p>على iPhone أو iPad استخدم قائمة المشاركة ثم «إضافة إلى الشاشة الرئيسية» وفعّل الفتح كتطبيق ويب إن ظهر الخيار.</p>
+    <p>قد يمنع التثبيت وضع التصفح الخاص أو فتح الصفحة داخل تطبيق آخر أو وجود التطبيق مثبتاً بالفعل.</p>
+    <p>التوليد والنشر يحتاجان الإنترنت. غلاف الأداة والتحرير المحلي متاحان دون اتصال بعد اكتمال الزيارة الأولى.</p>
+    <p>يمكنك إغلاق هذه النافذة ومواصلة التحرير.</p>
+  </div>
+  <div class="sheet-footer">
+    <button type="button" class="modweeb-gen-btn secondary" onclick="closeSheet('pwaInstallSheet')">إغلاق</button>
+    <button type="button" class="modweeb-gen-btn primary" id="pwaNativeInstallBtn" hidden>تثبيت</button>
+  </div>
+</div>
+
 
 
 <!-- ============================================================
@@ -381,7 +437,7 @@
 
   </div>
   <div class="sheet-footer template-setup-footer" style="gap:6px">
-    <button type="button" class="sheet-back-footer-btn" onclick="openSheet('templatesSheet')" aria-label="العودة إلى مكتبة القوالب" title="العودة إلى القوالب"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>القوالب</span></button>
+    <button type="button" class="sheet-back-footer-btn" onclick="openSheet('templatesSheet')" aria-label="العودة إلى مكتبة القوالب" title="العودة إلى القوالب"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>رجوع</span></button>
     <button onclick="closeSheet('templateSetupSheet')" class="modweeb-gen-btn">إلغاء</button>
     <button onclick="templateGenerateAndInsert()" id="tmplSetupGenBtn" class="modweeb-gen-btn primary">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L13.5 8.5H19L14.5 11.5L16 17L12 14L8 17L9.5 11.5L5 8.5H10.5L12 3Z"/></svg> توليد وإدراج
