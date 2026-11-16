@@ -365,3 +365,5 @@ installMediaTools();
 installModalDensity();
 installInterfaceLanguage();
 installApplication();
+
+(window as any).__hideArticleBoot?.();

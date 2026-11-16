@@ -34,6 +34,22 @@
 <meta name="twitter:description" content="محرر مقالات عربي وإنجليزي مع توليد AI اختياري، مراجعة SEO، وتصدير HTML ونشر بلوجر.">
 <meta name="twitter:image" content="https://zerootem.github.io/article-generator-tool/icons/icon-512.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"مولد المقالات — Article Generator","url":"https://zerootem.github.io/article-generator-tool/","description":"محرر مقالات بالعربية والإنجليزية مع توليد اختياري بالذكاء الاصطناعي، ومراجعة SEO وتصدير HTML والنشر على بلوجر.","applicationCategory":"ProductivityApplication","operatingSystem":"Web","inLanguage":["ar","en"],"image":"https://zerootem.github.io/article-generator-tool/icons/icon-512.png"}</script>
+<style>
+#articleBootPreloader{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#111;color:#f3f4f6;opacity:1;visibility:visible;transition:opacity .22s ease,visibility .22s ease;font:500 14px/1.5 system-ui,sans-serif}
+#articleBootPreloader.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.article-boot-card{display:grid;justify-items:center;gap:.75rem;padding:1.25rem;text-align:center}
+.article-boot-mark{position:relative;width:66px;height:66px;display:grid;place-items:center}
+.article-boot-ring{position:absolute;inset:0;width:100%;height:100%;animation:article-boot-spin 1s linear infinite}
+.article-boot-ring circle{fill:none;stroke:#374151;stroke-width:3}
+.article-boot-ring path{fill:none;stroke:#2799e8;stroke-width:4;stroke-linecap:round;stroke-dasharray:38 150}
+.article-boot-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2799e8,#5db6ee);box-shadow:0 5px 18px #2799e833}
+@keyframes article-boot-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.article-boot-ring{animation-duration:3s}#articleBootPreloader{transition-duration:.01ms}}
+</style>
+<script>
+window.__hideArticleBoot=function(){var e=document.getElementById('articleBootPreloader');if(!e||e.classList.contains('is-hidden'))return;clearTimeout(window.__articleBootFallback);e.classList.add('is-hidden');setTimeout(function(){e.remove()},280)};
+window.__articleBootFallback=setTimeout(function(){window.__hideArticleBoot()},12000);
+</script>
 <style id="ai-generation-settings-style">
 .ai-gen-card{margin:12px 0 16px;padding:14px;border:1px solid var(--contentL);border-radius:14px;background:var(--contentBa);box-shadow:0 6px 20px rgba(0,0,0,.06)}
 .ai-gen-card-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
@@ -55,6 +71,12 @@
 <link rel="stylesheet" href="/src/styles/app.css" data-export-css>
 </head>
 <body>
+<div id="articleBootPreloader" role="status" aria-live="polite" aria-label="جارٍ تحميل مولد المقالات">
+  <div class="article-boot-card">
+    <div class="article-boot-mark" aria-hidden="true"><svg class="article-boot-ring" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28"/><path d="M32 4a28 28 0 0 1 28 28"/></svg><span class="article-boot-logo"></span></div>
+    <span>جارٍ تهيئة مولد المقالات…</span>
+  </div>
+</div>
 <script src="/vendor/dompurify-3.4.18.min.js"
         integrity="sha256-gFPuKmoJ+dUPf81vt/BwcvUsfz+pqhIUfKtP6vZe6XA="
         crossorigin="anonymous" defer></script>
