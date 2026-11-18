@@ -34,30 +34,20 @@
 <meta name="twitter:description" content="محرر مقالات عربي وإنجليزي مع توليد AI اختياري، مراجعة SEO، وتصدير HTML ونشر بلوجر.">
 <meta name="twitter:image" content="https://zerootem.github.io/article-generator-tool/icons/icon-512.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"مولد المقالات — Article Generator","url":"https://zerootem.github.io/article-generator-tool/","description":"محرر مقالات بالعربية والإنجليزية مع توليد اختياري بالذكاء الاصطناعي، ومراجعة SEO وتصدير HTML والنشر على بلوجر.","applicationCategory":"ProductivityApplication","operatingSystem":"Web","inLanguage":["ar","en"],"image":"https://zerootem.github.io/article-generator-tool/icons/icon-512.png"}</script>
-<style>
-.pldW{display:none;direction:ltr;position:fixed;top:0;right:0;bottom:0;left:0;background:var(--bodyB, #f8fafc);align-items:center;justify-content:center;z-index:99999;visibility:visible;opacity:1;transition:all .8s ease}.pldW.e{display:flex}.pldW.h{opacity:0;visibility:hidden}:root:has(.pldW.e){overflow:hidden}.svg-loader{position:relative;width:85px;height:85px}.svg-loader svg{width:100%;height:100%}
-.svg-loader .part0 { fill:var(--transB,#f1f1f0); stroke:var(--contentL,#e3e7ef); stroke-width:5px; stroke-linecap:round; --dash:900; stroke-dasharray:var(--dash) calc(var(--path-length) - var(--dash)); animation:worm 1s linear infinite; }
-@keyframes worm { 0% { stroke-dashoffset:0; stroke:rgba(225,20,98,0); } 20% { stroke:rgba(225,20,98,.95); } 100% { stroke-dashoffset:calc(-1 * var(--path-length)); stroke:rgba(225,20,98,0); } }
-.drK .svg-loader .part0{fill:var(--transB)}
-.svg-loader .part1{fill:rgba(225,20,98,.9)}.svg-loader .part2{fill:rgba(111,202,220,.9)}.svg-loader .part3{fill:rgba(61,184,143,.9)}.svg-loader .part4{fill:rgba(233,169,32,.9)}.mod-icon{transform:scale(.8);transform-origin:center}
+<style id="mw-boot-loader-style">
+.pldW{display:none;direction:ltr;position:fixed;inset:0;background:var(--boot-bg,#f8fafc);align-items:center;justify-content:center;z-index:2147483000;visibility:visible;opacity:1;transition:all var(--boot-fade,800ms) ease}
+.pldW.e{display:flex}.pldW.h{opacity:0;visibility:hidden}
+:root:has(.pldW.e){overflow:hidden}
+.svg-loader{position:relative;width:var(--boot-size,85px);height:var(--boot-size,85px)}
+.svg-loader svg{width:100%;height:100%}
+.svg-loader .part0{fill:var(--boot-fill,#f1f1f0);stroke:var(--boot-stroke,#e3e7ef);stroke-width:var(--boot-stroke-width,5px);stroke-linecap:round;--dash:var(--boot-dash,900);stroke-dasharray:var(--dash) calc(var(--path-length) - var(--dash));animation:worm var(--boot-speed,1s) linear infinite}
+@keyframes worm{0%{stroke-dashoffset:0;stroke:color-mix(in srgb,var(--boot-accent,#e11462) 0%,transparent)}20%{stroke:color-mix(in srgb,var(--boot-accent,#e11462) 95%,transparent)}40%{stroke:color-mix(in srgb,var(--boot-accent,#e11462) 80%,transparent)}60%{stroke:color-mix(in srgb,var(--boot-accent,#e11462) 50%,transparent)}80%{stroke:color-mix(in srgb,var(--boot-accent,#e11462) 20%,transparent)}100%{stroke-dashoffset:calc(-1 * var(--path-length));stroke:color-mix(in srgb,var(--boot-accent,#e11462) 0%,transparent)}}
+.svg-loader .part1{fill:rgba(225,20,98,.9)}.svg-loader .part2{fill:rgba(111,202,220,.9)}.svg-loader .part3{fill:rgba(61,184,143,.9)}.svg-loader .part4{fill:rgba(233,169,32,.9)}
+.mod-icon{transform:scale(var(--boot-icon-scale,.8));transform-origin:center;transition:opacity .2s ease}
+.pldW.no-icon .mod-icon{opacity:0}
+@media(prefers-reduced-motion:reduce){.svg-loader .part0{animation-duration:calc(var(--boot-speed,1s) * 3)}}
 </style>
-<script>
-window.__hideArticleBoot = function() {
-  var e = document.getElementById('preloader');
-  if(!e || e.classList.contains('h')) return;
-  e.classList.add('h');
-  setTimeout(function(){ e.remove(); }, 800);
-};
-document.addEventListener('DOMContentLoaded', function() {
-  var e = document.getElementById('preloader');
-  if(e) {
-    e.classList.add('e');
-    var path = e.querySelector('.part0');
-    if(path && path.getTotalLength) path.style.setProperty('--path-length', path.getTotalLength());
-  }
-  setTimeout(window.__hideArticleBoot, 5000);
-});
-</script>
+<script src="/mw-boot-loader.js" data-hook="__hideArticleBoot" data-panel="1"></script>
 <style id="ai-generation-settings-style">
 .ai-gen-card{margin:12px 0 16px;padding:14px;border:1px solid var(--contentL);border-radius:14px;background:var(--contentBa);box-shadow:0 6px 20px rgba(0,0,0,.06)}
 .ai-gen-card-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
