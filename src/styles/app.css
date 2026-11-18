@@ -1111,47 +1111,59 @@ button#btnAiSlug:disabled svg {
 .ai-form-section {
   flex: 0 0 auto;
   margin: 0;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--contentL);
+  border-radius: .5rem;
   background: var(--contentBa);
-  box-shadow: none;
+  box-shadow: 0 1px 2px var(--transB);
+  transition: border-color .2s, box-shadow .2s;
 }
+.ai-form-section + .ai-form-section { margin-top: 8px; }
+.ai-form-section:has(> .ai-form-section-title:hover) { border-color: var(--linkC); }
 .ai-form-section > summary.ai-form-section-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-height: 38px;
+  min-height: 30px;
   color: var(--bodyC);
-  font-size: .78rem;
-  font-weight: 650;
+  font-size: .75rem;
+  font-weight: 600;
   line-height: 1.35;
   cursor: pointer;
   list-style: none;
+  user-select: none;
 }
 .ai-form-section > summary.ai-form-section-title::-webkit-details-marker { display: none; }
 .ai-form-section > summary.ai-form-section-title::after {
-  content: "+";
+  content: "⌄";
   display: grid;
   place-items: center;
-  width: 21px;
-  height: 21px;
-  flex: 0 0 21px;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
   border: 1px solid var(--contentL);
   border-radius: 50%;
-  color: var(--linkC);
-  font-size: 15px;
-  font-weight: 500;
+  background: transparent;
+  color: var(--notifC);
+  font-size: 14px;
+  font-weight: 600;
   line-height: 1;
+  transform: rotate(-90deg);
+  transition: transform .2s, background .2s, color .2s;
 }
-.ai-form-section[open] > summary.ai-form-section-title { border-bottom: 1px solid var(--contentL); }
-.ai-form-section[open] > summary.ai-form-section-title::after { content: "−"; }
+.ai-form-section > summary.ai-form-section-title:hover::after { background: var(--contentB); color: var(--linkC); }
+.ai-form-section[open] > summary.ai-form-section-title {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--contentL);
+}
+.ai-form-section[open] > summary.ai-form-section-title::after { transform: rotate(0deg); }
 .ai-form-section-content {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 9px 0 10px;
+  padding: 0 0 4px;
 }
 .ai-form-section-content > .sheet-field,
 .ai-form-section-content > .fields-row { margin: 0 !important; }
