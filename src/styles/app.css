@@ -1136,29 +1136,26 @@ button#btnAiSlug:disabled svg {
 }
 .ai-form-section > summary.ai-form-section-title::-webkit-details-marker { display: none; }
 .ai-form-section > summary.ai-form-section-title::after {
-  content: "⌄";
+  content: "+";
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
   border: 1px solid var(--contentL);
   border-radius: 50%;
-  background: transparent;
-  color: var(--notifC);
-  font-size: 14px;
-  font-weight: 600;
+  color: var(--linkC);
+  font-size: 15px;
+  font-weight: 500;
   line-height: 1;
-  transform: rotate(-90deg);
-  transition: transform .2s, background .2s, color .2s;
 }
-.ai-form-section > summary.ai-form-section-title:hover::after { background: var(--contentB); color: var(--linkC); }
+.ai-form-section > summary.ai-form-section-title:hover::after { background: var(--contentBa); }
 .ai-form-section[open] > summary.ai-form-section-title {
   margin-bottom: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--contentL);
 }
-.ai-form-section[open] > summary.ai-form-section-title::after { transform: rotate(0deg); }
+.ai-form-section[open] > summary.ai-form-section-title::after { content: "−"; }
 .ai-form-section-content {
   display: flex;
   flex-direction: column;
