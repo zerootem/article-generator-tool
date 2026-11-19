@@ -23,9 +23,15 @@ describe('confirmed interface layout regressions', () => {
     }
     expect(css).toContain('[dir="auto"]:placeholder-shown { direction: rtl; }');
   });
-  it('raises secondary text contrast in light mode without replacing the dark override', () => {
-    expect(css).toContain('--notifC:#5b6575');expect(css).not.toContain('--notifC:#888');
-    expect(css).toContain('--notifC:rgba(255,255,255,.9)');
+  it('uses the shared ModApp palette in light and dark surfaces', () => {
+    expect(css).toContain('--bodyB:#f9fafb');
+    expect(css).toContain('--contentB:#ffffff');
+    expect(css).toContain('--linkC:#3b82f6');
+    expect(css).toContain('--notifC:#6b7280');
+    expect(css).toContain('--bodyB:#1a1a1a');
+    expect(css).toContain('--contentB:#2d2d2d');
+    expect(css).toContain('--contentL:#404040');
+    expect(css).toContain('--notifC:#e5e5e5');
   });
   it('shortens the template return label while preserving its destination and SVG', () => {
     expect(html).toMatch(/onclick="openSheet\('templatesSheet'\)"[^>]*aria-label="العودة إلى مكتبة القوالب"[^>]*>[\s\S]*?<svg[\s\S]*?<span>رجوع<\/span><\/button>/);

@@ -4254,7 +4254,7 @@ function setStatus(msg, type){
    ============================================================ */
 (function initThemeModeMenu(){
   'use strict';
-  const STORAGE_KEY = 'modweebThemeMode';
+  const STORAGE_KEY = 'modweebThemeModeV2';
   const btn = document.getElementById('darkModeToggle');
   if (!btn) return;
 

@@ -1,12 +1,23 @@
+import { defineConfig } from 'vite';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { defineConfig } from 'vite';
 import { applicationPWA } from './scripts/pwa-build';
+
+const loaderHash = createHash('sha256').update(readFileSync(new URL('./public/mw-boot-loader.js', import.meta.url))).digest('hex').slice(0, 12);
+const versionBootLoader = {
+  name: 'version-boot-loader',
+  transformIndexHtml: {
+    order: 'post' as const,
+    handler(html: string) {
+      return html.replace(/(src=\"[^\"]*mw-boot-loader\.js)(?:\?v=[^\"]*)?(\")/, `$1?v=${loaderHash}$2`);
+    },
+  },
+};
 
 export default defineConfig({
   // GitHub Pages project sites are served below /<repository>/.
   base: process.env.NODE_ENV === 'production' ? '/article-generator-tool/' : '/',
-  plugins: [{
+  plugins: [versionBootLoader, {
     name: 'version-classic-scripts',
     apply: 'build',
     transformIndexHtml: {

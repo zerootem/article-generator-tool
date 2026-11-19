@@ -10,12 +10,16 @@ export function applicationPWA(): Plugin {
         const hash = createHash('sha256').update(data).digest('hex').slice(0, 12);
         return `assets/js/legacy/${file}?v=${hash}`;
       });
+      const loaderData = readFileSync(new URL('../public/mw-boot-loader.js', import.meta.url));
+      const loaderHash = createHash('sha256').update(loaderData).digest('hex').slice(0, 12);
+      const bootLoader = `mw-boot-loader.js?v=${loaderHash}`;
       const icons = readdirSync(new URL('../public/icons/', import.meta.url)).filter(file => /\.(png|ico)$/.test(file)).map(file => `icons/${file}`);
       const vendor = readdirSync(new URL('../public/vendor/', import.meta.url)).filter(file => file.endsWith('.js')).map(file => `vendor/${file}`);
       const bundled = Object.keys(bundle).filter(path => path.startsWith('assets/') && /\.(js|css|woff2)$/.test(path));
-      const paths = ['index.html', 'manifest.webmanifest', ...bundled, ...classic, ...icons, ...vendor];
+      const paths = ['index.html', 'manifest.webmanifest', ...bundled, ...classic, bootLoader, ...icons, ...vendor];
       const revision = createHash('sha256');
       for (const item of Object.values(bundle)) revision.update(item.type === 'asset' ? item.source : item.code);
+      revision.update(loaderData);
       for (const file of ['../public/manifest.webmanifest', ...icons.map(p => '../public/' + p), ...vendor.map(p => '../public/' + p)]) revision.update(readFileSync(new URL(file, import.meta.url)));
       const template = readFileSync(new URL('./pwa-service-worker.js', import.meta.url), 'utf8');
       const source = template.replace('__CACHE_NAME__', JSON.stringify('article-generator-shell-' + revision.digest('hex').slice(0, 16))).replace('__PRECACHE__', JSON.stringify(paths));

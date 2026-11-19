@@ -33,11 +33,17 @@ let isDarkMode = false;
             try {
                 const bg = window.getComputedStyle(body).backgroundColor || '';
                 const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                if (m) {
+                const alphaMatch = bg.match(/rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)/i);
+                const opaque = !alphaMatch || Number(alphaMatch[1]) > 0.05;
+                if (m && opaque) {
                     const avg = (parseInt(m[1]) + parseInt(m[2]) + parseInt(m[3])) / 3;
                     if (avg < 100) isDark = true;
                 }
             } catch(e){}
+        }
+        if (!isDark) {
+            try { isDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+            catch(e){}
         }
         if (isDark) {
             html.classList.add('dark');
