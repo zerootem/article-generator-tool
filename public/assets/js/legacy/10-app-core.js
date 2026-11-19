@@ -1428,7 +1428,9 @@ async function aiGenerateArticle(){
             jsonMode: true
         });
 
-        const data = window.modweebAI.parseJSON(raw);
+        const parsedData = window.modweebAI.parseJSON(raw);
+        if (typeof window.modweebNormalizeArticleSections !== 'function') throw new Error('تعذر تحميل سياسة التحقق من عناصر المقال؛ أعد تحميل الصفحة.');
+        const data = window.modweebNormalizeArticleSections(parsedData, params);
         if (!data || !Array.isArray(data.sections) || data.sections.length === 0) throw new Error('لم يُرجع المزود أقسام مقال صالحة؛ جرّب نموذجاً آخر أو قلّل حجم المقال');
         const videoId = params.hasYoutube && typeof window.modweebExtractYoutubeId === 'function'
             ? window.modweebExtractYoutubeId(params.youtubeReference) : '';
@@ -2414,7 +2416,9 @@ async function templateGenerateAndInsert(){
         };
         const request = window.modweebPrompts.article(params);
         const raw = await window.modweebAI.call({ systemPrompt: request.systemPrompt, userPrompt: request.userPrompt, maxTokens: 16000, temperature: 0.7, jsonMode: true });
-        const data = window.modweebAI.parseJSON(raw);
+        const parsedData = window.modweebAI.parseJSON(raw);
+        if (typeof window.modweebNormalizeArticleSections !== 'function') throw new Error('تعذر تحميل سياسة التحقق من عناصر المقال؛ أعد تحميل الصفحة.');
+        const data = window.modweebNormalizeArticleSections(parsedData, params);
         if (!data || !Array.isArray(data.sections) || !data.sections.length) throw new Error('لم يُرجع النموذج أقساماً صالحة.');
         aiApplySections(data);
         const t = document.getElementById('bloggerPostTitle');

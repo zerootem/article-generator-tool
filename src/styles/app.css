@@ -1383,11 +1383,14 @@ html body .ai-bottom-sheet .sheet-footer > button[hidden],
   font: 500 11px/1.2 Geist, sans-serif;
 }
 
-/* Remove only the disclosure shell, not input borders or summary separators. */
+/* Keep a subtle rounded outline around each AI disclosure group. */
 .ai-bottom-sheet details.ai-form-section,
 .ai-bottom-sheet details.ai-gen-subcard,
 .ai-bottom-sheet .ai-gen-card:has(details.ai-gen-subcard) {
-  border: 0 !important;
+  border: 1px solid var(--contentL) !important;
+  border-radius: 10px !important;
+  background-color: var(--contentB) !important;
+  margin-block: 0 7px !important;
   box-shadow: none !important;
 }
 
@@ -1472,16 +1475,18 @@ html body .ai-bottom-sheet[id] .fields-row {
 html body #aiPopup .ai-form-section .fields-row { padding-bottom: 0 !important; }
 html body #aiPopup :is(.ai-form-section, .ai-gen-subcard),
 html body #aiSettingsPanel .ai-gen-card:has(details) {
-  background-image: linear-gradient(var(--contentL), var(--contentL));
-  background-position: center bottom;
-  background-size: 100% 1px;
-  background-repeat: no-repeat;
-  border-radius: 0;
+  background: var(--contentB) !important;
+  background-image: none !important;
+  border: 1px solid var(--contentL) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  margin: 0 0 7px !important;
+  padding-inline: 9px !important;
 }
-html body #aiPopup .ai-form-section { padding-inline: 0; }
-html body #aiPopup .ai-form-section > summary { min-height: 34px; }
-html body #aiPopup .ai-form-section-content { padding: 7px 0 9px; gap: 7px; }
-html body #aiSettingsPanel :is(.ai-gen-card, .ai-gen-subcard) { padding: 7px 0; margin: 0; }
+html body #aiPopup .ai-form-section { padding-inline: 9px; }
+html body #aiPopup .ai-form-section > summary { min-height: 34px; padding-block: 6px; }
+html body #aiPopup .ai-form-section-content { padding: 6px 0 8px; gap: 7px; }
+html body #aiSettingsPanel :is(.ai-gen-card, .ai-gen-subcard) { padding: 7px 9px; margin: 0 0 7px; }
 html body #aiSettingsPanel .ai-cloud-keys-content { padding-top: 6px; }
 html body #aiAgentLockScreen { gap: 7px !important; padding: 8px !important; margin: 6px 0 !important; }
 html body #aiAgentLockMsg:empty { display: none; }

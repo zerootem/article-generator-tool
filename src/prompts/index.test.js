@@ -34,6 +34,13 @@ describe('article prompt guidance', () => {
     expect(systemPrompt).not.toMatch(/H3 إلزامي|H4 إلزامي|كل قسم H2 يجب أن يحتوي|عدد ثابت من H2/i);
   });
 
+  it('forbids unrequested FAQ and makes optional types depend on user choices', () => {
+    const prompt = prompts.article({ topic: 'موضوع', articleType: 'guide' }).systemPrompt;
+    expect(prompt).toContain('FAQ محظور افتراضياً');
+    expect(prompt).toContain('فعّل المستخدم خياره أو طلب النوع صراحةً');
+    expect(prompts.article({ topic: 'موضوع', articleType: 'faq' }).systemPrompt).toContain('صفحة أسئلة وأجوبة مفيدة');
+  });
+
   it('limits generated sections to documented template types and rejects extra HTML fields', () => {
     const { systemPrompt } = prompts.article({ topic: 'موضوع' });
     for (const type of ['note', 'alert', 'table', 'list', 'steps', 'faq', 'blockquote', 'mark', 'accordion', 'code', 'image', 'lazyYt']) {

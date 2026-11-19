@@ -1,5 +1,6 @@
 import { adjustRangesAfterEdit, findActiveRange, type EditorRange } from './editor/ranges';
 import { workerAI } from './ai/worker-client';
+import { normalizeArticleSections } from './ai/article-section-policy';
 import './prompts/index.js';
 import { installArticleAssistant } from './ai/article-assistant';
 import { installMediaTools } from './ai/media-tools';
@@ -28,6 +29,7 @@ declare global {
       saveModel: (model: string) => Promise<void>;
     };
     modweebPrompts?: Record<string, unknown>;
+    modweebNormalizeArticleSections?: typeof normalizeArticleSections;
   }
 }
 
@@ -38,6 +40,7 @@ window.ModweebEditorRanges = {
   findActive: findActiveRange,
 };
 window.modweebWorkerAI = workerAI;
+window.modweebNormalizeArticleSections = normalizeArticleSections;
 
 document.getElementById('aiWorkerStatusButton')?.addEventListener('click', async () => {
   const status = document.getElementById('aiWorkerStatus');

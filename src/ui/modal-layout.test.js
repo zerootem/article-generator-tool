@@ -66,6 +66,9 @@ describe('modal navigation and compact footer regressions', () => {
     expect(css).toContain('.ai-bottom-sheet details.ai-form-section,');
     expect(css).toContain('.ai-bottom-sheet details.ai-gen-subcard,');
     expect(css).toContain('.ai-bottom-sheet .ai-gen-card:has(details.ai-gen-subcard)');
+    expect(css).toContain('border: 1px solid var(--contentL) !important;');
+    expect(css).toContain('border-radius: 10px !important;');
+    expect(css).toContain('padding-inline: 9px !important;');
     expect(css).not.toMatch(/details\s+\*\s*\{\s*border:\s*0/);
   });
   it('keeps the SEO footer and navigation within the SEO modal div stack', () => {
