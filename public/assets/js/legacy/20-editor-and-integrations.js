@@ -2406,6 +2406,16 @@ hintR.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 7 5
   const GENERATION_MODE_KEY = 'modweebGenerationMode';
   const PUTER_MODEL_KEY = 'modweebPuterModel';
   const PUTER_DEFAULT_MODEL = 'gpt-5.4-nano';
+  const PUTER_DEEPSEEK_MODELS = [
+    {id:'deepseek/deepseek-v4.1-flash',name:'DeepSeek V4.1 Flash — سريع'},
+    {id:'deepseek/deepseek-v4-pro',name:'DeepSeek V4 Pro — متقدم'},
+    {id:'deepseek/deepseek-v3.2',name:'DeepSeek V3.2'},
+    {id:'deepseek/deepseek-r1-0528',name:'DeepSeek R1-0528 — استدلال'},
+    {id:'deepseek/deepseek-v3.1-terminus',name:'DeepSeek V3.1 Terminus'},
+    {id:'deepseek/deepseek-v3.2-exp',name:'DeepSeek V3.2 Exp — تجريبي'},
+    {id:'deepseek/deepseek-v4-flash-0731',name:'DeepSeek V4 Flash 0731'},
+    {id:'deepseek/deepseek-v4-pro-0813',name:'DeepSeek V4 Pro 0813'}
+  ];
   let puterModelsCache = [];
 
   function getGenerationMode(){
@@ -2479,10 +2489,25 @@ hintR.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 7 5
       puterModelsCache = filtered;
       const selected = getPuterModel();
       select.innerHTML='';
-      filtered.forEach(m => {
+      const liveById = new Map(filtered.map(model => [model.id, model]));
+      const curatedDeepSeek = PUTER_DEEPSEEK_MODELS.map(model => {
+        const live = liveById.get(model.id);
+        return live ? {...model, ...live, name:live.name || model.name} : model;
+      });
+      const deepSeekIds = new Set(curatedDeepSeek.map(model => model.id));
+      const additionalDeepSeek = filtered.filter(model => model.id.toLowerCase().startsWith('deepseek/') && !deepSeekIds.has(model.id));
+      const deepSeekGroup = document.createElement('optgroup');
+      deepSeekGroup.label = 'DeepSeek عبر Puter — بدون مفتاح DeepSeek';
+      [...curatedDeepSeek, ...additionalDeepSeek].forEach(m => {
+        const option=document.createElement('option'); option.value=m.id; option.textContent=formatPuterModel(m);
+        deepSeekGroup.appendChild(option);
+      });
+      if (deepSeekGroup.children.length) select.insertBefore(deepSeekGroup, select.firstChild);
+      filtered.filter(model => !model.id.toLowerCase().startsWith('deepseek/')).forEach(m => {
         const option=document.createElement('option'); option.value=m.id; option.textContent=formatPuterModel(m); select.appendChild(option);
       });
-      if (!filtered.some(m => m.id === selected)) {
+      const availableIds = new Set([...curatedDeepSeek, ...additionalDeepSeek, ...filtered].map(model => model.id));
+      if (!availableIds.has(selected)) {
         const fallback = filtered.find(m => m.id === PUTER_DEFAULT_MODEL) || filtered[0];
         localStorage.setItem(PUTER_MODEL_KEY, fallback.id);
         select.value=fallback.id;
@@ -3124,6 +3149,7 @@ async function decryptText(payload) {
           <li>أنشئ مفتاح API وانسخه، ثم الصقه في الحقل أعلاه.</li>
         </ol>
         <span class="note">المفتاح يُحفظ مشفّراً على هذا المتصفح. استخدام API قد يُحتسب على حساب DeepSeek.</span>
+        <span class="note">لخيارات DeepSeek دون مفتاح DeepSeek، اختر «Puter — بدون مفتاح API» من طريقة التوليد؛ الحصة أو الرسوم المحتملة تخص حساب Puter.</span>
       `
     }
   };

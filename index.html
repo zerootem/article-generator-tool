@@ -277,12 +277,22 @@
         <summary class="ai-gen-subcard-title">نموذج Puter</summary>
         <select id="aiPuterModel" class="ai-gen-select">
           <option value="gpt-5.4-nano">gpt-5.4-nano — الافتراضي</option>
+          <optgroup label="DeepSeek عبر Puter — بدون مفتاح DeepSeek">
+            <option value="deepseek/deepseek-v4.1-flash">DeepSeek V4.1 Flash — سريع</option>
+            <option value="deepseek/deepseek-v4-pro">DeepSeek V4 Pro — متقدم</option>
+            <option value="deepseek/deepseek-v3.2">DeepSeek V3.2</option>
+            <option value="deepseek/deepseek-r1-0528">DeepSeek R1-0528 — استدلال</option>
+            <option value="deepseek/deepseek-v3.1-terminus">DeepSeek V3.1 Terminus</option>
+            <option value="deepseek/deepseek-v3.2-exp">DeepSeek V3.2 Exp — تجريبي</option>
+            <option value="deepseek/deepseek-v4-flash-0731">DeepSeek V4 Flash 0731</option>
+            <option value="deepseek/deepseek-v4-pro-0813">DeepSeek V4 Pro 0813</option>
+          </optgroup>
         </select>
         <div class="ai-gen-inline">
           <button type="button" onclick="window.modweebAI.loadPuterModels()" class="modweeb-gen-btn secondary" id="aiPuterModelsBtn">تحديث كتالوج النماذج</button>
-          <span id="aiPuterStatus" class="ai-gen-status" role="status" aria-live="polite" style="margin:0">يمكنك تحميل القائمة لاختيار نموذج ومراجعة السعر المعروض.</span>
+          <span id="aiPuterStatus" class="ai-gen-status" role="status" aria-live="polite" style="margin:0">تتضمن القائمة نماذج DeepSeek؛ حدّث الكتالوج للتحقق من المتاح حاليًا.</span>
         </div>
-        <p class="ai-gen-help">تختلف النماذج المتاحة والأسعار والحدود. اختر نموذجًا مناسبًا للعربية وراجِع تفاصيل حساب Puter قبل الاستخدام المكثف.</p>
+        <p class="ai-gen-help">نماذج DeepSeek هنا تعمل عبر Puter ولا تحتاج مفتاح DeepSeek. قد يتطلب الاستخدام حساب Puter؛ الحصة المجانية والرسوم المحتملة تخص حساب المستخدم وتوافر النموذج يتغير.</p>
       </details>
     </section>
     <details class="ai-gen-subcard" id="aiCloudKeysAccordion" open>
