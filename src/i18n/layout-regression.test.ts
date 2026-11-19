@@ -24,14 +24,20 @@ describe('confirmed interface layout regressions', () => {
     expect(css).toContain('[dir="auto"]:placeholder-shown { direction: rtl; }');
   });
   it('uses the shared ModApp palette in light and dark surfaces', () => {
-    expect(css).toContain('--bodyB:#f9fafb');
-    expect(css).toContain('--contentB:#ffffff');
-    expect(css).toContain('--linkC:#3b82f6');
-    expect(css).toContain('--notifC:#6b7280');
-    expect(css).toContain('--bodyB:#1a1a1a');
-    expect(css).toContain('--contentB:#2d2d2d');
-    expect(css).toContain('--contentL:#404040');
-    expect(css).toContain('--notifC:#e5e5e5');
+    expect(css).toContain('--bodyB:var(--lBodyB)');
+    expect(css).toContain('--lBodyB:#f9fafb');
+    expect(css).toContain('--contentB:var(--lContentB)');
+    expect(css).toContain('--contentBa:#f6f6f6');
+    expect(css).toContain('--contentBs:#f1f1f0');
+    expect(css).toContain('--linkC:var(--lLinkC)');
+    expect(css).toContain('--notifC:var(--lNotifC)');
+    expect(css).toContain('--bodyB:var(--darkB)');
+    expect(css).toContain('--contentB:#252526');
+    expect(css).toContain('--contentBs:#303031');
+    expect(css).toContain('--contentBa:#252526');
+    expect(css).toContain('--contentL:#444444');
+    expect(css).not.toContain('--contentBa:#3a3a4a');
+    expect(css).toContain('--notifC:rgba(255,255,255,.9)');
   });
   it('shortens the template return label while preserving its destination and SVG', () => {
     expect(html).toMatch(/onclick="openSheet\('templatesSheet'\)"[^>]*aria-label="العودة إلى مكتبة القوالب"[^>]*>[\s\S]*?<svg[\s\S]*?<span>رجوع<\/span><\/button>/);
