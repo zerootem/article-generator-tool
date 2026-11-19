@@ -2375,7 +2375,7 @@ hintR.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 7 5
 
 /* ============================================================
    عميل الذكاء الاصطناعي الموحد (Unified AI Client)
-   يتصل مباشرة بـ 6 مزودين: OpenAI, Gemini, Claude, OpenRouter, Groq, Mistral
+   يتصل مباشرة بـ 7 مزودين: OpenAI, Gemini, Claude, OpenRouter, Groq, Mistral, DeepSeek
    ============================================================ */
 (function initUnifiedAIClient(){
   'use strict';
@@ -2387,7 +2387,8 @@ hintR.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 7 5
     claude:     'claude-3-5-haiku-20241022',
     openrouter: 'openai/gpt-4o-mini',
     groq:       'llama-3.1-8b-instant',
-    mistral:    'mistral-small-latest'
+    mistral:    'mistral-small-latest',
+    deepseek:   'deepseek-flash'
   };
 
   /* نقاط النهاية */
@@ -2396,6 +2397,7 @@ hintR.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 7 5
     openrouter: 'https://openrouter.ai/api/v1/chat/completions',
     groq:       'https://api.groq.com/openai/v1/chat/completions',
     mistral:    'https://api.mistral.ai/v1/chat/completions',
+    deepseek:   'https://api.deepseek.com/chat/completions',
     claude:     'https://api.anthropic.com/v1/messages',
     gemini:     'https://generativelanguage.googleapis.com/v1beta/models'
   };
@@ -2554,7 +2556,8 @@ hintR.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 7 5
       case 'openai':
       case 'openrouter':
       case 'groq':
-      case 'mistral': {
+      case 'mistral':
+      case 'deepseek': {
         const body = {
           model,
           messages: [
@@ -2564,8 +2567,8 @@ hintR.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 7 5
           max_tokens: maxTokens,
           temperature
         };
-        /* JSON mode مدعوم أصلاً في OpenAI فقط */
-        if (jsonMode && providerId === 'openai'){
+        /* JSON mode مدعوم في OpenAI وDeepSeek */
+        if (jsonMode && (providerId === 'openai' || providerId === 'deepseek')){
           body.response_format = { type: 'json_object' };
         }
         return {
@@ -2624,6 +2627,7 @@ async function fetchAvailableModels(providerId, apiKey){
     openrouter: 'https://openrouter.ai/api/v1/models',
     groq:       'https://api.groq.com/openai/v1/models',
     mistral:    'https://api.mistral.ai/v1/models',
+    deepseek:   'https://api.deepseek.com/models',
     claude:     'https://api.anthropic.com/v1/models',
     gemini:     'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(apiKey)
   };
@@ -2667,6 +2671,7 @@ function pickBestModel(providerId, available){
   const preferences = {
     groq:       ['llama-3.1-8b-instant', 'llama-3.1-70b', 'llama-3.3-70b', 'llama3-8b', 'mixtral-8x7b', 'gemma2-9b', 'gemma-7b'],
     openai:     ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    deepseek:   ['deepseek-flash', 'deepseek-v4-pro'],
     claude:     ['claude-3-5-haiku', 'claude-3-5-sonnet', 'claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus'],
     gemini:     ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'],
     openrouter: ['openai/gpt-4o-mini', 'openai/gpt-3.5-turbo', 'anthropic/claude-3-5-haiku', 'google/gemini-flash-1.5'],
@@ -2692,6 +2697,7 @@ function pickBestModel(providerId, available){
         case 'openrouter':
         case 'groq':
         case 'mistral':
+        case 'deepseek':
           return data.choices?.[0]?.message?.content || '';
         case 'claude':
           return (data.content && data.content[0] && data.content[0].text) || '';
@@ -3106,6 +3112,19 @@ async function decryptText(payload) {
         </ol>
         <span class="note"> مستوى مجاني متاح لنماذج open-source.</span>
       `
+    },
+    deepseek: {
+      name: 'DeepSeek',
+      keyLabel: 'API Key',
+      placeholder: 'sk-...',
+      help: `
+        <h4><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> الحصول على مفتاح DeepSeek</h4>
+        <ol>
+          <li>افتح <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">صفحة API Keys الرسمية</a>.</li>
+          <li>أنشئ مفتاح API وانسخه، ثم الصقه في الحقل أعلاه.</li>
+        </ol>
+        <span class="note">المفتاح يُحفظ مشفّراً على هذا المتصفح. استخدام API قد يُحتسب على حساب DeepSeek.</span>
+      `
     }
   };
 
@@ -3191,7 +3210,29 @@ async function decryptText(payload) {
         </div>
       </div>
       <div class="aiagent-help">${p.help}</div>
+      ${currentProvider === 'deepseek' ? `
+      <div class="aiagent-field">
+        <label for="aiagentDeepSeekModel">نموذج DeepSeek</label>
+        <select id="aiagentDeepSeekModel" dir="ltr" aria-label="اختيار نموذج DeepSeek">
+          <option value="deepseek-flash">DeepSeek V4.1 Flash — سريع</option>
+          <option value="deepseek-v4-pro">DeepSeek V4 Pro — متقدم</option>
+        </select>
+      </div>
+      ` : ''}
     `;
+
+    const deepseekModelSelect = document.getElementById('aiagentDeepSeekModel');
+    if (deepseekModelSelect && window.modweebAI){
+      const selectedModel = window.modweebAI.getModel('deepseek');
+      if (selectedModel && !Array.from(deepseekModelSelect.options).some(option => option.value === selectedModel)){
+        const customOption = document.createElement('option');
+        customOption.value = selectedModel;
+        customOption.textContent = 'نموذج مخصص — ' + selectedModel;
+        deepseekModelSelect.appendChild(customOption);
+      }
+      deepseekModelSelect.value = selectedModel || 'deepseek-flash';
+      deepseekModelSelect.addEventListener('change', () => window.modweebAI.setModel('deepseek', deepseekModelSelect.value));
+    }
 
     // زر الإظهار/الإخفاء
     const input = document.getElementById('aiagentKeyInput');
@@ -3318,6 +3359,11 @@ renderActiveProviderSelect();  // ← جديد: تحديث القائمة (لأ�
         ok = r.ok; if(!ok) errMsg = 'HTTP ' + r.status;
       } else if (currentProvider === 'mistral'){
         const r = await fetch('https://api.mistral.ai/v1/models', {
+          headers: { 'Authorization': 'Bearer ' + key }
+        });
+        ok = r.ok; if(!ok) errMsg = 'HTTP ' + r.status;
+      } else if (currentProvider === 'deepseek'){
+        const r = await fetch('https://api.deepseek.com/models', {
           headers: { 'Authorization': 'Bearer ' + key }
         });
         ok = r.ok; if(!ok) errMsg = 'HTTP ' + r.status;
