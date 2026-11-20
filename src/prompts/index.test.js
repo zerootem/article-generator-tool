@@ -26,19 +26,21 @@ describe('article prompt guidance', () => {
     expect(systemPrompt).toContain('تكرار قسري');
   });
 
-  it('uses all six heading levels without forcing fixed heading counts', () => {
+  it('documents all six heading levels and the legacy size-based H2 targets', () => {
     const { systemPrompt } = prompts.article({ topic: 'موضوع' });
     expect(systemPrompt).toContain('H1');
     expect(systemPrompt).toContain('H2');
     expect(systemPrompt).toContain('H5 وH6 نادران');
-    expect(systemPrompt).toContain('من دون حصة ثابتة');
-    expect(systemPrompt).not.toMatch(/H3 إلزامي|H4 إلزامي|كل قسم H2 يجب أن يحتوي|عدد ثابت من H2/i);
+    expect(systemPrompt).toContain('9–12 عناوين H2 موضوعية');
+    expect(prompts.article({ topic: 'موضوع', size: 'xs' }).systemPrompt).toContain('4–6 عناوين H2');
+    expect(prompts.article({ topic: 'موضوع', size: 'sm' }).systemPrompt).toContain('6–9 عناوين H2');
+    expect(prompts.article({ topic: 'موضوع', size: 'lg' }).systemPrompt).toContain('12–16 عناوين H2');
   });
 
   it('uses the selected UI word range and asks for the complete article, not a short outline', () => {
     const { systemPrompt, userPrompt } = prompts.article({ topic: 'موضوع', size: 'md' });
     expect(systemPrompt).toContain('1500-2400 كلمة');
-    expect(systemPrompt).toContain('فقرتان إلى أربع فقرات مفيدة');
+    expect(systemPrompt).toContain('شرح وافٍ من 4–6 جمل');
     expect(systemPrompt).toContain('لا تتوقف بعد مقدمة أو بضعة أسطر');
     expect(userPrompt).toContain('لا تتوقف عند المقدمة');
     expect(prompts.article({ topic: 'موضوع', size: 'xs' }).systemPrompt).toContain('600-900 كلمة');
@@ -46,18 +48,44 @@ describe('article prompt guidance', () => {
     expect(prompts.article({ topic: 'موضوع', size: 'lg' }).systemPrompt).toContain('2400-3600 كلمة');
   });
 
-  it('makes H3/H4 and optional content elements conditional', () => {
+  it('keeps H3/H4 and optional content elements conditional while requiring the legacy FAQ/accordion structure', () => {
     const { systemPrompt } = prompts.article({ topic: 'موضوع' });
-    expect(systemPrompt).toContain('يمكن استخدام H3');
-    expect(systemPrompt).toContain('قيود العناصر الاختيارية');
-    expect(systemPrompt).not.toMatch(/H3 إلزامي|H4 إلزامي|كل قسم H2 يجب أن يحتوي|عدد ثابت من H2/i);
+    expect(systemPrompt).toContain('يسمح بالعناوين H3');
+    expect(prompts.article({ topic: 'موضوع', hasH3: false }).systemPrompt).toContain('خيار H3 معطّل');
+    expect(systemPrompt).toContain('المحتوى الاختياري');
+    expect(systemPrompt).toContain('FAQ إلزامي حسب الهيكل');
+    expect(systemPrompt).toContain('accordion واحد إلزامي في نهاية كل H2 موضوعي');
+    expect(systemPrompt).toContain('قاعدة steps الإلزامية');
   });
 
-  it('forbids unrequested FAQ and makes optional types depend on user choices', () => {
-    const prompt = prompts.article({ topic: 'موضوع', articleType: 'guide' }).systemPrompt;
-    expect(prompt).toContain('FAQ لا يضاف تلقائياً');
-    expect(prompt).toContain('خانات الاختيار');
+  it('uses the legacy required FAQ even for a guide and preserves optional heading choices', () => {
+    const prompt = prompts.article({ topic: 'موضوع', articleType: 'guide', hasH3: false }).systemPrompt;
+    expect(prompt).toContain('heading (headingLevel: "h2", content: "الأسئلة الشائعة")');
+    expect(prompt).toContain('faq (faqItems فيها 4–5');
+    expect(prompt).toContain('خيار H3 معطّل');
     expect(prompts.article({ topic: 'موضوع', articleType: 'faq' }).systemPrompt).toContain('صفحة أسئلة وأجوبة مفيدة');
+    const englishPrompt = prompts.article({ topic: 'topic', language: 'en' }).systemPrompt;
+    expect(englishPrompt).toContain('تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.');
+    expect(englishPrompt).toContain('content: "FAQ"');
+  });
+
+  it('preserves the legacy required beginning, per-H2 sequence, and fixed ModWeeb attribution', () => {
+    const prompt = prompts.article({ topic: 'موضوع', opening: 'brief', hasKeyPoints: true }).systemPrompt;
+    expect(prompt).toContain('1. basics');
+    expect(prompt).toContain('2. heading h1');
+    expect(prompt).toContain('3. toc');
+    expect(prompt).toContain('note (noteStyle: "info")');
+    expect(prompt).toContain('تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.');
+    expect(prompt).toContain('paragraph (paragraphStyle: "dropcap")');
+    expect(prompt).toContain('keyPoints بعد المقدمة الموسعة مباشرة');
+    expect(prompt).toContain('paragraph (paragraphStyle: "indent")');
+    expect(prompt).toContain('accordion (accordionType: "ac") في نهاية كل قسم H2');
+    expect(prompt).toContain('3–7 خطوات كاملة قابلة للتنفيذ');
+    expect(prompt).toContain('content: "خاتمة"');
+    expect(prompt).toContain("<p class='note'><b>ملاحظة!</b><br/>");
+    expect(prompt).toContain('المصدر: ModWeeb<br>تم إعداد وتنسيق المقال عبر ModWeeb AI');
+    expect(prompt).toContain('<!--[ Post Reference paragraph ]--><p class=\'pRef\'>');
+    expect(prompt).toContain('تم إعداد وتنسيق المقال عبر ModWeeb AI');
   });
 
   it('documents current section types, fields, and safe inline links', () => {
@@ -67,6 +95,12 @@ describe('article prompt guidance', () => {
     }
     expect(systemPrompt).toContain('headingLevel":"h1|h2|h3|h4|h5|h6');
     expect(systemPrompt).toContain('paragraphStyle":"normal|indent|dropcap|ref');
+    expect(systemPrompt).toContain('dropCapChar');
+    expect(systemPrompt).toContain('spoilerBlurText');
+    expect(systemPrompt).toContain('tabHtmlSource');
+    expect(systemPrompt).toContain('tabCssSource');
+    expect(systemPrompt).toContain('tabJsSource');
+    expect(systemPrompt).toContain('tabJsonSource');
     expect(systemPrompt).toContain('linkStyle":"extL|alt|sec|button|buttonLn');
     expect(systemPrompt).toContain('audioPreload":"none|metadata|auto');
     expect(systemPrompt).toContain('videoType":"video/mp4|video/webm|video/ogg');
@@ -75,17 +109,17 @@ describe('article prompt guidance', () => {
     expect(systemPrompt).toContain('thumbnailUrl');
     expect(systemPrompt).toContain('tableClasses المسموح بها');
     expect(systemPrompt).toContain('accordionGroup');
-    expect(systemPrompt).toContain('لا تضف حقولاً علوية أو أنواعاً أو خصائص غير مدرجة');
-    expect(systemPrompt).toContain('عناصر inline الآمنة');
+    expect(systemPrompt).toContain('لا تضف حقولاً أو أنواعاً غير المخطط');
+    expect(systemPrompt).toContain('تنسيق inline الآمن');
     expect(systemPrompt).not.toContain('<heading');
   });
 
   it('requests source references without permitting fabricated URLs', () => {
     const { systemPrompt } = prompts.article({ topic: 'موضوع' });
-    expect(systemPrompt).toContain('من 2 إلى 4 مراجع خارجية');
+    expect(systemPrompt).toContain('2–4 روابط خارجية ذات صلة');
     expect(systemPrompt).toContain('لا تختلق اسم جهة أو عنوان صفحة أو URL');
     expect(systemPrompt).toContain('rel="noopener noreferrer"');
-    expect(systemPrompt).toContain('لا تستخدم كتل link/button/downloadBox أو relatedManual إلا بطلب صريح');
+    expect(systemPrompt).toContain('لا تضف accordionGroup أو relatedAuto أو link أو button أو downloadBox');
   });
 
   it('supports neutral, direct-address, we, and I points of view', () => {

@@ -24,6 +24,7 @@ function buildArticlePrompt(params = {}) {
   const countryGuide = COUNTRY_MAP[country] || COUNTRY_MAP.ar;
   const articleTypeGuide = ARTICLE_TYPE_MAP[articleType] || ARTICLE_TYPE_MAP.guide;
   const openingGuide = OPENING_MAP[opening] || OPENING_MAP.brief;
+  const h2Target = H2_TARGET_MAP[size] || H2_TARGET_MAP.md;
 
   const preferences = [];
   if (hasH3) preferences.push('يمكن استخدام H3 لتقسيم فكرة فرعية حقيقية أو جزء طويل؛ لا تضع H3 في كل قسم.');
@@ -32,27 +33,27 @@ function buildArticlePrompt(params = {}) {
   if (hasBold) preferences.push('استخدم العريض باعتدال لإبراز مصطلح أو خلاصة مفيدة، لا لحشو الكلمات المفتاحية.');
   if (hasItalics) preferences.push('استخدم المائل فقط عند وجود حاجة تحريرية فعلية.');
   if (hasQuotes) preferences.push('لا تدرج اقتباساً منسوباً إلا إذا كان نصه ونسبته موثقين في مدخلات المستخدم؛ لا تنشئ اقتباسات أو أسماء خبراء.');
-  if (hasKeyPoints) preferences.push('يمكن إضافة keyPoints موجزة تلخص نتائج المقال عندما تكون نافعة؛ لا تفرض عدداً أو موضعاً ثابتاً ولا تكرر متن المقال.');
-  if (hasInstructions) preferences.push('عند شرح إجراء متسلسل حقيقي، أدرج steps عملية مرتبة؛ لا تستخدم steps للموضوعات الوصفية ولا تحوّل هذا الخيار إلى alert.');
+  if (hasKeyPoints) preferences.push('أضف keyPoints بعد المقدمة الموسعة مباشرة، في 5–7 محاور موجزة، من دون تكرار متن المقال.');
+  if (hasInstructions) preferences.push('عند شرح إجراء متسلسل حقيقي، أدرج steps عملية مرتبة مباشرة بعد الفقرة indent؛ لا تستخدمها للموضوعات الوصفية.');
   if (hasTables) preferences.push('أدرج table فقط عندما توجد مقارنة أو بيانات مفيدة؛ لا تختلق قيماً لملء خلاياه.');
   if (hasImages) preferences.push('أدرج image منظماً فقط عند وجود رابط صورة HTTP(S) قدمه المستخدم؛ لا تنشئ رابطاً أو عنصراً نائباً.');
-  if (hasNotes) preferences.push('أدرج note عند وجود معلومة تفسيرية أو نصيحة مفيدة، واختر noteStyle مناسباً؛ لا تجعله إخلاء مسؤولية مصطنعاً.');
+  if (hasNotes) preferences.push('يمكن إضافة note اختيارية إضافية عند وجود معلومة تفسيرية مفيدة؛ لا تكرر ملاحظة البداية الإلزامية.');
   if (hasAlerts) preferences.push('أدرج alert عند وجود تحذير أو معلومة تستدعي إبرازاً، واختر alertStyle بدقة؛ لا تحوّل كل فقرة إلى تنبيه.');
   if (hasBlur) preferences.push('استخدم spoiler مع accordionType=blur فقط لمعلومة اختيارية مناسبة كإجابة أو حرق؛ لا تخفِ المعلومة الأساسية.');
   if (hasCode) preferences.push('أدرج code أو codeTabs أو inlineCode عند الحاجة التقنية الحقيقية فقط؛ اختر لغة من القائمة المدعومة، واستخدم kbd لاختصار لوحة مفاتيح حقيقي فقط.');
   if (hasYoutube) preferences.push('لا تنشئ lazyYt أو معرّف فيديو؛ التطبيق يضيف الفيديو من مرجع YouTube الذي أدخله المستخدم بعد التوليد.');
-  if (hasConclusion) preferences.push('اختم بخلاصة موجزة ذات قيمة تلخص أهم النتائج؛ لا تفرض دعوة تسويقية أو ادعاءً غير مدعوم.');
+  if (hasConclusion) preferences.push('أضف قسم الخاتمة المحدد في الهيكل الإلزامي، بخلاصة مفيدة بلا دعوة تسويقية أو ادعاء غير مدعوم.');
   if (!hasH3) preferences.push('خيار H3 معطّل: لا تستخدم عناوين h3.');
   if (!hasH4) preferences.push('خيار H4 وما بعده معطّل: لا تستخدم h4 أو h5 أو h6.');
-  if (!hasConclusion) preferences.push('خيار الخاتمة معطّل: لا تضف قسم خاتمة مستقلاً.');
+  if (!hasConclusion) preferences.push('خيار الخاتمة معطّل: تخطّ قسم الخاتمة وملاحظتها الختامية فقط؛ احتفظ بقسم FAQ ومرجع المقال النهائي.');
   if (!hasTables) preferences.push('خيار الجداول معطّل: لا تستخدم table إلا إذا طلبه المستخدم صراحةً في customRequest.');
   if (!hasLists) preferences.push('خيار القوائم معطّل: لا تستخدم list إلا إذا طلبها المستخدم صراحةً في customRequest.');
   if (!hasQuotes) preferences.push('خيار الاقتباسات معطّل: لا تستخدم blockquote.');
-  if (!hasKeyPoints) preferences.push('خيار النقاط الرئيسية معطّل: لا تستخدم keyPoints.');
-  if (!hasInstructions) preferences.push('خيار الخطوات معطّل: لا تستخدم steps إلا إذا طلبها المستخدم صراحةً في customRequest.');
+  if (!hasKeyPoints) preferences.push('خيار النقاط الرئيسية معطّل: تخطّ keyPoints فقط، وأضف بدلاً منها فقرة normal لتوسعة المقدمة.');
+  if (!hasInstructions) preferences.push('لا تضف steps لمجرد التنويع؛ لكن إذا شرح قسم H2 إجراءً متسلسلاً حقيقياً، فقاعدة الهيكل الإلزامي للخطوات لها الأولوية.');
   if (!hasBold) preferences.push('خيار الخط العريض معطّل: لا تستخدم strong أو b.');
   if (!hasItalics) preferences.push('خيار الخط المائل معطّل: لا تستخدم em أو i.');
-  if (!hasNotes) preferences.push('خيار الملاحظات معطّل: لا تستخدم note.');
+  if (!hasNotes) preferences.push('لا تضف note اختيارية داخل المتن؛ أبقِ ملاحظة info الإلزامية في البداية.');
   if (!hasAlerts) preferences.push('خيار التنبيهات معطّل: لا تستخدم alert.');
   if (!hasBlur) preferences.push('خيار ضباب النص معطّل: لا تستخدم spoiler.');
   if (!hasCode) preferences.push('خيار الأكواد معطّل: لا تستخدم code أو codeTabs أو inlineCode أو kbd.');
@@ -62,7 +63,7 @@ function buildArticlePrompt(params = {}) {
   const typeCatalog = `مخطط sections الحالي. أخرج الأنواع والحقول المكتوبة هنا فقط، وبأسماء الحقول نفسها:
 - basics: {"type":"basics","metaDescription":"وصف دقيق للمقال","thumbnailUrl":"رابط صورة قدمه المستخدم فقط أو اتركه فارغاً","subtitle":"عنوان فرعي دقيق اختياري"}
 - heading: {"type":"heading","content":"...","headingLevel":"h1|h2|h3|h4|h5|h6","headingBefore":"اختياري","headingAfter":"اختياري"}
-- paragraph: {"type":"paragraph","content":"نص أو تنسيق inline مسموح فقط","paragraphStyle":"normal|indent|dropcap|ref","refSource":"مصدر حقيقي مذكور في المدخلات عند استخدام ref"}
+- paragraph: {"type":"paragraph","content":"نص أو تنسيق inline مسموح فقط","paragraphStyle":"normal|indent|dropcap|ref","dropCapChar":"اختياري؛ حرف البداية عند dropcap فقط","refSource":"مصدر حقيقي مذكور في المدخلات عند استخدام ref"}
 - toc: {"type":"toc","tocLabel":"جدول المحتويات","tocStyle":"automatic|manual","tocManualItems":[{"text":"...","id":"..."}]}
 - note: {"type":"note","content":"...","noteStyle":"info|warning|question","noteTitle":"عنوان قصير اختياري"}
 - alert: {"type":"alert","content":"...","alertStyle":"info|warning|success|error|tip|question","alertOutlined":false,"alertTitle":"عنوان قصير اختياري"}
@@ -73,10 +74,10 @@ function buildArticlePrompt(params = {}) {
 - table: {"type":"table","tableRows":2,"tableCols":2,"tableData":[["رأس 1","رأس 2"],["...","..."]],"tableClasses":"bordered stripped hovered"}
 - accordion: {"type":"accordion","summary":"...","content":"...","accordionType":"ac|ac alt|sp|group|blur","accordions":[{"summary":"...","content":"...","alt":false}]}
 - accordionGroup: {"type":"accordionGroup","summary":"...","content":"...","accordionType":"group","accordions":[{"summary":"...","content":"...","alt":false}]}
-- spoiler: {"type":"spoiler","accordionType":"blur","spoilerBlurText":"نص مناسب للإخفاء"}
+- spoiler: {"type":"spoiler","summary":"عنوان اختياري عند استخدام نمط طي غير blur","content":"...","accordionType":"sp|ac|ac alt|group|blur","spoilerBlurText":"نص مناسب للإخفاء في نمط blur"}
 - faq: {"type":"faq","faqItems":[{"question":"...","answer":"..."}]}
 - code: {"type":"code","codeContent":"...","codeLanguage":"html|css|js|json","codeComment":"اختياري","codeSource":"لا تذكره إلا إذا قدم المستخدم المصدر","codeLines":"اختياري","codeCopy":true,"codeHighlight":true,"codeSyntax":true}
-- codeTabs: {"type":"codeTabs","tabHtml":"...","tabCss":"...","tabJs":"...","tabJson":"..."}
+- codeTabs: {"type":"codeTabs","tabHtml":"...","tabHtmlSource":"مسار اختياري","tabCss":"...","tabCssSource":"مسار اختياري","tabJs":"...","tabJsSource":"مسار اختياري","tabJson":"...","tabJsonSource":"مسار اختياري"}
 - inlineCode: {"type":"inlineCode","inlineCode":"مصطلح أو أمر قصير"}
 - kbd: {"type":"kbd","kbdText":"اختصار لوحة مفاتيح حقيقي"}
 - mark: {"type":"mark","markText":"نص قصير","markClass":"|block|red|gray|orange|blue|green|gold|purple"}
@@ -92,21 +93,54 @@ function buildArticlePrompt(params = {}) {
 
 قيم الأنماط للأقسام أعلاه مغلقة؛ لا تخترع قيمة جديدة. لا تخلط الأنواع المتشابهة: note ليس alert، وsteps ليست تنبيهاً، وspoiler هو نمط blur، وlink/button/downloadBox عناصر مختلفة. لا تستخدم link أو button أو downloadBox أو audioPlayer أو videoPlayer أو relatedManual إلا بطلب صريح من المستخدم ومع روابط HTTP(S) أدخلها هو؛ لا تختلق URL أو عنوان صفحة أو اسم ملف أو حجماً. videoPoster وimageUrl وgridUrls يجب أن تكون روابط قدمها المستخدم حرفياً. لا تستخدم relatedAuto أو accordionGroup أو codeTabs أو kbd إلا إذا طلبها المستخدم صراحةً أو كانت مفيدة بوضوح ضمن خيارها المفعّل. يمكن إدراج relatedAuto دون روابط يدوية لأنه يُحمّل منشورات المدونة تلقائياً؛ لا تخترع له data label. استخدم codeTabs فقط عند وجود أمثلة حقيقية متعددة؛ لا تملأ تبويباً بكود وهمي. أخرج هذه الأنواع بمخطط حقولها فقط.`;
 
+  const faqHeading = language === 'ar' ? 'الأسئلة الشائعة' : 'FAQ';
+  const openingNote = 'تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.';
+  const mandatoryStructure = `الهيكل الإلزامي للمقال — التزم بالترتيب والأنواع والحقول التالية، ولا تحذف عنصراً بنيوياً:
+
+البداية:
+1. basics: metaDescription دقيق، وthumbnailUrl فقط إذا قدّم المستخدم رابط صورة؛ subtitle اختياري عند فائدته.
+2. heading h1 (العنوان الرئيسي، عنوان واحد فقط).
+3. toc (tocStyle: "automatic").
+4. note (noteStyle: "info") — content بهذه الصياغة حرفياً: "${openingNote}".
+5. paragraph (paragraphStyle: "dropcap") — مقدمة قوية وفق: ${openingGuide}.
+${hasKeyPoints ? '6. keyPoints (items من 5–7 محاور حقيقية موجزة، لا تكرر الفقرات).\n7. paragraph (paragraphStyle: "normal") — توسعة للمقدمة.' : '6. paragraph (paragraphStyle: "normal") — توسعة للمقدمة، من دون keyPoints لأن خيارها معطّل.'}
+
+الجسم الرئيسي — أنشئ ${h2Target} عناوين موضوعية H2 تقريباً وفق حجم المقال المختار، ولكل H2 هذا التسلسل الإلزامي:
+→ heading (headingLevel: "h2") — عنوان محدد يضم الكلمة المفتاحية أو مرادفاً طبيعياً متى ناسب.
+→ paragraph (paragraphStyle: "normal") — شرح وافٍ من 4–6 جمل، واستخدم <b> و<em> و<code> عند الحاجة فقط، واحترم خيارات التنسيق المعطّلة.
+→ paragraph (paragraphStyle: "indent") — تكملة أو زاوية عملية من 2–4 جمل.
+→ [عنصر إضافي واحد مناسب للسياق عند الحاجة: note أو blockquote موثق فقط أو list أو table أو alert أو mark أو image أو غيرها من الأنواع المدعومة؛ لا تضع عنصراً عشوائياً ولا تكرر المحتوى].
+→ accordion (accordionType: "ac") في نهاية كل قسم H2؛ summary موجز وcontent يضيف ملاحظة أو معلومة مفيدة مرتبطة فعلاً بالقسم، لا تكرر الفقرات. لا تستخدم accordionGroup بدلاً منه.
+
+قاعدة steps الإلزامية:
+إذا كان قسم H2 يشرح إجراءً متسلسلاً حقيقياً مثل طريقة تنفيذ أو تثبيت أو استخدام، فأضف مباشرة بعد paragraph indent كتلة واحدة من النوع steps، فيها 3–7 خطوات كاملة قابلة للتنفيذ؛ ثم أضف accordion في نهاية القسم كالمعتاد. لا تستخدم steps للمقارنة أو تعداد المزايا أو الأسباب أو التوقعات.
+
+المراجع والروابط:
+أدرج paragraph normal قرب نهاية المتن بعنوان bold "${language === 'ar' ? 'المصادر والمراجع' : 'Sources & References'}" يتبعه 2–4 روابط خارجية ذات صلة في علامات <a href="URL" target="_blank" rel="noopener noreferrer">اسم المصدر</a>. فضّل صفحات رسمية/أولية، ولا تختلق عنواناً أو رابطاً ولا تزعم التحقق الحي؛ إذا تعذر تحديد رابط موثوق بدقة فلا تضع رابطاً وهمياً. يمكن إيراد المراجع نفسها أيضاً بجوار الادعاءات التي تسندها.
+
+قبل الخاتمة (بهذا الترتيب الدقيق):
+→ heading (headingLevel: "h2", content: "${faqHeading}").
+→ faq (faqItems فيها 4–5 أسئلة وأجوبة مناسبة؛ كل إجابة 3–5 جمل مفيدة، والأسئلة واقعية غير مكررة من المتن وتبدأ بصيغ بحث طبيعية مثل كيف، ما هو، لماذا، متى، هل، ما الفرق، ما أفضل؛ اكتب باللغة المختارة).
+${hasConclusion ? `→ heading (headingLevel: "h2", content: "خاتمة").\n→ paragraph (paragraphStyle: "normal") — خلاصة قوية ومفيدة.\n→ paragraph (paragraphStyle: "normal") — content بالوسم التالي مع ملاحظة ختامية مفيدة غير نائبة: <p class='note'><b>ملاحظة!</b><br/>[نص موجز ملائم]</p>.` : 'خيار الخاتمة معطّل: لا تضف قسم خاتمة أو ملاحظتها، لكن احتفظ بقسم FAQ.'}
+
+في نهاية كل مقال، أضف آخر كتلة paragraph (paragraphStyle: "normal") واجعل content يحتوي فقط على هذا المرجع الثابت، من دون أي نص قبله أو بعده:
+<!--[ Post Reference paragraph ]--><p class='pRef'>المصدر: ModWeeb<br>تم إعداد وتنسيق المقال عبر ModWeeb AI</p>`;
+
   const systemPrompt = [
     `أنت محرر محتوى عربي وخبير في بناء مقالات بلوجر طويلة نافعة، دقيقة، واضحة وسهلة التصفح. ${langInstruction}`,
     `اكتب مقالاً كاملاً يجيب حاجة القارئ من البداية إلى النهاية، لا مسودة قصيرة ولا ملخصاً. استخدم نوع المقال المختار (${articleTypeGuide}) والجمهور (${countryGuide}) والنبرة (${toneGuide}) وسهولة القراءة (${readingGuide}) ومنظور السرد (${povGuide}) كما يناسبها. وضع الكتابة: ${writingModeGuide}`,
-    `الطول والعمق: ${sizeGuide}. نطاق الكلمات المختار هدف تحريري تقريبي قوي؛ اكتب في نطاقه ما دام الموضوع يسمح بمحتوى مفيد. لا تتوقف بعد مقدمة أو بضعة أسطر. وسّع كل محور أساسي بشرح وسياق وأمثلة عملية أو مقارنة عند توافر معلوماتها. لا تكرر الفكرة ولا تضف حشواً لمجرد بلوغ عدد الكلمات. أنشئ عدداً من أقسام H2 يكفي لتغطية الموضوع بعمق، من دون حصة ثابتة أو أقسام مصطنعة.`,
+    `الطول والعمق: ${sizeGuide}. نطاق الكلمات المختار هدف تحريري تقريبي قوي؛ استهدف ${h2Target} عناوين H2 موضوعية كما في الهيكل الأصلي أدناه. اكتب مقالاً مكتملاً قريباً من نطاق الحجم، لا مسودة قصيرة ولا ملخصاً؛ أتمم فقرات كل قسم وعناصره المطلوبة. لا تتوقف بعد مقدمة أو بضعة أسطر، ولا تكرر الأفكار أو تضف حشواً لمجرد بلوغ عدد الكلمات.`,
     `معايير جودة وSEO: حدّد نية القارئ وأجب عنها مبكراً، واجعل لكل عنوان دلالة دقيقة. استخدم الكلمة الرئيسية (${mainKeyword || 'لا توجد كلمة رئيسية محددة؛ استخدم الموضوع أساساً'}) في العنوان والمقدمة والعناوين الفرعية عندما تلائم السياق، وأدرج المرادفات والكلمات الداعمة (${keywords || 'لا توجد كلمات مساعدة محددة'}) طبيعياً بلا كثافة رقمية أو تكرار قسري. استهدف عنواناً واضحاً وجذاباً بطول تقريبي 55–65 حرفاً ووصفاً ميتا موجزاً نحو 140–160 حرفاً إذا أمكن دون الإخلال بالدقة؛ هذه أهداف تحريرية وليست ضماناً لمعايير Google. أنشئ 5–8 وسوم وثيقة الصلة بلا تكرار أو حشو. لا تعد بالتصدر أو بنتائج SEO مضمونة.`,
-    `الافتتاحية: ${openingGuide}. ابدأ بإجابة أو فائدة واضحة، ثم وضّح ما سيغطيه المقال. لا تستخدم إحصاءً أو اقتباساً أو قصة واقعية إلا إذا كانت مدعومة في المدخلات؛ والقصة الافتراضية يجب أن توصف صراحة بأنها مثال تخيلي.`,
-    `البنية التحريرية: ابدأ بكتلة basics، ثم عنوان H1 واحد، ثم جدول محتويات آلي toc، ثم مقدمة paragraph مناسبة. نظّم المتن بعناوين H2 واضحة، وفقرات paragraph كافية ومترابطة (عادةً فقرتان إلى أربع فقرات مفيدة لكل محور كبير بحسب الحاجة، لا كعدد آلي). يجوز أن يتبع H2 نص مباشر. استخدم H3 عند وجود فكرة فرعية، وH4–H6 فقط للتدرج الحقيقي وبالترتيب المنطقي؛ لا تقفز بين المستويات ولا تستخدم العنوان لمجرد تكبير الخط. أضف خاتمة بعنوان H2 وفق خيار hasConclusion.`,
-    `المحتوى: اشرح المفاهيم بوضوح، وبيّن الشروط والاستثناءات والمزايا والقيود متى كانت معروفة. أضف الخطوات فقط للإجراءات المتسلسلة، والقوائم للمعلومات المتوازية، والجداول للمقارنات التي تتوفر بياناتها. اجعل كل عنصر يخدم الفهم ولا تفرض note أو alert أو quote أو keyPoints أو FAQ أو accordion أو code أو وسائط عشوائياً. تفضيلات العناصر المفعّلة: ${preferences.length ? preferences.join(' ') : 'لا توجد عناصر اختيارية مفعّلة؛ استخدم البنية الأساسية فقط.'}`,
+    `الافتتاحية: ${openingGuide}. لا تستخدم إحصاءً أو اقتباساً أو قصة واقعية إلا إذا كانت مدعومة؛ لا تنشئ تجربة شخصية أو نسبة لمصدر من عندك.`,
+    `الهيكل الإلزامي المأخوذ من البرومبت القديم (بكل الترتيب والتفاصيل):\n${mandatoryStructure}`,
+    `المحتوى الاختياري: استخدم الأنواع الأخرى فقط إذا كانت تخدم الموضوع، وكانت خاناتها مفعّلة أو طلبها المستخدم؛ لا تكدّسها. ${hasH3 ? 'يسمح بالعناوين H3 عند حاجة موضوعية فقط.' : 'خيار H3 معطّل، فلا تستخدمه.'} ${hasH4 ? 'استخدم H4–H6 للتدرج المتداخل فقط؛ لا تتجاوز مستوى ولا تستخدم عنواناً للتكبير.' : 'خيار H4 وما بعده معطّل، فلا تستخدم h4 أو h5 أو h6.'} خيارات المقال الحالية: ${preferences.length ? preferences.join(' ') : 'لا توجد عناصر اختيارية إضافية مفعّلة.'}`,
     `الروابط والمصادر: أدرج من 2 إلى 4 مراجع خارجية ذات صلة في فقرة/فقرات أخيرة بعنوان «المصادر والمراجع» عندما تستطيع تحديد مصادر موثوقة وروابطها الدقيقة بثقة. فضّل المصادر الرسمية والأولية، واربط اسم المصدر أو عنوانه داخل paragraph.content باستخدام رابط HTML inline آمن فقط: <a href="URL" target="_blank" rel="noopener noreferrer">اسم المصدر</a>. يمكن أيضاً وضع رابط المصدر بجوار الادعاء الذي يسنده. لا تختلق اسم جهة أو عنوان صفحة أو URL، ولا تدّع أنك فتحت أو تحققت مباشرة من صفحة لم تُتح لك. إذا لم تكن متأكداً من رابط دقيق فلا تنشئه ولا تستبدله برابط وهمي؛ استخدم فقط المعلومات التي يمكن صياغتها بأمان. لا تضع روابط عامة أو placeholders. لا تنشئ روابط داخلية أو CTA أو روابط دعوة تسويقية من تلقاء نفسك. لا تستخدم كتل link/button/downloadBox أو relatedManual إلا بطلب صريح وروابط قدمها المستخدم. لا تنشئ صوتاً أو فيديو أو ملفاً قابلاً للتنزيل دون رابط مباشر قدمه المستخدم.`,
     `الدقة والثقة: لا تختلق تجربة شخصية أو صفة خبير أو إحصائية أو دراسة أو سعرًا أو تاريخاً أو خاصية منتج أو اقتباساً أو مصدراً. لا تعرض الرأي كحقيقة، ولا تخلط بين معلومة عامة ومعلومة حديثة. إذا كانت المعلومة تعتمد على تحديث آني ولا توجد في المدخلات، تجنب الجزم بها ونبّه إلى الحاجة للتحقق بدلاً من اختراعها.`,
-    `تنسيق محتوى paragraph: content نص، ويسمح داخله فقط بعناصر inline الآمنة اللازمة مثل <strong>/<b> و<em>/<i> و<code> و<a> للروابط. لا تستخدم وسوماً block أو Markdown أو CSS أو JavaScript أو وسوماً غير مدرجة. اكتب JSON صالحاً مع تهريب علامات الاقتباس داخل النصوص والروابط. لا تضع روابط خاماً غير مفهومة إذا أمكن استخدام اسم وصفي كرابط.`,
-    `قيود العناصر الاختيارية: basics وheading وparagraph وtoc هي العناصر الأساسية. FAQ لا يضاف تلقائياً؛ استخدمه فقط لنوع faq/faqpage أو عندما يطلبه المستخدم صراحةً، ما لم يطلب استبعاده. لا تضف accordion أو accordionGroup أو relatedAuto أو relatedManual تلقائياً. الأنواع التي تتحكم بها خانات الاختيار لا تستخدم إلا عند تفعيل خيارها؛ تفضيلات المستخدم المفعّلة والمعطّلة مذكورة أدناه. لا تخرج image أو gridUrls أو videoPoster إلا بروابط صور قدمها المستخدم حرفياً. لا تنشئ lazyYt أو معرّف فيديو؛ التطبيق يدرجه وحده من مرجع YouTube صالح أدخله المستخدم. الأنواع link/button/downloadBox/audioPlayer/videoPlayer/relatedManual لا تستخدم إلا بطلب صريح وبروابط ومدخلات كافية قدمها المستخدم.`,
+    `تنسيق paragraph: يسمح بتنسيق inline الآمن <strong>/<b> و<em>/<i> و<code> و<a href="http(s)://..." target="_blank" rel="noopener noreferrer"> و<br>. ويسمح بوسمي الكتلتين الثابتتين المحددتين في الهيكل فقط: p.note الختامي وp.pRef الأخير، وكذلك تعليق Post Reference المحدد حرفياً؛ لا تضف وسوماً أو خصائص HTML أخرى. اكتب JSON صالحاً واهرب علامات الاقتباس داخل النصوص والروابط.`,
+    `قواعد عدم العشوائية: FAQ إلزامي حسب الهيكل حتى في المقال العام، وaccordion واحد إلزامي في نهاية كل H2 موضوعي؛ note الإفتتاحية إلزامية. steps إلزامية عند شرح إجراء حقيقي فقط. لا تضف accordionGroup أو relatedAuto أو link أو button أو downloadBox أو audioPlayer أو videoPlayer أو relatedManual من تلقاء نفسك. FAQ فقط يمكن تكوينه من معلومات الموضوع، ولا تختلق حقائق/أسعاراً/إحصاءات/اقتباسات. الوسائط وروابط العناصر المنفصلة (غير روابط المصادر داخل paragraph) لا تستخدم إلا عندما قدمها المستخدم حرفياً؛ التطبيق يدرج YouTube فقط من مرجعه الصالح.`,
     `المخطط الدقيق: ${typeCatalog}`,
     `قيم tableClasses المسموح بها هي فقط bordered وnoborder وcborder وstripped وhovered وsticky وvab وfull وmh100 وmhvh وmh200 وmh300 وsp5 وsp10 وsp20 وprimary وwarning وsuccess وerror وclr وclb، وتفصل بينها مسافات. خيارات relatedSortBy هي updated أو published. لا تخترع thumbnailUrl أو videoPoster أو imageUrl أو gridUrls؛ استخدم URL قدمه المستخدم حرفياً.`,
-    `الإخراج النهائي: أعد JSON صالحاً فقط، بلا Markdown أو شرح خارجه، بالمفاتيح العليا title وmetaDescription وtags وsections. sections مصفوفة مرتبة من الكتل أعلاه فقط. اجعل title وmetaDescription متوافقين مع محتوى المقال؛ ضع الوصف أيضاً في basics.metaDescription. لا تضف حقولاً علوية أو أنواعاً أو خصائص غير مدرجة. لا تضع فقرة نسبة/إسناد دعائي ثابتة مثل «تم إعداد المقال بواسطة...» إلا إذا طلبها المستخدم.`,
+    `الإخراج النهائي: أعد JSON صالحاً فقط بلا Markdown أو شرح خارجه، بالمفاتيح العليا title وmetaDescription وtags وsections. اجعل title هو عنوان H1 نفسه، وانسخ الوصف إلى basics.metaDescription، وأخرج 5–8 وسوم دقيقة. لا تضف حقولاً أو أنواعاً غير المخطط. نفّذ مقاطع ModWeeb الثابتة المطلوبة في الهيكل حرفياً؛ لا تضف إسناداً أو ترويجاً آخر.`,
   ].join('\n\n');
 
   const userPrompt = [
@@ -137,6 +171,7 @@ const SIZE_MAP = {
   md: 'نطاق تقريبي 1500-2400 كلمة؛ تغطية متوازنة ومتعمقة للموضوع',
   lg: 'نطاق تقريبي 2400-3600 كلمة؛ تغطية موسعة للمحاور ذات القيمة فقط'
 };
+const H2_TARGET_MAP = { xs: '4–6', sm: '6–9', md: '9–12', lg: '12–16' };
 const TONE_MAP = {
   professional: 'مهني ورسمي، دقيق ومباشر',
   educational: 'تعليمي توضيحي، يشرح المفاهيم تدريجياً',

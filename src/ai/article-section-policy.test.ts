@@ -2,14 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { normalizeArticleSections } from './article-section-policy';
 
 describe('normalizeArticleSections', () => {
-  it('keeps supported core blocks and removes unrequested FAQ, data, media, and unknown types', () => {
+  it('keeps required core blocks and removes invalid FAQ counts, data, media, and unknown types', () => {
     const result = normalizeArticleSections({
       title: 'عنوان',
       sections: [
         { type: 'basics', metaDescription: 'وصف', randomHtml: '<script>' },
         { type: 'heading', content: 'القسم', headingLevel: 'h2', surprise: 'drop me' },
         { type: 'paragraph', content: 'شرح' },
-        { type: 'faq', faqItems: [{ question: 'س؟', answer: 'ج' }] },
+        { type: 'faq', faqItems: [
+          { question: 'كيف؟', answer: 'شرح أول.' }, { question: 'ما هو؟', answer: 'شرح ثان.' },
+          { question: 'لماذا؟', answer: 'شرح ثالث.' }, { question: 'متى؟', answer: 'شرح رابع.' },
+          { question: 'هل؟', answer: 'شرح خامس.' }, { question: 'زائد؟', answer: 'يجب إسقاطه.' },
+        ] },
+        { type: 'note', noteStyle: 'warning', content: 'تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.' },
+        { type: 'note', noteStyle: 'warning', content: 'ملاحظة إضافية لا يسمح بها الخيار المعطل.' },
+        { type: 'steps', steps: ['الخطوة الأولى', 'الخطوة الثانية', 'الخطوة الثالثة'] },
+        { type: 'accordion', accordionType: 'blur', summary: 'معلومة', content: 'تفصيل' },
         { type: 'table', tableData: [['أ', 'ب']] },
         { type: 'image', imageUrl: 'https://example.com/fake.jpg' },
         { type: 'lazyYt', youtubeId: 'abcdefghijk' },
@@ -17,18 +25,26 @@ describe('normalizeArticleSections', () => {
       ],
     }, { articleType: 'guide' });
 
-    expect(result?.sections.map((section: any) => section.type)).toEqual(['basics', 'heading', 'paragraph']);
+    expect(result?.sections.map((section: any) => section.type)).toEqual(['basics', 'heading', 'paragraph', 'faq', 'note', 'steps', 'accordion']);
     expect(result?.sections[0]).not.toHaveProperty('randomHtml');
     expect(result?.sections[1]).not.toHaveProperty('surprise');
+    expect(result?.sections[3].faqItems).toHaveLength(5);
+    expect(result?.sections[4].noteStyle).toBe('info');
+    expect(result?.sections[6].accordionType).toBe('ac');
     expect(result?.title).toBe('عنوان');
   });
 
-  it('allows FAQ only for a selected FAQ article type or an explicit positive request', () => {
-    const faq = { type: 'faq', faqItems: [{ question: 'سؤال مفيد؟', answer: 'إجابة موجزة.' }] };
-    expect(normalizeArticleSections({ sections: [faq] }, { articleType: 'guide' })?.sections).toHaveLength(0);
+  it('allows a four-to-five-item FAQ by default even when custom text conflicts with the required structure', () => {
+    const faq = { type: 'faq', faqItems: [
+      { question: 'كيف؟', answer: 'شرح أول.' }, { question: 'ما هو؟', answer: 'شرح ثان.' },
+      { question: 'لماذا؟', answer: 'شرح ثالث.' }, { question: 'متى؟', answer: 'شرح رابع.' },
+      { question: 'هل؟', answer: 'شرح خامس.' },
+    ] };
+    expect(normalizeArticleSections({ sections: [faq] }, { articleType: 'guide' })?.sections).toHaveLength(1);
     expect(normalizeArticleSections({ sections: [faq] }, { articleType: 'faq' })?.sections).toHaveLength(1);
     expect(normalizeArticleSections({ sections: [faq] }, { articleType: 'guide', customRequest: 'أضف قسم الأسئلة الشائعة' })?.sections).toHaveLength(1);
-    expect(normalizeArticleSections({ sections: [faq] }, { articleType: 'faq', customRequest: 'لا تضف الأسئلة الشائعة' })?.sections).toHaveLength(0);
+    expect(normalizeArticleSections({ sections: [faq] }, { articleType: 'faq', customRequest: 'لا تضف الأسئلة الشائعة' })?.sections).toHaveLength(1);
+    expect(normalizeArticleSections({ sections: [{ ...faq, faqItems: faq.faqItems.slice(0, 3) }] })?.sections).toHaveLength(0);
   });
 
   it('respects disabled H3 and H4 heading options', () => {
@@ -41,6 +57,30 @@ describe('normalizeArticleSections', () => {
     const result = normalizeArticleSections({ sections }, { hasH3: false, hasH4: false });
     expect(result?.sections).toEqual([]);
     expect(normalizeArticleSections({ sections }, { hasH3: true, hasH4: false })?.sections.map((item: any) => item.headingLevel)).toEqual(['h3']);
+  });
+
+  it('keeps dropcap and spoiler editor fields and enforces key-point and procedural-step ranges', () => {
+    const result = normalizeArticleSections({
+      sections: [
+        { type: 'paragraph', content: 'مقدمة مفيدة.', paragraphStyle: 'dropcap', dropCapChar: 'م' },
+        { type: 'keyPoints', items: ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'زيادة'] },
+        { type: 'steps', steps: ['١', '٢', '٣', '٤', '٥', '٦', '٧', 'زيادة'] },
+        { type: 'spoiler', summary: 'العنوان', content: 'شرح', accordionType: 'sp' },
+      ],
+    }, { hasKeyPoints: true, hasBlur: true, customRequest: 'أضف عنصر تمويه مناسباً' });
+
+    expect(result?.sections[0].dropCapChar).toBe('م');
+    expect(result?.sections[1].items).toHaveLength(7);
+    expect(result?.sections[2].steps).toHaveLength(7);
+    expect(result?.sections[3].summary).toBe('العنوان');
+    expect(normalizeArticleSections({ sections: [{ type: 'steps', steps: ['١', '٢'] }] })?.sections).toEqual([]);
+    expect(normalizeArticleSections({ sections: [{ type: 'keyPoints', items: ['١', '٢', '٣', '٤'] }] }, { hasKeyPoints: true })?.sections).toEqual([]);
+  });
+
+  it('preserves the exact terminal Post Reference paragraph required by the legacy structure', () => {
+    const content = "<!--[ Post Reference paragraph ]--><p class='pRef'>المصدر: ModWeeb<br>تم إعداد وتنسيق المقال عبر ModWeeb AI</p>";
+    const result = normalizeArticleSections({ sections: [{ type: 'paragraph', paragraphStyle: 'normal', content }] });
+    expect(result?.sections.at(-1)).toEqual({ type: 'paragraph', paragraphStyle: 'normal', content });
   });
 
   it('honors explicit feature flags, validates media against user inputs, and strips extra fields', () => {
@@ -143,7 +183,7 @@ describe('normalizeArticleSections', () => {
     const result = normalizeArticleSections({
       sections: [
         { type: 'accordionGroup', accordionType: 'ac', accordions: [{ summary: 'تفصيل', content: 'شرح', alt: false }] },
-        { type: 'codeTabs', tabHtml: '<p>مثال</p>', tabJs: 'console.log(1)' },
+        { type: 'codeTabs', tabHtml: '<p>مثال</p>', tabHtmlSource: 'index.html', tabJs: 'console.log(1)', tabJsSource: 'src/main.js' },
         { type: 'inlineCode', inlineCode: 'npm run build' },
         { type: 'kbd', kbdText: 'Ctrl + S' },
         { type: 'audioPlayer', audioUrl, audioTitle: 'مقدمة صوتية', audioPreload: 'auto' },
@@ -158,6 +198,8 @@ describe('normalizeArticleSections', () => {
     ]);
     expect(result?.sections[0].accordionType).toBe('group');
     expect(result?.sections[1].tabJs).toBe('console.log(1)');
+    expect(result?.sections[1].tabHtmlSource).toBe('index.html');
+    expect(result?.sections[1].tabJsSource).toBe('src/main.js');
     expect(result?.sections[4].audioUrl).toBe(audioUrl);
     expect(result?.sections[5].videoPoster).toBe(posterUrl);
     expect(result?.sections[5].videoWidth).toBe('720');
