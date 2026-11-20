@@ -60,7 +60,7 @@ function buildArticlePrompt(params = {}) {
   if (!hasYoutube) preferences.push('خيار YouTube معطّل: لا تستخدم lazyYt.');
 
   const typeCatalog = `مخطط sections الحالي. أخرج الأنواع والحقول المكتوبة هنا فقط، وبأسماء الحقول نفسها:
-- basics: {"type":"basics","metaDescription":"وصف دقيق للمقال"}
+- basics: {"type":"basics","metaDescription":"وصف دقيق للمقال","thumbnailUrl":"رابط صورة قدمه المستخدم فقط أو اتركه فارغاً","subtitle":"عنوان فرعي دقيق اختياري"}
 - heading: {"type":"heading","content":"...","headingLevel":"h1|h2|h3|h4|h5|h6","headingBefore":"اختياري","headingAfter":"اختياري"}
 - paragraph: {"type":"paragraph","content":"نص أو تنسيق inline مسموح فقط","paragraphStyle":"normal|indent|dropcap|ref","refSource":"مصدر حقيقي مذكور في المدخلات عند استخدام ref"}
 - toc: {"type":"toc","tocLabel":"جدول المحتويات","tocStyle":"automatic|manual","tocManualItems":[{"text":"...","id":"..."}]}
@@ -70,7 +70,7 @@ function buildArticlePrompt(params = {}) {
 - steps: {"type":"steps","steps":["خطوة عملية", "خطوة عملية"]}
 - list: {"type":"list","listItems":["...", "..."],"listStyle":"default|s1"}
 - keyPoints: {"type":"keyPoints","items":["...", "..."]}
-- table: {"type":"table","tableRows":2,"tableCols":2,"tableData":[["رأس 1","رأس 2"],["...","..."]],"tableClasses":"bordered stripped hovered sticky"}
+- table: {"type":"table","tableRows":2,"tableCols":2,"tableData":[["رأس 1","رأس 2"],["...","..."]],"tableClasses":"bordered stripped hovered"}
 - accordion: {"type":"accordion","summary":"...","content":"...","accordionType":"ac|ac alt|sp|group|blur","accordions":[{"summary":"...","content":"...","alt":false}]}
 - accordionGroup: {"type":"accordionGroup","summary":"...","content":"...","accordionType":"group","accordions":[{"summary":"...","content":"...","alt":false}]}
 - spoiler: {"type":"spoiler","accordionType":"blur","spoilerBlurText":"نص مناسب للإخفاء"}
@@ -80,7 +80,7 @@ function buildArticlePrompt(params = {}) {
 - inlineCode: {"type":"inlineCode","inlineCode":"مصطلح أو أمر قصير"}
 - kbd: {"type":"kbd","kbdText":"اختصار لوحة مفاتيح حقيقي"}
 - mark: {"type":"mark","markText":"نص قصير","markClass":"|block|red|gray|orange|blue|green|gold|purple"}
-- image: {"type":"image","imageStyle":"standard|full|figure|grid|scroll|lazyload|showall","imageUrl":"رابط HTTP(S) قدمه المستخدم حرفياً","imageAlt":"وصف دقيق","imageLightbox":true,"imageCaptionStyle":"figure|table","imageDisableCaption":false,"caption":"...","gridUrls":"روابط فعلية قدمها المستخدم، رابط في كل سطر"}
+- image: {"type":"image","imageStyle":"standard|full|figure|grid|scroll|lazyload|showall","imageUrl":"رابط HTTP(S) قدمه المستخدم حرفياً","imageAlt":"وصف دقيق","imageWidth":1280,"imageHeight":720,"imageLightbox":true,"imageCaptionStyle":"figure|table","imageDisableCaption":false,"caption":"...","gridUrls":"روابط فعلية قدمها المستخدم، رابط في كل سطر","scrollHeight":"h150|h200|h250"}
 - lazyYt: {"type":"lazyYt","youtubeId":"لا تنشئه؛ التطبيق يستخرجه من مرجع المستخدم","youtubeMode":"lazy|defer","ratio":"16/9|4/3"}
 - link: {"type":"link","linkText":"...","linkUrl":"رابط HTTP(S) قدمه المستخدم","linkStyle":"extL|alt|sec|button|buttonLn"}
 - button: {"type":"button","buttonText":"...","buttonUrl":"رابط HTTP(S) قدمه المستخدم","buttonIcon":"|dl|demo","buttonOutlined":false}
@@ -88,7 +88,7 @@ function buildArticlePrompt(params = {}) {
 - audioPlayer: {"type":"audioPlayer","audioUrl":"رابط مباشر لملف MP3 قدمه المستخدم","audioTitle":"عنوان ذكره المستخدم فقط","audioPreload":"none|metadata|auto"}
 - videoPlayer: {"type":"videoPlayer","videoUrl":"رابط ملف فيديو مباشر قدمه المستخدم","videoPoster":"رابط صورة غلاف قدمه المستخدم حرفياً أو اتركه فارغاً","videoType":"video/mp4|video/webm|video/ogg","videoPreload":"none|metadata|auto","videoWidth":"100%"}
 - relatedManual: {"type":"relatedManual","relatedTitle":"عنوان قصير","relatedLinks":[{"text":"عنوان قدمه المستخدم","url":"رابط HTTP(S) قدمه المستخدم"}]}
-- relatedAuto: {"type":"relatedAuto","relatedAutoLabel":"منشورات ذات صلة","relatedMax":6,"relatedDataLabel":"وسم يذكره المستخدم فقط","relatedSortBy":"updated","relatedRandom":true}
+- relatedAuto: {"type":"relatedAuto","relatedAutoLabel":"منشورات ذات صلة","relatedMax":6,"relatedDataLabel":"وسم يذكره المستخدم فقط","relatedSortBy":"updated|published","relatedRandom":true}
 
 قيم الأنماط للأقسام أعلاه مغلقة؛ لا تخترع قيمة جديدة. لا تخلط الأنواع المتشابهة: note ليس alert، وsteps ليست تنبيهاً، وspoiler هو نمط blur، وlink/button/downloadBox عناصر مختلفة. لا تستخدم link أو button أو downloadBox أو audioPlayer أو videoPlayer أو relatedManual إلا بطلب صريح من المستخدم ومع روابط HTTP(S) أدخلها هو؛ لا تختلق URL أو عنوان صفحة أو اسم ملف أو حجماً. videoPoster وimageUrl وgridUrls يجب أن تكون روابط قدمها المستخدم حرفياً. لا تستخدم relatedAuto أو accordionGroup أو codeTabs أو kbd إلا إذا طلبها المستخدم صراحةً أو كانت مفيدة بوضوح ضمن خيارها المفعّل. يمكن إدراج relatedAuto دون روابط يدوية لأنه يُحمّل منشورات المدونة تلقائياً؛ لا تخترع له data label. استخدم codeTabs فقط عند وجود أمثلة حقيقية متعددة؛ لا تملأ تبويباً بكود وهمي. أخرج هذه الأنواع بمخطط حقولها فقط.`;
 
@@ -105,6 +105,7 @@ function buildArticlePrompt(params = {}) {
     `تنسيق محتوى paragraph: content نص، ويسمح داخله فقط بعناصر inline الآمنة اللازمة مثل <strong>/<b> و<em>/<i> و<code> و<a> للروابط. لا تستخدم وسوماً block أو Markdown أو CSS أو JavaScript أو وسوماً غير مدرجة. اكتب JSON صالحاً مع تهريب علامات الاقتباس داخل النصوص والروابط. لا تضع روابط خاماً غير مفهومة إذا أمكن استخدام اسم وصفي كرابط.`,
     `قيود العناصر الاختيارية: basics وheading وparagraph وtoc هي العناصر الأساسية. FAQ لا يضاف تلقائياً؛ استخدمه فقط لنوع faq/faqpage أو عندما يطلبه المستخدم صراحةً، ما لم يطلب استبعاده. لا تضف accordion أو accordionGroup أو relatedAuto أو relatedManual تلقائياً. الأنواع التي تتحكم بها خانات الاختيار لا تستخدم إلا عند تفعيل خيارها؛ تفضيلات المستخدم المفعّلة والمعطّلة مذكورة أدناه. لا تخرج image أو gridUrls أو videoPoster إلا بروابط صور قدمها المستخدم حرفياً. لا تنشئ lazyYt أو معرّف فيديو؛ التطبيق يدرجه وحده من مرجع YouTube صالح أدخله المستخدم. الأنواع link/button/downloadBox/audioPlayer/videoPlayer/relatedManual لا تستخدم إلا بطلب صريح وبروابط ومدخلات كافية قدمها المستخدم.`,
     `المخطط الدقيق: ${typeCatalog}`,
+    `قيم tableClasses المسموح بها هي فقط bordered وnoborder وcborder وstripped وhovered وsticky وvab وfull وmh100 وmhvh وmh200 وmh300 وsp5 وsp10 وsp20 وprimary وwarning وsuccess وerror وclr وclb، وتفصل بينها مسافات. خيارات relatedSortBy هي updated أو published. لا تخترع thumbnailUrl أو videoPoster أو imageUrl أو gridUrls؛ استخدم URL قدمه المستخدم حرفياً.`,
     `الإخراج النهائي: أعد JSON صالحاً فقط، بلا Markdown أو شرح خارجه، بالمفاتيح العليا title وmetaDescription وtags وsections. sections مصفوفة مرتبة من الكتل أعلاه فقط. اجعل title وmetaDescription متوافقين مع محتوى المقال؛ ضع الوصف أيضاً في basics.metaDescription. لا تضف حقولاً علوية أو أنواعاً أو خصائص غير مدرجة. لا تضع فقرة نسبة/إسناد دعائي ثابتة مثل «تم إعداد المقال بواسطة...» إلا إذا طلبها المستخدم.`,
   ].join('\n\n');
 

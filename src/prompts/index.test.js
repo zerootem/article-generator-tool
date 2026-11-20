@@ -70,7 +70,10 @@ describe('article prompt guidance', () => {
     expect(systemPrompt).toContain('linkStyle":"extL|alt|sec|button|buttonLn');
     expect(systemPrompt).toContain('audioPreload":"none|metadata|auto');
     expect(systemPrompt).toContain('videoType":"video/mp4|video/webm|video/ogg');
-    expect(systemPrompt).toContain('relatedSortBy":"updated');
+    expect(systemPrompt).toContain('relatedSortBy":"updated|published');
+    expect(systemPrompt).toContain('scrollHeight":"h150|h200|h250');
+    expect(systemPrompt).toContain('thumbnailUrl');
+    expect(systemPrompt).toContain('tableClasses المسموح بها');
     expect(systemPrompt).toContain('accordionGroup');
     expect(systemPrompt).toContain('لا تضف حقولاً علوية أو أنواعاً أو خصائص غير مدرجة');
     expect(systemPrompt).toContain('عناصر inline الآمنة');

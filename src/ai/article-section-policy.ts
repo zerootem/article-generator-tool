@@ -24,7 +24,7 @@ type RecordValue = Record<string, unknown>;
 export type NormalizedArticleOutput = RecordValue & { sections: RecordValue[] };
 
 const SECTION_FIELDS: Record<string, string[]> = {
-  basics: ['type', 'metaDescription'],
+  basics: ['type', 'metaDescription', 'thumbnailUrl', 'subtitle'],
   heading: ['type', 'content', 'headingLevel', 'headingBefore', 'headingAfter'],
   paragraph: ['type', 'content', 'paragraphStyle', 'refSource'],
   toc: ['type', 'tocLabel', 'tocStyle', 'tocManualItems'],
@@ -44,7 +44,7 @@ const SECTION_FIELDS: Record<string, string[]> = {
   inlineCode: ['type', 'inlineCode'],
   kbd: ['type', 'kbdText'],
   mark: ['type', 'markText', 'markClass'],
-  image: ['type', 'imageStyle', 'imageUrl', 'imageAlt', 'imageLightbox', 'imageCaptionStyle', 'imageDisableCaption', 'caption', 'gridUrls'],
+  image: ['type', 'imageStyle', 'imageUrl', 'imageAlt', 'imageWidth', 'imageHeight', 'imageLightbox', 'imageCaptionStyle', 'imageDisableCaption', 'caption', 'gridUrls', 'scrollHeight'],
   lazyYt: ['type', 'youtubeId', 'youtubeMode', 'ratio'],
   link: ['type', 'linkText', 'linkUrl', 'linkStyle'],
   button: ['type', 'buttonText', 'buttonUrl', 'buttonIcon', 'buttonOutlined'],
@@ -147,25 +147,25 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
   for (const key of SECTION_FIELDS[type]) {
     if (key === 'type' || section[key] === undefined) continue;
     const value = section[key];
-    if (['headingLevel', 'paragraphStyle', 'tocStyle', 'noteStyle', 'alertStyle', 'quoteStyle', 'listStyle', 'accordionType', 'codeLanguage', 'imageStyle', 'imageCaptionStyle', 'markClass', 'youtubeMode', 'ratio', 'linkStyle', 'buttonIcon', 'audioPreload', 'videoPreload', 'videoType', 'relatedSortBy'].includes(key)) {
+    if (['headingLevel', 'paragraphStyle', 'tocStyle', 'noteStyle', 'alertStyle', 'quoteStyle', 'listStyle', 'accordionType', 'codeLanguage', 'imageStyle', 'imageCaptionStyle', 'scrollHeight', 'markClass', 'youtubeMode', 'ratio', 'linkStyle', 'buttonIcon', 'audioPreload', 'videoPreload', 'videoType', 'relatedSortBy'].includes(key)) {
       const validValues: Record<string, string[]> = {
         headingLevel: ['h1','h2','h3','h4','h5','h6'], paragraphStyle: ['normal','indent','dropcap','ref'], tocStyle: ['automatic','manual'],
         noteStyle: ['info','warning','question'], alertStyle: ['info','warning','success','error','tip','question'], quoteStyle: ['normal','s1','s2'],
         listStyle: ['default','s1'], accordionType: ['ac','ac alt','sp','group','blur'], codeLanguage: ['html','css','js','json'],
-        imageStyle: ['standard','full','figure','grid','scroll','lazyload','showall'], imageCaptionStyle: ['figure','table'],
+        imageStyle: ['standard','full','figure','grid','scroll','lazyload','showall'], imageCaptionStyle: ['figure','table'], scrollHeight: ['h150','h200','h250'],
         markClass: ['','block','red','gray','orange','blue','green','gold','purple'], youtubeMode: ['lazy','defer'], ratio: ['16/9','4/3'],
         linkStyle: ['extL','alt','sec','button','buttonLn'], buttonIcon: ['','dl','demo'], audioPreload: ['none','metadata','auto'],
-        videoPreload: ['none','metadata','auto'], videoType: ['video/mp4','video/webm','video/ogg'], relatedSortBy: ['updated'],
+        videoPreload: ['none','metadata','auto'], videoType: ['video/mp4','video/webm','video/ogg'], relatedSortBy: ['updated','published'],
       };
       if (typeof value === 'string' && validValues[key].includes(value)) result[key] = value;
       continue;
     }
-    if (['content','metaDescription','headingBefore','headingAfter','refSource','tocLabel','noteTitle','alertTitle','quoteAuthor','summary','spoilerBlurText','codeContent','codeComment','codeSource','codeLines','tabHtml','tabCss','tabJs','tabJson','inlineCode','kbdText','markText','imageAlt','caption','linkText','buttonText','fileName','fileSize','audioTitle','relatedTitle','relatedAutoLabel','relatedDataLabel'].includes(key)) {
+    if (['content','metaDescription','subtitle','headingBefore','headingAfter','refSource','tocLabel','noteTitle','alertTitle','quoteAuthor','summary','spoilerBlurText','codeContent','codeComment','codeSource','codeLines','tabHtml','tabCss','tabJs','tabJson','inlineCode','kbdText','markText','imageAlt','caption','linkText','buttonText','fileName','fileSize','audioTitle','relatedTitle','relatedAutoLabel','relatedDataLabel'].includes(key)) {
       if (typeof value === 'string' && ((key !== 'audioTitle' && key !== 'relatedDataLabel') || inputContains(value, sourceText))) result[key] = value;
       continue;
     }
     if (key === 'tableClasses' && typeof value === 'string') {
-      const safeClasses = value.split(/\s+/).filter((item) => ['bordered','stripped','hovered','sticky'].includes(item));
+      const safeClasses = value.split(/\s+/).filter((item) => ['bordered','noborder','cborder','stripped','hovered','sticky','vab','full','mh100','mhvh','mh200','mh300','sp5','sp10','sp20','primary','warning','success','error','clr','clb'].includes(item));
       if (safeClasses.length) result[key] = [...new Set(safeClasses)].join(' ');
       continue;
     }
@@ -203,15 +203,20 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
       result[key] = value;
       continue;
     }
+    if (key === 'imageWidth' || key === 'imageHeight') {
+      const number = typeof value === 'number' ? value : Number(value);
+      if (Number.isFinite(number)) result[key] = Math.max(1, Math.min(5000, Math.floor(number)));
+      continue;
+    }
     if (key === 'tableRows' || key === 'tableCols') {
-      if (typeof value === 'number' && Number.isFinite(value)) result[key] = Math.max(0, Math.min(30, Math.floor(value)));
+      if (typeof value === 'number' && Number.isFinite(value)) result[key] = Math.max(1, Math.min(10, Math.floor(value)));
       continue;
     }
     if (key === 'tableData' && Array.isArray(value)) {
-      result[key] = value.slice(0, 30).filter(Array.isArray).map((row) => (row as unknown[]).slice(0, 12).map((cell) => String(cell ?? '').slice(0, 500)));
+      result[key] = value.slice(0, 10).filter(Array.isArray).map((row) => (row as unknown[]).slice(0, 10).map((cell) => String(cell ?? '').slice(0, 500)));
       continue;
     }
-    if (['imageUrl','linkUrl','buttonUrl','downloadFile','audioUrl','videoUrl','videoPoster'].includes(key)) {
+    if (['imageUrl','thumbnailUrl','linkUrl','buttonUrl','downloadFile','audioUrl','videoUrl','videoPoster'].includes(key)) {
       const url = validUrl(value, urls);
       if (url) result[key] = url;
       continue;

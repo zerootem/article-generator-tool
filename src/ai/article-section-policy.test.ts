@@ -68,6 +68,21 @@ describe('normalizeArticleSections', () => {
     expect(result?.sections[2]).not.toHaveProperty('random');
   });
 
+  it('preserves current basics and image fields and constrains table dimensions and classes', () => {
+    const imageUrl = 'https://example.com/feature.webp';
+    const result = normalizeArticleSections({
+      sections: [
+        { type: 'basics', metaDescription: 'وصف المقال', thumbnailUrl: imageUrl, subtitle: 'مقدمة موجزة' },
+        { type: 'image', imageUrl, imageStyle: 'scroll', scrollHeight: 'h200', imageWidth: 6200, imageHeight: 800 },
+        { type: 'table', tableData: [['س', 'ص']], tableRows: 20, tableCols: 0, tableClasses: 'bordered sp10 arbitrary' },
+      ],
+    }, { topic: `مقال يتضمن الصورة ${imageUrl}`, hasImages: true, hasTables: true });
+
+    expect(result?.sections[0]).toMatchObject({ type: 'basics', metaDescription: 'وصف المقال', thumbnailUrl: imageUrl, subtitle: 'مقدمة موجزة' });
+    expect(result?.sections[1]).toMatchObject({ type: 'image', imageStyle: 'scroll', scrollHeight: 'h200', imageWidth: 5000, imageHeight: 800 });
+    expect(result?.sections[2]).toMatchObject({ type: 'table', tableRows: 10, tableCols: 1, tableClasses: 'bordered sp10' });
+  });
+
   it('allows link, button, and downloadBox only on explicit request with user-provided URL and file details', () => {
     const url = 'https://example.com/guide.pdf';
     const customRequest = `أضف رابطاً وزراً وصندوق تحميل للملف ${url} باسم guide.pdf وحجم 2 MB`;
@@ -134,7 +149,7 @@ describe('normalizeArticleSections', () => {
         { type: 'audioPlayer', audioUrl, audioTitle: 'مقدمة صوتية', audioPreload: 'auto' },
         { type: 'videoPlayer', videoUrl, videoPoster: posterUrl, videoType: 'video/mp4', videoPreload: 'metadata', videoWidth: '720' },
         { type: 'relatedManual', relatedTitle: 'المزيد', relatedLinks: [{ text: 'دليل الاستخدام', url: relatedUrl }, { text: 'رابط مختلق', url: 'https://fake.example/path' }] },
-        { type: 'relatedAuto', relatedAutoLabel: 'منشورات ذات صلة', relatedMax: 99, relatedDataLabel: 'وسم غير مذكور', relatedSortBy: 'not-supported', relatedRandom: true },
+        { type: 'relatedAuto', relatedAutoLabel: 'منشورات ذات صلة', relatedMax: 99, relatedDataLabel: 'وسم غير مذكور', relatedSortBy: 'published', relatedRandom: true },
       ],
     }, { customRequest });
 
@@ -149,7 +164,7 @@ describe('normalizeArticleSections', () => {
     expect(result?.sections[6].relatedLinks).toEqual([{ text: 'دليل الاستخدام', url: relatedUrl }]);
     expect(result?.sections[7].relatedMax).toBe(10);
     expect(result?.sections[7]).not.toHaveProperty('relatedDataLabel');
-    expect(result?.sections[7]).not.toHaveProperty('relatedSortBy');
+    expect(result?.sections[7].relatedSortBy).toBe('published');
   });
 
   it('rejects unrequested or fabricated media and related links, and unsupported enum values', () => {
