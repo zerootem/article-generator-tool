@@ -3,6 +3,8 @@ export interface ArticleSectionPolicyOptions {
   customRequest?: string;
   articleType?: string;
   hasTables?: boolean;
+  hasH3?: boolean;
+  hasH4?: boolean;
   hasLists?: boolean;
   hasInstructions?: boolean;
   hasQuotes?: boolean;
@@ -34,12 +36,23 @@ const SECTION_FIELDS: Record<string, string[]> = {
   keyPoints: ['type', 'items'],
   table: ['type', 'tableRows', 'tableCols', 'tableData', 'tableClasses'],
   accordion: ['type', 'summary', 'content', 'accordionType', 'accordions'],
+  accordionGroup: ['type', 'summary', 'content', 'accordionType', 'accordions'],
   faq: ['type', 'faqItems'],
   spoiler: ['type', 'content', 'accordionType', 'spoilerBlurText'],
   code: ['type', 'codeContent', 'codeLanguage', 'codeComment', 'codeSource', 'codeLines', 'codeCopy', 'codeHighlight', 'codeSyntax'],
+  codeTabs: ['type', 'tabHtml', 'tabCss', 'tabJs', 'tabJson'],
+  inlineCode: ['type', 'inlineCode'],
+  kbd: ['type', 'kbdText'],
   mark: ['type', 'markText', 'markClass'],
   image: ['type', 'imageStyle', 'imageUrl', 'imageAlt', 'imageLightbox', 'imageCaptionStyle', 'imageDisableCaption', 'caption', 'gridUrls'],
   lazyYt: ['type', 'youtubeId', 'youtubeMode', 'ratio'],
+  link: ['type', 'linkText', 'linkUrl', 'linkStyle'],
+  button: ['type', 'buttonText', 'buttonUrl', 'buttonIcon', 'buttonOutlined'],
+  downloadBox: ['type', 'fileName', 'fileSize', 'downloadFile'],
+  audioPlayer: ['type', 'audioUrl', 'audioTitle', 'audioPreload'],
+  videoPlayer: ['type', 'videoUrl', 'videoPoster', 'videoType', 'videoPreload', 'videoWidth'],
+  relatedManual: ['type', 'relatedTitle', 'relatedLinks'],
+  relatedAuto: ['type', 'relatedAutoLabel', 'relatedMax', 'relatedDataLabel', 'relatedSortBy', 'relatedRandom'],
 };
 
 function isRecord(value: unknown): value is RecordValue {
@@ -50,9 +63,12 @@ function text(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
+function inputText(options: ArticleSectionPolicyOptions): string {
+  return [options.topic, options.customRequest, options.mainKeyword, options.keywords].filter(Boolean).join('\n');
+}
+
 function userUrls(options: ArticleSectionPolicyOptions): Set<string> {
-  const source = [options.topic, options.customRequest, options.mainKeyword, options.keywords].filter(Boolean).join('\n');
-  const candidates = source.match(/https?:\/\/[^\s<>"']+/gi) || [];
+  const candidates = inputText(options).match(/https?:\/\/[^\s<>"']+/gi) || [];
   return new Set(candidates.map((url) => url.replace(/[),.;!?،؛]+$/g, '')));
 }
 
@@ -74,17 +90,31 @@ function positiveRequest(customRequest: string, english: RegExp, arabic: RegExp)
 function allowedSectionTypes(options: ArticleSectionPolicyOptions, urls: Set<string>): Set<string> {
   const custom = options.customRequest || '';
   const types = new Set(['basics', 'heading', 'paragraph', 'toc']);
-  if (options.hasNotes) types.add('note');
-  if (options.hasAlerts) types.add('alert');
-  if (options.hasQuotes) types.add('blockquote');
-  if (options.hasLists) types.add('list');
-  if (options.hasInstructions) types.add('steps');
-  if (options.hasKeyPoints) types.add('keyPoints');
+  if (options.hasNotes || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,35}\bnote\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,35}(?:ملاحظة|تنويه)/i)) types.add('note');
+  if (options.hasAlerts || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,35}\balert\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,35}(?:تنبيه)/i)) types.add('alert');
+  if (options.hasQuotes || positiveRequest(custom, /\b(?:add|include|insert)\b.{0,35}\bquote\b/i, /(?:أضف|اضف|أدرج|ادرج).{0,35}(?:اقتباس)/i)) types.add('blockquote');
+  if (options.hasLists || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,35}\blist\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,35}(?:قائمة)/i)) types.add('list');
+  if (options.hasInstructions || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,35}\bsteps?\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,35}(?:خطوات|خطوة بخطوة)/i)) types.add('steps');
+  if (options.hasKeyPoints || positiveRequest(custom, /\b(?:add|include|create)\b.{0,40}\b(?:key points|keypoints)\b/i, /(?:أضف|اضف|أدرج|ادرج).{0,40}(?:نقاط رئيسية|أهم النقاط)/i)) types.add('keyPoints');
   if (options.hasTables || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,40}\btable\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ|استخدم).{0,40}(?:جدول)/i)) types.add('table');
   if (options.hasBlur || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,40}\b(?:spoiler|blur)\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,40}(?:إخفاء|تمويه|حرق)/i)) types.add('spoiler');
-  if (options.hasCode || positiveRequest(custom, /\b(?:add|include|create|show)\b.{0,40}\bcode\b/i, /(?:أضف|اضف|أدرج|ادرج|اكتب|أنشئ|انشئ).{0,40}(?:كود|شفرة|مثال برمجي)/i)) types.add('code');
+  const codeRequested = options.hasCode || positiveRequest(custom, /\b(?:add|include|create|show)\b.{0,40}\b(?:code|code tabs|inline code)\b/i, /(?:أضف|اضف|أدرج|ادرج|اكتب|أنشئ|انشئ).{0,40}(?:كود|شفرة|مثال برمجي|كود متعدد)/i);
+  if (codeRequested) {
+    types.add('code');
+    types.add('codeTabs');
+    types.add('inlineCode');
+  }
+  if (positiveRequest(custom, /\b(?:add|include|show)\b.{0,40}\b(?:kbd|keyboard shortcut)\b/i, /(?:أضف|اضف|أدرج|ادرج|اعرض).{0,40}(?:اختصار لوحة المفاتيح|مفتاح الاختصار)/i)) types.add('kbd');
   if (options.hasImages && urls.size > 0) types.add('image');
   if (options.hasYoutube && !!text(options.youtubeReference)) types.add('lazyYt');
+
+  if (urls.size > 0 && positiveRequest(custom, /\b(?:add|include|create|insert|use)\b.{0,50}\b(?:links?|sources?|references?)\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ|استخدم).{0,50}(?:رابط|روابط|مصدر|مصادر|مرجع|مراجع)/i)) types.add('link');
+  if (urls.size > 0 && positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,40}\bbutton\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,40}(?:زر)/i)) types.add('button');
+  if (urls.size > 0 && positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,40}\bdownload\s*box\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,40}(?:صندوق|مربع|كتلة)\s*(?:ال)?(?:تحميل|تنزيل)/i)) types.add('downloadBox');
+  if (urls.size > 0 && positiveRequest(custom, /\b(?:add|include|insert|embed)\b.{0,45}\baudio(?:\s+player)?\b/i, /(?:أضف|اضف|أدرج|ادرج|ضمّن|ضمن).{0,45}(?:مشغل\s*(?:الصوت|صوت)|ملف\s*صوتي)/i)) types.add('audioPlayer');
+  if (urls.size > 0 && positiveRequest(custom, /\b(?:add|include|insert|embed)\b.{0,45}\bvideo(?:\s+player)?\b/i, /(?:أضف|اضف|أدرج|ادرج|ضمّن|ضمن).{0,45}(?:مشغل\s*(?:الفيديو|فيديو)|ملف\s*فيديو)/i)) types.add('videoPlayer');
+  if (urls.size > 0 && positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,55}\bmanual related links?\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,55}(?:روابط|منشورات)\s*(?:يدوية\s*)?(?:ذات صلة|مشابهة)/i)) types.add('relatedManual');
+  if (positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,55}\b(?:auto(?:matic)? related posts?|related posts?)\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,55}(?:منشورات|مقالات)\s*(?:تلقائية\s*)?(?:ذات صلة|مشابهة)/i)) types.add('relatedAuto');
 
   const faqDenied = /(?:لا\s*(?:تضف|تدرج|تنشئ|تكتب)|بدون|دون|تجنب|استبعد).{0,35}(?:faq|الأسئلة?\s*(?:الشائعة|وأجوبة)|اسئلة\s*(?:شائعة|واجوبة))/i.test(custom);
   const faqRequested = options.articleType === 'faq' || options.articleType === 'faqpage'
@@ -92,32 +122,54 @@ function allowedSectionTypes(options: ArticleSectionPolicyOptions, urls: Set<str
   if (faqRequested && !faqDenied) types.add('faq');
 
   if (positiveRequest(custom, /\b(?:add|include|create|use)\b.{0,40}\baccordion\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ|استخدم).{0,40}(?:قسم مطوي|أكورديون|قائمة قابلة للطي)/i)) types.add('accordion');
+  if (positiveRequest(custom, /\b(?:add|include|create|use)\b.{0,40}\baccordion group\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ|استخدم).{0,40}(?:مجموعة أقسام مطوية|مجموعة أكورديون)/i)) types.add('accordionGroup');
   if (positiveRequest(custom, /\b(?:add|include|create|highlight)\b.{0,40}\bmark\b/i, /(?:أضف|اضف|أبرز|استخدم).{0,40}(?:تمييز|نص مميز|تظليل)/i)) types.add('mark');
-  if (positiveRequest(custom, /\b(?:add|include|create)\b.{0,40}\b(?:key points|keypoints)\b/i, /(?:أضف|اضف|أدرج|ادرج).{0,40}(?:نقاط رئيسية|أهم النقاط)/i)) types.add('keyPoints');
   return types;
 }
 
-function copyKnownFields(section: RecordValue, type: string, urls: Set<string>): RecordValue | null {
+function inputContains(value: string, source: string): boolean {
+  const normalizedSource = source.toLocaleLowerCase();
+  return normalizedSource.includes(value.trim().toLocaleLowerCase());
+}
+
+function filenameFromUrl(value: string): string | undefined {
+  try {
+    const path = new URL(value).pathname.split('/').filter(Boolean).pop();
+    return path ? decodeURIComponent(path) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, options: ArticleSectionPolicyOptions): RecordValue | null {
   const result: RecordValue = { type };
+  const sourceText = inputText(options);
   for (const key of SECTION_FIELDS[type]) {
     if (key === 'type' || section[key] === undefined) continue;
     const value = section[key];
-    if (['headingLevel', 'paragraphStyle', 'tocStyle', 'noteStyle', 'alertStyle', 'quoteStyle', 'listStyle', 'accordionType', 'codeLanguage', 'imageStyle', 'imageCaptionStyle', 'markClass', 'youtubeMode', 'ratio'].includes(key)) {
+    if (['headingLevel', 'paragraphStyle', 'tocStyle', 'noteStyle', 'alertStyle', 'quoteStyle', 'listStyle', 'accordionType', 'codeLanguage', 'imageStyle', 'imageCaptionStyle', 'markClass', 'youtubeMode', 'ratio', 'linkStyle', 'buttonIcon', 'audioPreload', 'videoPreload', 'videoType', 'relatedSortBy'].includes(key)) {
       const validValues: Record<string, string[]> = {
         headingLevel: ['h1','h2','h3','h4','h5','h6'], paragraphStyle: ['normal','indent','dropcap','ref'], tocStyle: ['automatic','manual'],
         noteStyle: ['info','warning','question'], alertStyle: ['info','warning','success','error','tip','question'], quoteStyle: ['normal','s1','s2'],
         listStyle: ['default','s1'], accordionType: ['ac','ac alt','sp','group','blur'], codeLanguage: ['html','css','js','json'],
         imageStyle: ['standard','full','figure','grid','scroll','lazyload','showall'], imageCaptionStyle: ['figure','table'],
         markClass: ['','block','red','gray','orange','blue','green','gold','purple'], youtubeMode: ['lazy','defer'], ratio: ['16/9','4/3'],
+        linkStyle: ['extL','alt','sec','button','buttonLn'], buttonIcon: ['','dl','demo'], audioPreload: ['none','metadata','auto'],
+        videoPreload: ['none','metadata','auto'], videoType: ['video/mp4','video/webm','video/ogg'], relatedSortBy: ['updated'],
       };
       if (typeof value === 'string' && validValues[key].includes(value)) result[key] = value;
       continue;
     }
-    if (['content','metaDescription','headingBefore','headingAfter','refSource','tocLabel','noteTitle','alertTitle','quoteAuthor','summary','spoilerBlurText','codeContent','codeComment','codeSource','codeLines','markText','imageAlt','caption','tableClasses'].includes(key)) {
-      if (typeof value === 'string') result[key] = value;
+    if (['content','metaDescription','headingBefore','headingAfter','refSource','tocLabel','noteTitle','alertTitle','quoteAuthor','summary','spoilerBlurText','codeContent','codeComment','codeSource','codeLines','tabHtml','tabCss','tabJs','tabJson','inlineCode','kbdText','markText','imageAlt','caption','linkText','buttonText','fileName','fileSize','audioTitle','relatedTitle','relatedAutoLabel','relatedDataLabel'].includes(key)) {
+      if (typeof value === 'string' && ((key !== 'audioTitle' && key !== 'relatedDataLabel') || inputContains(value, sourceText))) result[key] = value;
       continue;
     }
-    if (['alertOutlined','codeCopy','codeHighlight','codeSyntax','imageLightbox','imageDisableCaption'].includes(key)) {
+    if (key === 'tableClasses' && typeof value === 'string') {
+      const safeClasses = value.split(/\s+/).filter((item) => ['bordered','stripped','hovered','sticky'].includes(item));
+      if (safeClasses.length) result[key] = [...new Set(safeClasses)].join(' ');
+      continue;
+    }
+    if (['alertOutlined','codeCopy','codeHighlight','codeSyntax','imageLightbox','imageDisableCaption','buttonOutlined','relatedRandom'].includes(key)) {
       if (typeof value === 'boolean') result[key] = value;
       continue;
     }
@@ -137,6 +189,20 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>):
       result[key] = value.filter(isRecord).map((item) => ({ summary: text(item.summary) || '', content: text(item.content) || '', alt: item.alt === true })).filter((item) => item.summary && item.content);
       continue;
     }
+    if (key === 'relatedLinks' && Array.isArray(value)) {
+      result[key] = value.filter(isRecord).map((item) => ({ text: text(item.text) || '', url: validUrl(item.url, urls) || '' }))
+        .filter((item) => item.text && item.url && (inputContains(item.text, sourceText) || item.text === filenameFromUrl(item.url)));
+      continue;
+    }
+    if (key === 'relatedMax') {
+      const number = typeof value === 'number' ? value : Number(value);
+      if (Number.isFinite(number)) result[key] = Math.max(1, Math.min(10, Math.floor(number)));
+      continue;
+    }
+    if (key === 'videoWidth' && typeof value === 'string' && /^(?:100%|[1-9]\d{0,3})$/.test(value)) {
+      result[key] = value;
+      continue;
+    }
     if (key === 'tableRows' || key === 'tableCols') {
       if (typeof value === 'number' && Number.isFinite(value)) result[key] = Math.max(0, Math.min(30, Math.floor(value)));
       continue;
@@ -145,7 +211,7 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>):
       result[key] = value.slice(0, 30).filter(Array.isArray).map((row) => (row as unknown[]).slice(0, 12).map((cell) => String(cell ?? '').slice(0, 500)));
       continue;
     }
-    if (key === 'imageUrl') {
+    if (['imageUrl','linkUrl','buttonUrl','downloadFile','audioUrl','videoUrl','videoPoster'].includes(key)) {
       const url = validUrl(value, urls);
       if (url) result[key] = url;
       continue;
@@ -161,13 +227,38 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>):
   if (type === 'image' && !result.imageUrl && !result.gridUrls) return null;
   if (type === 'table' && (!Array.isArray(result.tableData) || result.tableData.length === 0)) return null;
   if (type === 'heading' && !text(result.content)) return null;
+  if (type === 'heading' && result.headingLevel === 'h3' && options.hasH3 === false) return null;
+  if (type === 'heading' && ['h4', 'h5', 'h6'].includes(String(result.headingLevel)) && options.hasH4 === false) return null;
   if (type === 'paragraph' && !text(result.content)) return null;
+  if (type === 'blockquote') {
+    const quote = text(result.content);
+    if (!quote || !inputContains(quote, sourceText)) return null;
+    if (text(result.quoteAuthor) && !inputContains(String(result.quoteAuthor), sourceText)) delete result.quoteAuthor;
+  }
   if (type === 'list' && (!Array.isArray(result.listItems) || result.listItems.length === 0)) return null;
   if (type === 'steps' && (!Array.isArray(result.steps) || result.steps.length === 0)) return null;
   if (type === 'keyPoints' && (!Array.isArray(result.items) || result.items.length === 0)) return null;
-  if (type === 'accordion' && !text(result.summary) && (!Array.isArray(result.accordions) || result.accordions.length === 0)) return null;
+  if (['accordion','accordionGroup'].includes(type) && !text(result.summary) && (!Array.isArray(result.accordions) || result.accordions.length === 0)) return null;
+  if (type === 'accordionGroup') result.accordionType = 'group';
   if (type === 'code' && !text(result.codeContent)) return null;
+  if (type === 'codeTabs' && !['tabHtml','tabCss','tabJs','tabJson'].some((key) => text(result[key]))) return null;
+  if (type === 'inlineCode' && !text(result.inlineCode)) return null;
+  if (type === 'kbd' && !text(result.kbdText)) return null;
   if (type === 'mark' && !text(result.markText)) return null;
+  if (type === 'link' && (!text(result.linkText) || !validUrl(result.linkUrl, urls))) return null;
+  if (type === 'button' && (!text(result.buttonText) || !validUrl(result.buttonUrl, urls))) return null;
+  if (type === 'downloadBox') {
+    const fileUrl = validUrl(result.downloadFile, urls);
+    const fileName = text(result.fileName);
+    const fileSize = text(result.fileSize);
+    const urlFileName = fileUrl ? filenameFromUrl(fileUrl) : undefined;
+    const knownName = fileName && (inputContains(fileName, sourceText) || (!!urlFileName && fileName.toLocaleLowerCase() === urlFileName.toLocaleLowerCase()));
+    if (!fileUrl || !knownName || !fileSize || !inputContains(fileSize, sourceText)) return null;
+  }
+  if (type === 'audioPlayer' && !validUrl(result.audioUrl, urls)) return null;
+  if (type === 'videoPlayer' && !validUrl(result.videoUrl, urls)) return null;
+  if (type === 'relatedManual' && (!Array.isArray(result.relatedLinks) || result.relatedLinks.length === 0)) return null;
+  if (type === 'relatedAuto' && !result.relatedMax) result.relatedMax = 6;
   return result;
 }
 
@@ -178,7 +269,7 @@ export function normalizeArticleSections(data: unknown, options: ArticleSectionP
   const allowed = allowedSectionTypes(options, urls);
   const sections = data.sections.flatMap((candidate) => {
     if (!isRecord(candidate) || typeof candidate.type !== 'string' || !allowed.has(candidate.type) || !SECTION_FIELDS[candidate.type]) return [];
-    const section = copyKnownFields(candidate, candidate.type, urls);
+    const section = copyKnownFields(candidate, candidate.type, urls, options);
     return section ? [section] : [];
   });
   return { ...data, sections };
