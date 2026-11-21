@@ -161,9 +161,9 @@
         <span class="hbtn-label">SEO</span>
       </button>
 
-      <button onclick="openImproveTextSheet()" class="modweeb-gen-btn primary header-action-btn" id="improveTextToolbarBtn" title="تحسين النص">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        <span class="hbtn-label">تحسين</span>
+      <button onclick="openSmartAssistant('outline')" class="modweeb-gen-btn primary header-action-btn" id="articleOutlineToolbarBtn" title="مخطط المقال بالذكاء الاصطناعي">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+        <span class="hbtn-label">مخطط</span>
       </button>
 
       <button onclick="toggleBloggerSection()" class="modweeb-gen-btn primary header-action-btn" id="toggleBloggerBtn" title="نشر بلوجر">
@@ -560,10 +560,10 @@
     <h3>المساعد الذكي والتحرير</h3>
     <div class="sheet-head-actions"><button class="sheet-close-btn" onclick="closeSheet('smartAssistantSheet')" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
   </div>
-  <div class="smart-assistant-tabs" role="tablist" aria-label="أوضاع المساعد">
+  <div class="smart-assistant-tabs" role="tablist" aria-label="أدوات المساعد الذكي">
     <button type="button" class="smart-assistant-tab active" aria-selected="true" onclick="setSmartAssistantTab('assistant',this)">إنشاء محتوى</button>
     <button type="button" class="smart-assistant-tab" aria-selected="false" onclick="setSmartAssistantTab('edit',this)">تعديل المقال</button>
-    <button type="button" class="smart-assistant-tab" aria-selected="false" onclick="setSmartAssistantTab('improve',this)">تحسين النص</button>
+    <button type="button" class="smart-assistant-tab" aria-selected="false" onclick="setSmartAssistantTab('outline',this)">مخطط المقال</button>
   </div>
   <div class="sheet-body smart-assistant-panel active" id="smartGeneratePanel">
 
@@ -621,7 +621,25 @@
     <div class="sheet-field"><label for="smartEditScope">نطاق التعديل</label><select id="smartEditScope" dir="rtl"><option value="article">المقال بالكامل مع الحفاظ على بقية المحتوى</option><option value="selection">النص المحدد في المحرر فقط</option></select></div>
     <div id="smartEditHint" class="ai-inline-help" role="status">سيتم حفظ التغيير في سجل التراجع قبل تطبيقه.</div>
   </div>
-  <div id="smartImprovePanel" class="sheet-body smart-assistant-panel" hidden></div>
+  <div class="sheet-body smart-assistant-panel" id="smartOutlinePanel" hidden>
+    <div class="article-outline-intro">
+      <div class="article-outline-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg></div>
+      <div><strong>خطّط قبل التوليد</strong><p>أنشئ هيكلاً منظماً، راجع العناوين وعدّل ترتيبها، ثم اعتمده ليتّبعه مولّد المقال.</p></div>
+    </div>
+    <div class="article-outline-fields">
+      <div class="sheet-field"><label for="articleOutlineTopic">موضوع المقال أو عنوانه</label><input id="articleOutlineTopic" type="text" dir="auto" maxlength="500" placeholder="اكتب الموضوع الذي تريد بناء المخطط له"></div>
+      <div class="sheet-field"><label for="articleOutlineKeyword">الكلمة المفتاحية المحورية <span class="ai-inline-help">اختياري</span></label><input id="articleOutlineKeyword" type="text" dir="auto" maxlength="180" placeholder="الكلمة الأساسية المستهدفة"></div>
+    </div>
+    <div class="article-outline-context" id="articleOutlineContext" role="status">سيستخدم المخطط نوع المقال وحجمه ولغته المختارة في إعدادات التوليد.</div>
+    <div id="articleOutlineEmpty" class="article-outline-empty"><span aria-hidden="true">✦</span><strong>لا يوجد مخطط بعد</strong><p>أنشئ اقتراحاً أولياً، ثم حرّر الأقسام والأسئلة قبل اعتماده.</p></div>
+    <div id="articleOutlineResult" class="article-outline-result" hidden>
+      <div class="article-outline-result-head"><div><strong>المخطط المقترح</strong><span>يمكنك تعديل العناوين وتحريك الأقسام أو حذفها.</span></div><button type="button" id="addArticleOutlineSection" class="article-outline-add">+ إضافة قسم</button></div>
+      <div class="sheet-field"><label for="articleOutlineTitle">العنوان الرئيسي المقترح</label><input id="articleOutlineTitle" type="text" dir="auto" maxlength="180"></div>
+      <div id="articleOutlineSections" class="article-outline-sections" aria-live="polite"></div>
+      <div class="sheet-field article-outline-faq"><label for="articleOutlineFaqQuestions">أسئلة قسم FAQ <span>سؤال واحد في كل سطر</span></label><textarea id="articleOutlineFaqQuestions" rows="4" dir="auto" spellcheck="true"></textarea></div>
+      <p class="article-outline-note">ستُدرج الأسئلة ضمن قسم FAQ الإلزامي. أما الخاتمة فتتبع خيارها في إعدادات مولّد المقال.</p>
+    </div>
+  </div>
   <div class="sheet-footer smart-assistant-footer" id="smartGenerateFooter" data-mode="assistant">
     <button type="button" id="smartHeaderBack" class="sheet-back-footer-btn" onclick="smartHeaderBack()" aria-label="العودة إلى إنشاء المحتوى" title="رجوع" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>رجوع</span></button>
     <button id="smartCloseBtn" onclick="closeSheet('smartAssistantSheet')" class="modweeb-gen-btn">إغلاق</button>
@@ -629,7 +647,6 @@
     <button onclick="smartCopyResult()" id="smartCopyBtn" class="modweeb-gen-btn secondary" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> نسخ</button>
     <button onclick="smartGenerate()" id="smartGenBtn" class="modweeb-gen-btn primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L13.5 8.5H19L14.5 11.5L16 17L12 14L8 17L9.5 11.5L5 8.5H10.5L12 3Z"/></svg> توليد</button>
   </div>
-  <div class="sheet-footer smart-assistant-footer" id="smartImproveFooter" hidden></div>
 </div>
 
 

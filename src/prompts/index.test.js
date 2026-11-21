@@ -10,11 +10,22 @@ beforeAll(async () => {
 describe('article prompt guidance', () => {
   it('preserves the existing public prompt API and return shape', () => {
     expect(Object.keys(prompts)).toEqual([
-      'article', 'suggestTitles', 'keywords', 'improveText', 'seoMeta', 'smartAssistant', 'smartArticleEdit'
+      'article', 'articleOutline', 'suggestTitles', 'keywords', 'improveText', 'seoMeta', 'smartAssistant', 'smartArticleEdit'
     ]);
     const result = prompts.article({ topic: 'موضوع تجريبي' });
     expect(Object.keys(result)).toEqual(['systemPrompt', 'userPrompt']);
     expect(result.userPrompt).toContain('موضوع تجريبي');
+  });
+
+  it('builds a structured outline prompt with the selected article context and no invented links', () => {
+    const request = prompts.articleOutline({ topic: 'دليل كتابة المحتوى', mainKeyword: 'كتابة المحتوى', articleType: 'guide', size: 'md', language: 'ar', hasH3: false });
+    expect(Object.keys(request)).toEqual(['systemPrompt', 'userPrompt']);
+    expect(request.systemPrompt).toContain('"sections":[{"heading":"عنوان H2"');
+    expect(request.systemPrompt).toContain('لا تقترح H3');
+    expect(request.systemPrompt).toContain('لا تخترع أرقاماً أو حقائق أو مصادر أو روابط');
+    expect(request.userPrompt).toContain('دليل كتابة المحتوى');
+    expect(request.userPrompt).toContain('كتابة المحتوى');
+    expect(request.userPrompt).toContain('9–12');
   });
 
   it('prioritizes useful, natural, accurate content and guards against fabricated facts', () => {

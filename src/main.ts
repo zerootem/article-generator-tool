@@ -151,19 +151,6 @@ movePanel('#bloggerSettingsSheet > .sheet-body', bloggerSettingsPanel);
 movePanel('#bloggerSettingsSheet > .sheet-footer', bloggerSettingsPanel);
 bloggerSettingsSource?.remove();
 
-const smartImprovePanel = byId('smartImprovePanel');
-const smartImproveFooter = byId('smartImproveFooter');
-const improveTextSource = byId('improveTextSheet');
-const improveTextBody = document.querySelector<HTMLElement>('#improveTextSheet > .sheet-body');
-if (improveTextBody && smartImprovePanel) {
-  Array.from(improveTextBody.childNodes).forEach((node) => smartImprovePanel.appendChild(node));
-}
-const improveActions = document.querySelector<HTMLElement>('#improveTextSheet > .sheet-footer');
-if (improveActions && smartImproveFooter) {
-  Array.from(improveActions.childNodes).forEach((node) => smartImproveFooter.appendChild(node));
-}
-improveTextSource?.remove();
-
 const keywordPanel = byId('seoKeywordPanel');
 const keywordHost = byId('seoKeywordHost');
 if (keywordPanel && keywordHost) keywordHost.appendChild(keywordPanel);
@@ -253,47 +240,51 @@ bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
 });
 (window as any).bloggerHeaderBack = () => (window as any).setBloggerPublishTab('compose');
 
-(window as any).setSmartAssistantTab = (name: 'assistant' | 'edit' | 'improve', activeButton?: HTMLElement | null) => {
-  const panels: Record<string, string> = { assistant: 'smartGeneratePanel', edit: 'smartEditPanel', improve: 'smartImprovePanel' };
+(window as any).setSmartAssistantTab = (name: 'assistant' | 'edit' | 'outline', activeButton?: HTMLElement | null) => {
+  const panels: Record<string, string> = { assistant: 'smartGeneratePanel', edit: 'smartEditPanel', outline: 'smartOutlinePanel' };
   const button = activeButton || document.querySelector<HTMLElement>(`.smart-assistant-tab[onclick*="'${name}'"]`);
   const panel = byId(panels[name]);
   selectTab('.smart-assistant-tab', button, '.smart-assistant-panel', panel);
-  const improveMode = name === 'improve';
   const back = byId('smartHeaderBack');
-  if (back) back.hidden = name === 'assistant' || name === 'improve';
-  const improveBack = byId('smartImproveBackBtn');
-  if (improveBack) improveBack.hidden = name !== 'improve';
+  if (back) back.hidden = name !== 'edit';
   const footer = byId('smartGenerateFooter');
-  if (footer) {
-    footer.hidden = improveMode;
-    footer.dataset.mode = name;
-  }
-  const improveFooter = byId('smartImproveFooter');
-  if (improveFooter) improveFooter.hidden = !improveMode;
+  if (footer) { footer.hidden = false; footer.dataset.mode = name; }
   const insertMode = byId('smartInsertMode');
   const insertLabel = document.querySelector<HTMLElement>('.smart-insert-mode-label');
+  const outputOptions = document.querySelector<HTMLElement>('.smart-output-options');
   if (insertMode) insertMode.hidden = name !== 'assistant';
   if (insertLabel) insertLabel.hidden = name !== 'assistant';
+  if (outputOptions) outputOptions.hidden = name !== 'assistant';
   const generateButton = byId('smartGenBtn');
-  if (generateButton) generateButton.textContent = name === 'edit' ? 'إنشاء التعديل' : 'توليد';
+  if (generateButton) generateButton.textContent = name === 'edit' ? 'إنشاء التعديل' : name === 'outline' ? 'اقتراح مخطط' : 'توليد';
   const insertButton = byId('smartInsertBtn');
   if (insertButton) {
-    insertButton.textContent = name === 'edit' ? 'تطبيق التعديل' : 'إدراج';
-    insertButton.style.display = name !== 'improve' && (window as any)._smartLastHTML ? 'inline-flex' : 'none';
+    insertButton.textContent = name === 'edit' ? 'تطبيق التعديل' : name === 'outline' ? 'اعتماد المخطط' : 'إدراج';
+    insertButton.setAttribute('aria-label', name === 'outline' ? 'اعتماد المخطط لاستخدامه عند توليد المقال' : name === 'edit' ? 'تطبيق التعديل على المقال' : 'إدراج النتيجة في المحرر');
+    const hasOutline = name === 'outline' && !!(window as any)._articleOutlineDraft;
+    insertButton.style.display = (name === 'edit' ? !!(window as any)._smartLastHTML : name === 'outline' ? hasOutline : !!(window as any)._smartLastHTML) ? 'inline-flex' : 'none';
   }
   const copyButton = byId('smartCopyBtn');
-  if (copyButton && name === 'improve') copyButton.style.display = 'none';
+  if (copyButton) copyButton.style.display = name === 'outline' && (window as any)._articleOutlineDraft ? 'inline-flex' : (window as any)._smartLastHTML ? 'inline-flex' : 'none';
   // Keep the one result/progress component visible in the active work panel.
   if (panel) {
     const progress = byId('smartProgressBar');
     const result = byId('smartResultPreview');
     if (progress) panel.appendChild(progress);
-    if (result) panel.appendChild(result);
+    if (result && name !== 'outline') panel.appendChild(result);
+  }
+  const type = (byId('aiArticleType') as HTMLSelectElement | null)?.selectedOptions[0]?.textContent || '';
+  const size = (byId('aiSize') as HTMLSelectElement | null)?.selectedOptions[0]?.textContent || '';
+  const language = (byId('aiLanguage') as HTMLSelectElement | null)?.selectedOptions[0]?.textContent || '';
+  const context = byId('articleOutlineContext');
+  if (context) {
+    const translate = (text: string) => (window as any).modweebI18n?.translate?.(text) || text;
+    context.textContent = `${translate('إعدادات المقال الحالية:')} ${type} · ${size} · ${language}. ${translate('يمكن تعديلها من نافذة التوليد قبل إنشاء المقال.')}`;
   }
   (window as any)._smartAssistantMode = name;
 };
 (window as any).smartHeaderBack = () => (window as any).setSmartAssistantTab('assistant');
-(window as any).openSmartAssistant = (name: 'assistant' | 'edit' | 'improve' = 'assistant') => {
+(window as any).openSmartAssistant = (name: 'assistant' | 'edit' | 'outline' = 'assistant') => {
   (window as any).openSheet?.('smartAssistantSheet');
   (window as any).setSmartAssistantTab(name);
   const topic = (byId('aiTopic') as HTMLInputElement | null)?.value || (byId('aiMainKeyword') as HTMLInputElement | null)?.value || '';
@@ -304,8 +295,15 @@ bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
     const editor = byId('unifiedCodeEditor') as HTMLTextAreaElement | null;
     if (instruction && !instruction.value && editor?.selectionStart !== editor?.selectionEnd) instruction.value = 'عدّل الجزء المحدد مع الحفاظ على معناه وتنسيقه.';
   }
+  if (name === 'outline') {
+    const outlineTopic = byId('articleOutlineTopic') as HTMLInputElement | null;
+    const outlineKeyword = byId('articleOutlineKeyword') as HTMLInputElement | null;
+    const mainTopic = (byId('aiTopic') as HTMLInputElement | null)?.value.trim() || '';
+    const mainKeyword = (byId('aiMainKeyword') as HTMLInputElement | null)?.value.trim() || '';
+    if (outlineTopic) outlineTopic.value = mainTopic || mainKeyword;
+    if (outlineKeyword) outlineKeyword.value = mainKeyword;
+  }
 };
-(window as any).openImproveTextSheet = () => (window as any).openSmartAssistant('improve');
 
 (window as any).setSmartAssistantTab('assistant');
 (byId('aiGenerationMode') as HTMLSelectElement | null)?.addEventListener('change', syncProviderSettings);

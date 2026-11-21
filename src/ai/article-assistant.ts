@@ -1,5 +1,7 @@
+import { articleOutlineMarkdown, formatArticleOutlineInstruction, normalizeArticleOutline, type ArticleOutline, type ArticleOutlineSection } from './article-outline';
+
 type EditScope = 'article' | 'selection';
-type SmartMode = 'assistant' | 'edit' | 'improve';
+type SmartMode = 'assistant' | 'edit' | 'outline';
 interface EditorSelection {
   start: number;
   end: number;
@@ -9,6 +11,7 @@ interface EditorSelection {
 
 const w = window as any;
 const byId = (id: string) => document.getElementById(id);
+const uiText = (text: string): string => w.modweebI18n?.translate?.(text) || text;
 
 function captureSelection(): EditorSelection {
   const editor = byId('unifiedCodeEditor') as HTMLTextAreaElement | null;
@@ -94,9 +97,200 @@ function applyEditorHtml(nextHtml: string, cursor: number): void {
   }
 }
 
+function readOutlineDraft(): ArticleOutline | null {
+  const draft = w._articleOutlineDraft as ArticleOutline | null;
+  if (!draft) return null;
+  draft.topic = (byId('articleOutlineTopic') as HTMLInputElement | null)?.value.trim().slice(0, 500) || '';
+  draft.title = (byId('articleOutlineTitle') as HTMLInputElement | null)?.value.trim().slice(0, 180) || '';
+  draft.mainKeyword = (byId('articleOutlineKeyword') as HTMLInputElement | null)?.value.trim().slice(0, 180) || '';
+  const faqText = (byId('articleOutlineFaqQuestions') as HTMLTextAreaElement | null)?.value || '';
+  draft.faqQuestions = faqText.split(/\r?\n/).map((question) => question.trim()).filter(Boolean);
+  return draft;
+}
+
+function outlineField(labelText: string, control: HTMLInputElement | HTMLTextAreaElement, index: number, field: string): HTMLDivElement {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'sheet-field';
+  const label = document.createElement('label');
+  control.id = `articleOutline-${field}-${index}`;
+  control.dataset.outlineIndex = String(index);
+  control.dataset.outlineField = field;
+  label.htmlFor = control.id;
+  label.textContent = labelText;
+  wrapper.append(label, control);
+  return wrapper;
+}
+
+function renderOutlineSections(): void {
+  const host = byId('articleOutlineSections');
+  const draft = w._articleOutlineDraft as ArticleOutline | null;
+  if (!host || !draft) return;
+  host.replaceChildren();
+  const hasH3 = !!(byId('aiHasH3') as HTMLInputElement | null)?.checked;
+  draft.sections.forEach((section, index) => {
+    const card = document.createElement('section');
+    card.className = 'article-outline-card';
+    const cardHead = document.createElement('div');
+    cardHead.className = 'article-outline-card-head';
+    const cardLabel = document.createElement('span');
+    cardLabel.textContent = `${uiText('القسم')} ${index + 1}`;
+    const actions = document.createElement('div');
+    actions.className = 'article-outline-card-actions';
+    const makeAction = (action: string, text: string, aria: string, disabled = false) => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.dataset.outlineAction = action; button.dataset.outlineIndex = String(index);
+      button.textContent = text; button.setAttribute('aria-label', `${aria} ${index + 1}`); button.title = `${aria} ${index + 1}`;
+      button.disabled = disabled;
+      actions.appendChild(button);
+    };
+    makeAction('up', '↑', uiText('تحريك القسم لأعلى'), index === 0);
+    makeAction('down', '↓', uiText('تحريك القسم لأسفل'), index === draft.sections.length - 1);
+    makeAction('remove', '×', uiText('حذف القسم'), draft.sections.length <= 3);
+    cardHead.append(cardLabel, actions);
+
+    const heading = document.createElement('input');
+    heading.type = 'text'; heading.value = section.heading; heading.maxLength = 140; heading.autocomplete = 'off';
+    const purpose = document.createElement('textarea');
+    purpose.value = section.purpose; purpose.maxLength = 320; purpose.rows = 2;
+    const subheadings = document.createElement('textarea');
+    subheadings.value = section.subheadings.join('\n'); subheadings.maxLength = 700; subheadings.rows = 2;
+    const subheadingField = outlineField('عناوين H3 فرعية (اختياري)', subheadings, index, 'subheadings');
+    subheadingField.hidden = !hasH3;
+    card.append(cardHead, outlineField('عنوان H2', heading, index, 'heading'), outlineField('فائدة القسم للقارئ', purpose, index, 'purpose'), subheadingField);
+    host.appendChild(card);
+  });
+}
+
+function renderArticleOutline(outline: ArticleOutline): void {
+  const result = byId('articleOutlineResult');
+  const empty = byId('articleOutlineEmpty');
+  const title = byId('articleOutlineTitle') as HTMLInputElement | null;
+  const faq = byId('articleOutlineFaqQuestions') as HTMLTextAreaElement | null;
+  if (result) result.hidden = false;
+  if (empty) empty.hidden = true;
+  if (title) title.value = outline.title;
+  if (faq) faq.value = outline.faqQuestions.join('\n');
+  renderOutlineSections();
+  const insert = byId('smartInsertBtn'); if (insert) insert.style.display = 'inline-flex';
+  const copy = byId('smartCopyBtn'); if (copy) copy.style.display = 'inline-flex';
+}
+
+async function runArticleOutline(): Promise<void> {
+  const topic = (byId('articleOutlineTopic') as HTMLInputElement | null)?.value.trim() || '';
+  const mainKeyword = (byId('articleOutlineKeyword') as HTMLInputElement | null)?.value.trim() || '';
+  const button = byId('smartGenBtn') as HTMLButtonElement | null;
+  const progress = byId('smartProgressBar');
+  const empty = byId('articleOutlineEmpty');
+  const result = byId('articleOutlineResult');
+  const currentDraft = w._articleOutlineDraft as ArticleOutline | null;
+  const previousOutline = currentDraft ? {
+    ...(readOutlineDraft() as ArticleOutline),
+    sections: currentDraft.sections.map((section) => ({ ...section, subheadings: [...section.subheadings] })),
+    faqQuestions: [...currentDraft.faqQuestions],
+  } : null;
+  if (!topic) { showMessage('أدخل موضوع المقال أولاً لبناء المخطط.'); return; }
+  if (button) { button.disabled = true; button.textContent = 'جارٍ اقتراح المخطط…'; }
+  if (progress) {
+    progress.style.display = 'block';
+    const label = progress.querySelector('div');
+    if (label) label.textContent = 'جاري إعداد مخطط المقال...';
+  }
+  if (empty) empty.hidden = !!previousOutline;
+  if (result && !previousOutline) result.hidden = true;
+  try {
+    const request = w.modweebPrompts?.articleOutline?.({
+      topic,
+      mainKeyword,
+      articleType: (byId('aiArticleType') as HTMLSelectElement | null)?.value || 'guide',
+      size: (byId('aiSize') as HTMLSelectElement | null)?.value || 'md',
+      language: (byId('aiLanguage') as HTMLSelectElement | null)?.value || 'ar',
+      hasH3: !!(byId('aiHasH3') as HTMLInputElement | null)?.checked,
+    });
+    if (!request) throw new Error('قالب مخطط المقال غير متاح؛ أعد تحميل الأداة.');
+    const raw = await callAI(request.systemPrompt, request.userPrompt, { maxTokens: 4500, jsonMode: true });
+    const outline = normalizeArticleOutline(parseJson(raw), topic, mainKeyword);
+    w._approvedArticleOutline = null;
+    w._approvedArticleOutlineTitle = '';
+    w._approvedArticleOutlinePrompt = '';
+    w._articleOutlineDraft = outline;
+    w._smartLastResult = { mode: 'outline' };
+    w._smartLastHTML = '';
+    renderArticleOutline(outline);
+    showMessage('اكتمل المخطط. راجع ترتيب الأقسام وعدّل ما يلزم قبل اعتماده.');
+  } catch (error) {
+    if (previousOutline) {
+      w._articleOutlineDraft = previousOutline;
+      renderArticleOutline(previousOutline);
+    } else if (empty) empty.hidden = false;
+    showMessage(`${uiText('تعذر إعداد المخطط:')} ${error instanceof Error ? error.message : 'خطأ غير معروف'}`, 5000);
+  } finally {
+    if (progress) progress.style.display = 'none';
+    if (button) { button.disabled = false; button.textContent = 'اقتراح مخطط'; }
+  }
+}
+
+function applyArticleOutline(): void {
+  const originalOutline = w._articleOutlineDraft as ArticleOutline | null;
+  const currentTopic = (byId('articleOutlineTopic') as HTMLInputElement | null)?.value.trim() || '';
+  const normalizeTopic = (value: string) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  if (originalOutline && normalizeTopic(originalOutline.topic) !== normalizeTopic(currentTopic)) {
+    showMessage('تغير موضوع المخطط؛ أنشئ اقتراحاً جديداً لهذا الموضوع قبل اعتماده.');
+    return;
+  }
+  const outline = readOutlineDraft();
+  if (!outline || !outline.topic || !outline.title) { showMessage('أدخل موضوعاً وعنواناً صالحين للمخطط.'); return; }
+  if (outline.sections.length < 3) { showMessage('أبقِ ثلاثة أقسام رئيسية على الأقل قبل اعتماد المخطط.'); return; }
+  if (outline.sections.some((section) => !section.heading)) { showMessage('أكمل عناوين جميع الأقسام قبل اعتماد المخطط.'); return; }
+  const faqInput = byId('articleOutlineFaqQuestions') as HTMLTextAreaElement | null;
+  const rawFaqCount = (faqInput?.value || '').split(/\r?\n/).map((question) => question.trim()).filter(Boolean).length;
+  if (rawFaqCount > 5) { showMessage('أبقِ أسئلة FAQ بين أربعة وخمسة أسئلة.'); return; }
+  if (outline.faqQuestions.length < 4) { showMessage('أضف أربعة أسئلة شائعة على الأقل قبل اعتماد المخطط.'); return; }
+  const titleInput = byId('aiTopic') as HTMLInputElement | null;
+  const keywordInput = byId('aiMainKeyword') as HTMLInputElement | null;
+  if (titleInput) titleInput.value = outline.title;
+  if (keywordInput) keywordInput.value = outline.mainKeyword;
+  w._approvedArticleOutline = {
+    ...outline,
+    sections: outline.sections.map((section: ArticleOutlineSection) => ({ ...section, subheadings: [...section.subheadings] })),
+    faqQuestions: [...outline.faqQuestions],
+  };
+  w._approvedArticleOutlineTitle = outline.title;
+  w._approvedArticleOutlinePrompt = formatArticleOutlineInstruction(
+    outline,
+    !!(byId('aiHasH3') as HTMLInputElement | null)?.checked,
+    (byId('aiLanguage') as HTMLSelectElement | null)?.value || 'ar',
+  );
+  showMessage('تم اعتماد المخطط؛ سيتبعه مولّد المقال عند إنشاء المقال بهذا العنوان.');
+}
+
+function handleOutlineSectionEvent(event: Event): void {
+  const target = event.target as HTMLElement;
+  const draft = w._articleOutlineDraft as ArticleOutline | null;
+  if (!draft) return;
+  if (event.type === 'input' && target.dataset.outlineIndex !== undefined) {
+    const index = Number(target.dataset.outlineIndex);
+    const section = draft.sections[index];
+    if (!section) return;
+    const value = (target as HTMLInputElement | HTMLTextAreaElement).value;
+    if (target.dataset.outlineField === 'heading') section.heading = value.slice(0, 140);
+    if (target.dataset.outlineField === 'purpose') section.purpose = value.slice(0, 320);
+    if (target.dataset.outlineField === 'subheadings') section.subheadings = value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 5);
+    return;
+  }
+  if (event.type !== 'click') return;
+  const button = target.closest<HTMLButtonElement>('[data-outline-action]');
+  if (!button) return;
+  const index = Number(button.dataset.outlineIndex);
+  const action = button.dataset.outlineAction;
+  if (action === 'remove' && draft.sections.length > 3) draft.sections.splice(index, 1);
+  if (action === 'up' && index > 0) [draft.sections[index - 1], draft.sections[index]] = [draft.sections[index], draft.sections[index - 1]];
+  if (action === 'down' && index < draft.sections.length - 1) [draft.sections[index + 1], draft.sections[index]] = [draft.sections[index], draft.sections[index + 1]];
+  renderOutlineSections();
+}
+
 async function smartGenerate(): Promise<void> {
   const mode = (w._smartAssistantMode || 'assistant') as SmartMode;
-  if (mode === 'improve') { await runImproveText(); return; }
+  if (mode === 'outline') { await runArticleOutline(); return; }
   const topic = (byId('smartContextTopic') as HTMLInputElement | null)?.value.trim() || '';
   const language = (byId('aiLanguage') as HTMLSelectElement | null)?.value || 'ar';
   const button = byId('smartGenBtn') as HTMLButtonElement | null;
@@ -174,9 +368,11 @@ async function smartGenerate(): Promise<void> {
 
 function smartCopyResult(): void {
   const result = w._smartLastResult || {};
-  const text = result.mode === 'edit'
-    ? result.scope === 'selection' ? result.replacementHtml : JSON.stringify({ findHtml: result.findHtml, replacementHtml: result.replacementHtml }, null, 2)
-    : String(result.html || '');
+  const text = result.mode === 'outline'
+    ? articleOutlineMarkdown(readOutlineDraft() || w._articleOutlineDraft, (byId('aiLanguage') as HTMLSelectElement | null)?.value || 'ar')
+    : result.mode === 'edit'
+      ? result.scope === 'selection' ? result.replacementHtml : JSON.stringify({ findHtml: result.findHtml, replacementHtml: result.replacementHtml }, null, 2)
+      : String(result.html || '');
   if (!text.trim()) { showMessage('لا يوجد محتوى للنسخ'); return; }
   navigator.clipboard?.writeText(text).then(() => showMessage('تم النسخ')).catch(() => showMessage('تعذر النسخ'));
 }
@@ -184,6 +380,7 @@ function smartCopyResult(): void {
 function smartInsertResult(): void {
   const result = w._smartLastResult;
   if (!result) { showMessage('لا توجد نتيجة'); return; }
+  if (result.mode === 'outline') { applyArticleOutline(); return; }
   const editor = byId('unifiedCodeEditor') as HTMLTextAreaElement | null;
   if (!editor) { showMessage('محرر المقال غير متاح'); return; }
   const current = editor.value;
@@ -310,7 +507,6 @@ export function installArticleAssistant(): void {
   const originalOpenSheet = w.openSheet;
   if (typeof originalOpenSheet === 'function' && !originalOpenSheet.__modweebRouted) {
     const routed = function (this: any, id: string, ...args: unknown[]) {
-      if (id === 'improveTextSheet') { w.openSmartAssistant?.('improve'); return; }
       if (id === 'aiAgentSheet') { w.openAgent?.(); return; }
       if (id === 'bloggerSettingsSheet') { w.openBloggerSettingsFromPublish?.(); return; }
       return originalOpenSheet.call(this, id, ...args);
@@ -328,7 +524,26 @@ export function installArticleAssistant(): void {
   configureReturn('bloggerSettingsBackBtn', () => w.setBloggerPublishTab?.('compose'));
   configureReturn('smartImproveBackBtn', () => w.setSmartAssistantTab?.('assistant'));
 
+  const outlineSections = byId('articleOutlineSections');
+  outlineSections?.addEventListener('input', handleOutlineSectionEvent);
+  outlineSections?.addEventListener('click', handleOutlineSectionEvent);
+  byId('addArticleOutlineSection')?.addEventListener('click', () => {
+    const draft = w._articleOutlineDraft as ArticleOutline | null;
+    if (!draft) { showMessage('أنشئ مخططاً أولاً ثم أضف الأقسام.'); return; }
+    if (draft.sections.length >= 18) { showMessage('وصل المخطط إلى الحد الأقصى للأقسام.'); return; }
+    draft.sections.push({ heading: '', purpose: '', subheadings: [] });
+    renderOutlineSections();
+    const lastHeading = outlineSections?.querySelector<HTMLInputElement>('.article-outline-card:last-child input');
+    lastHeading?.focus();
+  });
+
   const originalOpenSmart = w.openSmartAssistant;
+  const originalOpenImprove = w.openImproveTextSheet;
+  w.openImproveTextSheet = () => {
+    openImproveMode();
+    if (typeof originalOpenImprove === 'function') originalOpenImprove.call(w);
+    else w.openSheet?.('improveTextSheet');
+  };
   w.openSmartAssistant = (mode: SmartMode = 'assistant') => {
     w._smartSelection = captureSelection();
     w._smartLastResult = null;
@@ -336,18 +551,23 @@ export function installArticleAssistant(): void {
     const preview = byId('smartResultPreview'); if (preview) preview.style.display = 'none';
     const insert = byId('smartInsertBtn'); if (insert) insert.style.display = 'none';
     const copy = byId('smartCopyBtn'); if (copy) copy.style.display = 'none';
+    if (mode === 'outline') {
+      w._articleOutlineDraft = null;
+      const result = byId('articleOutlineResult'); if (result) result.hidden = true;
+      const empty = byId('articleOutlineEmpty'); if (empty) empty.hidden = false;
+    }
     originalOpenSmart?.(mode);
-    if (mode === 'improve') openImproveMode();
     if (mode === 'edit') {
       const prompt = byId('smartEditPrompt') as HTMLTextAreaElement | null;
       if (prompt && !prompt.value && w._smartSelection.html) prompt.value = 'عدّل الجزء المحدد مع الحفاظ على معناه وتنسيقه.';
     }
   };
 
-  w.openImproveTextSheet = () => w.openSmartAssistant?.('improve');
   w.smartGenerate = smartGenerate;
   w.smartInsertResult = smartInsertResult;
   w.smartCopyResult = smartCopyResult;
+  w.applyArticleOutline = applyArticleOutline;
+  w.runArticleOutline = runArticleOutline;
   w.runImproveText = runImproveText;
   w.applyImproveResult = applyImproveResult;
 }

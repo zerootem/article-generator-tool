@@ -1063,9 +1063,41 @@ button#btnAiSlug:disabled svg {
   border-top: 1px solid var(--contentL);
 }
 #smartAssistantSheet > .sheet-footer[hidden] { display: none !important; }
-#smartImprovePanel { overflow-y: auto !important; }
-#smartImproveFooter { display: flex; }
-#smartImproveFooter[hidden] { display: none !important; }
+#smartOutlinePanel { gap: 10px; }
+.article-outline-intro{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--contentL);border-radius:10px;background:var(--contentBa)}
+.article-outline-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border-radius:10px;background:var(--linkL);color:var(--linkC)}
+.article-outline-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.article-outline-intro strong,.article-outline-result-head strong{display:block;color:var(--bodyC);font-size:.82rem}
+.article-outline-intro p{margin:3px 0 0;color:var(--notifC);font-size:.7rem;line-height:1.5}
+.article-outline-fields{display:grid;grid-template-columns:1.35fr 1fr;gap:8px}
+.article-outline-fields .sheet-field{margin:0;min-width:0}
+.article-outline-context{padding:7px 9px;border-inline-start:3px solid var(--linkC);border-radius:6px;background:var(--contentBa);color:var(--notifC);font-size:.68rem;line-height:1.5}
+.article-outline-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:100px;padding:14px;border:1px dashed var(--contentL);border-radius:10px;color:var(--notifC);text-align:center}
+.article-outline-empty>span{color:var(--linkC);font-size:1.15rem}
+.article-outline-empty strong{color:var(--bodyC);font-size:.78rem}
+.article-outline-empty p{margin:0;font-size:.68rem}
+.article-outline-result{display:flex;flex-direction:column;gap:9px}
+.article-outline-result[hidden]{display:none!important}
+.article-outline-result-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.article-outline-result-head span{display:block;margin-top:3px;color:var(--notifC);font-size:.66rem}
+.article-outline-add{flex:0 0 auto;min-height:30px;padding:0 9px;border:1px solid var(--contentL);border-radius:7px;background:var(--contentBa);color:var(--linkC);font:inherit;font-size:.68rem;cursor:pointer}
+.article-outline-sections{display:flex;flex-direction:column;gap:7px}
+.article-outline-card{padding:9px;border:1px solid var(--contentL);border-radius:9px;background:var(--contentBa)}
+.article-outline-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;color:var(--notifC);font-size:.68rem}
+.article-outline-card-actions{display:flex;gap:4px}
+.article-outline-card-actions button{width:26px;height:25px;padding:0;border:1px solid var(--contentL);border-radius:6px;background:var(--contentB);color:var(--bodyC);font:inherit;font-size:.7rem;cursor:pointer}
+.article-outline-card-actions button:hover{border-color:var(--linkC);color:var(--linkC)}
+.article-outline-card-actions button:disabled{opacity:.45;cursor:not-allowed}
+.article-outline-card .sheet-field{margin:0 0 6px}
+.article-outline-card .sheet-field:last-child{margin-bottom:0}
+.article-outline-card input,.article-outline-card textarea,.article-outline-faq textarea,#smartOutlinePanel input{width:100%;box-sizing:border-box;min-height:34px;padding:7px 9px;border:1px solid var(--contentL);border-radius:7px;background:var(--contentB);color:var(--bodyC);font:inherit;font-size:.75rem;line-height:1.5}
+.article-outline-card textarea,.article-outline-faq textarea{min-height:52px;resize:vertical}
+.article-outline-card :is(input,textarea):focus,.article-outline-faq textarea:focus,#smartOutlinePanel input:focus{border-color:var(--linkC);outline:2px solid color-mix(in srgb,var(--linkC) 15%,transparent)}
+.article-outline-faq{margin:0}
+.article-outline-faq label{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.article-outline-faq label span,.article-outline-note{color:var(--notifC);font-size:.65rem}
+.article-outline-note{margin:0;line-height:1.5}
+@media(max-width:520px){.article-outline-fields{grid-template-columns:1fr}.article-outline-intro{align-items:flex-start}.article-outline-result-head{align-items:flex-start}.article-outline-card{padding:8px}}
 #aiProgressBar { position: relative !important; top: auto !important; flex: 0 0 auto; }
 
 /* Consistent small SVG back action in modal footers. */
@@ -1264,8 +1296,8 @@ button#btnAiSlug:disabled svg {
 #aiSettingsPanel .sheet-footer { display: flex; flex-wrap: wrap; gap: 6px; }
 #aiSettingsPanel .sheet-back-footer-btn,
 #bloggerSettingsPanel .sheet-back-footer-btn,
-#smartGenerateFooter .sheet-back-footer-btn,
-#smartImproveFooter .sheet-back-footer-btn { justify-self: start; }
+#smartGenerateFooter .sheet-back-footer-btn { justify-self: start; }
+#smartOutlinePanel .sheet-field label { margin-bottom: 4px; }
 
 @media (max-width: 600px) {
   #aiPopup,
@@ -1286,8 +1318,7 @@ button#btnAiSlug:disabled svg {
 /* Hidden attributes must win over the explicit grid footers above. */
 #aiGenerateFooter[hidden],
 #bloggerComposeFooter[hidden],
-#smartGenerateFooter[hidden],
-#smartImproveFooter[hidden] { display: none !important; }
+#smartGenerateFooter[hidden] { display: none !important; }
 
 /* Flat, compact action bars. IDs deliberately beat legacy !important sizes. */
 html body .ai-bottom-sheet > .sheet-footer,

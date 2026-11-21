@@ -49,14 +49,35 @@ describe('modal navigation and compact footer regressions', () => {
     }
   });
   it('keeps output choices out of the pinned assistant footer', () => {
-    const footer = html.split('id="smartGenerateFooter"')[1].split('id="smartImproveFooter"')[0];
+    const footerStart = html.indexOf('id="smartGenerateFooter"');
+    const footer = html.slice(footerStart, html.indexOf('</div>', footerStart));
     expect(footer).not.toContain('id="smartInsertMode"');
     expect(footer).not.toContain('smart-fmt-toggle');
     expect(html).toContain('class="smart-output-options"');
   });
-  it('moves improve action children, never nests a second footer', () => {
-    expect(main).toContain('improveActions.childNodes');
-    expect(main).not.toContain("movePanel('#improveTextSheet > .sheet-footer', smartImproveFooter)");
+  it('replaces the redundant improve toolbar action with the article outline workflow', () => {
+    expect(html).toContain('id="articleOutlineToolbarBtn"');
+    expect(html).toContain("onclick=\"openSmartAssistant('outline')\"");
+    expect(html).toContain('id="smartOutlinePanel"');
+    expect(html).not.toContain('id="improveTextToolbarBtn"');
+    expect(html).not.toContain("setSmartAssistantTab('improve'");
+    expect(main).toContain("outline: 'smartOutlinePanel'");
+    expect(main).not.toContain('smartImprovePanel');
+  });
+  it('provides editable ordered H2 sections and FAQ before accepting an outline', () => {
+    expect(html).toContain('id="articleOutlineSections"');
+    expect(html).toContain('id="articleOutlineFaqQuestions"');
+    expect(html).toContain('id="addArticleOutlineSection"');
+    expect(main).toContain("name === 'outline' ? 'اعتماد المخطط'");
+    expect(css).toContain('.article-outline-card');
+    expect(css).toContain('@media(max-width:520px){.article-outline-fields{grid-template-columns:1fr}');
+  });
+  it('appends a matching approved outline without replacing the writer custom request', () => {
+    const generate = core.slice(core.indexOf('async function aiGenerateArticle()'), core.indexOf('function aiSelectTitle('));
+    expect(generate).toContain('approvedOutlineTitle === effectiveTopic');
+    expect(generate).toContain("(document.getElementById('aiCustomRequest')||{}).value || ''");
+    expect(generate).toContain('outlineInstruction');
+    expect(generate).toContain(".filter(Boolean).join('\\n\\n')");
   });
   it('feeds CSS to Vite for versioned production assets and keeps an export fallback', () => {
     expect(html).toContain('href="/src/styles/app.css"');

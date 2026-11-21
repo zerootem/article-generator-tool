@@ -1385,11 +1385,18 @@ async function aiGenerateArticle(){
     if (bar) bar.style.display = 'block';
     if (txt) txt.textContent = 'جاري توليد المقال...';
 
+    const approvedOutlineTitle = String(window._approvedArticleOutlineTitle || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    const outlineMatchesTopic = approvedOutlineTitle && approvedOutlineTitle === effectiveTopic.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    const outlineInstruction = outlineMatchesTopic ? String(window._approvedArticleOutlinePrompt || '').trim() : '';
+    const customRequest = [
+        (document.getElementById('aiCustomRequest')||{}).value || '',
+        outlineInstruction
+    ].map(value => String(value || '').trim()).filter(Boolean).join('\n\n');
     const params = {
         topic: effectiveTopic,
         mainKeyword: mainKw.trim(),
         keywords: (document.getElementById('aiKeywords')||{}).value || '',
-        customRequest: (document.getElementById('aiCustomRequest')||{}).value || '',
+        customRequest,
         writingMode: window._aiWritingMode || 'default',
         tone: (document.getElementById('aiTone')||{}).value || 'professional',
         size: (document.getElementById('aiSize')||{}).value || 'md',

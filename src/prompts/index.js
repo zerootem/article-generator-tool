@@ -254,6 +254,14 @@ const OPENING_MAP = {
 function promptLanguage(language) { return language === 'en' ? 'English' : 'العربية الفصحى'; }
 window.modweebPrompts = {
   article: params => buildArticlePrompt(params || {}),
+  articleOutline: ({ topic = '', mainKeyword = '', articleType = 'guide', size = 'md', language = 'ar', hasH3 = true } = {}) => {
+    const sectionTarget = ({ xs: '4–6', sm: '6–9', md: '9–12', lg: '12–16' })[size] || '9–12';
+    const typeGuide = ARTICLE_TYPE_MAP[articleType] || ARTICLE_TYPE_MAP.guide;
+    return {
+      systemPrompt: `أنت مخطط تحريري لمقالات مفيدة وصديقة للبحث. اكتب باللغة ${promptLanguage(language)}. أعد JSON صالحاً فقط بلا Markdown أو شرح خارجه، بالمخطط التالي حصراً: {"title":"...","sections":[{"heading":"عنوان H2","purpose":"وظيفة القسم للقارئ","subheadings":["عنوان H3"]}],"faqQuestions":["سؤال واقعي"]}. أنشئ بين 4 و16 قسماً موضوعياً بحسب الطلب وحجم المقال، مع 4–5 أسئلة شائعة مختلفة. اجعل عناوين الأقسام متسلسلة منطقياً وتغطي نية البحث دون تكرار. ${hasH3 ? 'أضف H3 فقط عندما يوضح فكرة فرعية حقيقية، ويمكن تركها فارغة.' : 'أخرج subheadings كمصفوفة فارغة دائماً ولا تقترح H3.'} لا تضف مقدمة أو خاتمة أو FAQ إلى sections؛ التطبيق يدرج العناصر الإلزامية في مواضعها. لا تخترع أرقاماً أو حقائق أو مصادر أو روابط أو عناوين URLs. اجعل purpose موجزاً يوضح فائدة كل قسم، دون كتابة متن المقال.`,
+      userPrompt: `موضوع/عنوان المقال: ${topic}\nالكلمة المفتاحية المحورية: ${mainKeyword || 'غير محددة'}\nنوع المقال: ${typeGuide}\nعدد الأقسام المستهدف لحجم المقال: ${sectionTarget}\nاقترح عنواناً رئيسياً مناسباً ومخططاً متوازناً قابلًا للتنفيذ، واجعل الأسئلة الشائعة مرتبطة مباشرة بموضوع البحث.`
+    };
+  },
   suggestTitles: ({ title = '', language = 'ar', count = 10 } = {}) => ({
     systemPrompt: `أنت محرر عناوين. اقترح عناوين دقيقة وجذابة وغير مضللة باللغة ${promptLanguage(language)}. أعد JSON صالحاً فقط بهذا الشكل: {"suggestions":["..."]}. لا تضف شروحاً.`,
     userPrompt: `اقترح ${Math.max(1, Math.min(20, Number(count) || 10))} عناوين مختلفة للموضوع التالي، مع الحفاظ على معناه وتجنب الادعاءات غير المدعومة:\n${title}`
