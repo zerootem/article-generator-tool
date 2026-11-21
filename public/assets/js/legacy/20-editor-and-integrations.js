@@ -4144,14 +4144,23 @@ function setStatus(msg, type){
   }
 
   // ============ اختبار الاتصال ============
+  let pendingConnectionTest = false;
   async function test(){
-    const data = await readAll();
-    if (!data.blogId || !data.apiKey){
-      setStatus(' Blog ID و API Key مطلوبان للاختبار', 'err');
+    if (!window.modweebCrypto?.isUnlocked()) {
+      pendingConnectionTest = true;
+      refreshVaultUI();
+      setStatus('الخزنة مقفلة. أدخل كلمة المرور؛ سيُعاد اختبار الاتصال تلقائياً بعد فتحها.', 'err');
+      document.getElementById('bloggerVaultPassword')?.focus();
       return;
     }
-    setStatus(' جاري اختبار الوصول إلى Blogger API...', 'loading');
+    pendingConnectionTest = false;
     try{
+      const data = await readAll();
+      if (!data.blogId || !data.apiKey){
+        setStatus('Blog ID و API Key مطلوبان للاختبار', 'err');
+        return;
+      }
+      setStatus('جاري اختبار الوصول إلى Blogger API...', 'loading');
       const url = 'https://www.googleapis.com/blogger/v3/blogs/' +
         encodeURIComponent(data.blogId) + '?key=' + encodeURIComponent(data.apiKey);
       const r = await fetch(url);
@@ -4209,7 +4218,12 @@ function setStatus(msg, type){
       if (message) message.textContent = '';
       refreshVaultUI();
       await refreshFields();
-      setStatus('الخزنة مفتوحة؛ اضغط حفظ لتثبيت المدخلات الجديدة.', 'ok');
+      if (pendingConnectionTest) {
+        pendingConnectionTest = false;
+        await test();
+      } else {
+        setStatus('الخزنة مفتوحة؛ اضغط حفظ لتثبيت المدخلات الجديدة.', 'ok');
+      }
     } catch(e) {
       if (message) message.textContent = e.message || 'تعذر فتح الخزنة.';
       input.value = ''; confirm.value = '';

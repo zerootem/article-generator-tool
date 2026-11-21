@@ -4,7 +4,7 @@
 /* ═══════════════════════════════════════════════════════════
    ⚙️ إعدادات التحكم العامة
    ═══════════════════════════════════════════════════════════ */
-const MW_SLUG_ENABLED = false;  // ← false = معطّل | true = مفعّل
+const MW_SLUG_ENABLED = false;  // Blogger API لا يدعم تعيين الرابط المخصص عند الإنشاء.
 
 let modweebBlocks = [];
 let modweebHistory = [];
@@ -2658,7 +2658,7 @@ function smartInsertResult(){
 /* ============================================================
    24. Blogger Publish
    ============================================================ */
-let currentAccessToken = null, tokenExpiryTime = 0;
+let currentAccessToken = null, tokenExpiryTime = 0, lastBloggerAuthError = '';
 const BLOGGER_CONFIG = {
     BLOG_ID: "",
     API_KEY: "",
@@ -2668,8 +2668,17 @@ const BLOGGER_CONFIG = {
 };
 
 async function refreshAccessToken(){
-    // Avoid an invalid OAuth request during startup before Blogger settings load.
-    if (!String(BLOGGER_CONFIG.REFRESH_TOKEN || '').trim()) return false;
+    lastBloggerAuthError = '';
+    if (!String(BLOGGER_CONFIG.REFRESH_TOKEN || '').trim()) {
+        lastBloggerAuthError = 'Refresh Token غير محفوظ؛ افتح إعدادات Blogger واحفظ بيانات OAuth.';
+        modweebShowStatus(lastBloggerAuthError, 4000);
+        return false;
+    }
+    if (!String(BLOGGER_CONFIG.CLIENT_ID || '').trim() || BLOGGER_CONFIG.CLIENT_ID === '.' || !String(BLOGGER_CONFIG.CLIENT_SECRET || '').trim()) {
+        lastBloggerAuthError = 'بيانات Client ID أو Client Secret غير مكتملة؛ راجع إعدادات Blogger.';
+        modweebShowStatus(lastBloggerAuthError, 4000);
+        return false;
+    }
     modweebShowStatus("جاري تجديد الصلاحية", 2000);
     const p = new URLSearchParams();
     p.append("client_id", BLOGGER_CONFIG.CLIENT_ID);
@@ -2685,9 +2694,16 @@ async function refreshAccessToken(){
             modweebShowStatus("الصلاحية جاهزة", 1000);
             return true;
         }
-        modweebShowStatus("فشل التجديد: " + (d.error_description || ""), 4000);
+        lastBloggerAuthError = d.error === 'invalid_grant'
+            ? 'Refresh Token غير صالح أو أُلغي؛ أنشئ Refresh Token جديداً واحفظه.'
+            : (d.error_description || d.error || 'تحقق من بيانات OAuth وصلاحيات Blogger.');
+        modweebShowStatus("فشل التجديد: " + lastBloggerAuthError, 4000);
         return false;
-    } catch(e) { modweebShowStatus("خطأ في الاتصال", 3000); return false; }
+    } catch(e) {
+        lastBloggerAuthError = 'تعذر الاتصال بخادم Google للتحقق من الصلاحية.';
+        modweebShowStatus(lastBloggerAuthError, 3000);
+        return false;
+    }
 }
 async function getValidAccessToken(){
     if (currentAccessToken && Date.now() < tokenExpiryTime) return currentAccessToken;
@@ -2746,18 +2762,39 @@ function openPublishedUrl(){
     }
 }
 
-function sanitizeSlugEnglish(raw){
-    if (!raw) return '';
-    return raw.toString().trim().toLowerCase().replace(/[^a-z0-9\-\s]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+function buildBloggerPostPayload({blogId, postType, title, labels, content}){
+    const isPage = postType === 'page';
+    const articleContent = String(content || '');
+    const pageContent = articleContent.replace(/<!--\s*more\s*-->\s*/gi, '');
+    const payload = {
+        // Blogger API expects the resource kind "blogger" for posts and pages.
+        kind: 'blogger',
+        blog: {id: String(blogId || '').trim()},
+        title: String(title || '').trim(),
+        content: isPage
+            ? pageContent
+            : articleContent.includes('<!--more-->') ? articleContent : '<!--more-->\n' + articleContent
+    };
+    // Pages do not support post labels or the post-only read-more marker.
+    if (!isPage) {
+        const cleanLabels = String(labels || '').split(/[,،]/).map(label => label.trim()).filter(Boolean);
+        if (cleanLabels.length) payload.labels = cleanLabels;
+    }
+    // Blogger API does not expose a custom permalink field; Blogger derives it from the title.
+    return payload;
 }
 
 async function publishToBlogger(retry){
     if (retry === undefined) retry = 0;
+    if (!window.modweebCrypto?.isUnlocked?.()) {
+        modweebShowStatus('الخزنة مقفلة؛ افتحها من إعدادات Blogger ثم أعد النشر.', 5000);
+        window.openBloggerSettingsFromPublish?.();
+        return;
+    }
     const blogId = (document.getElementById('bloggerBlogId')||{}).value?.trim() || BLOGGER_CONFIG.BLOG_ID;
     const postType = (document.getElementById('bloggerPostType')||{}).value || 'post';
     const title = (document.getElementById('bloggerPostTitle')||{}).value?.trim() || '';
     const labels = (document.getElementById('bloggerPostLabels')||{}).value?.trim() || '';
-    const slug = (document.getElementById('bloggerPostSlug')||{}).value?.trim() || '';
     if (!title) { showFailurePopup('يرجى إدخال عنوان المقال'); return; }
     if (!modweebArticleHTML || !modweebArticleHTML.trim()) generateFullHTML();
     if (!modweebArticleHTML || !modweebArticleHTML.trim()) { showFailurePopup('لا يوجد محتوى'); return; }
@@ -2766,20 +2803,15 @@ async function publishToBlogger(retry){
     if (publishBtn) { publishBtn.disabled = true; publishBtn.innerHTML = 'جاري النشر...'; }
     try {
         const token = await getValidAccessToken();
-        if (!token) throw new Error('تعذر الحصول على صلاحية صالحة.');
-        const cleanLabels = labels.split(',').map(l => l.trim()).filter(l => l.length > 0);
-        const postData = { kind: 'blogger#' + postType, blog: {id: blogId}, title, content: modweebArticleHTML.includes('<!--more-->') ? modweebArticleHTML : '<!--more-->\n' + modweebArticleHTML };
-        if (cleanLabels.length) postData.labels = cleanLabels;
-        /* 🔒 Slug معطّل: لا نرسل customMetaData — Blogger يولّد الرابط من العنوان */
-if (MW_SLUG_ENABLED && slug) {
-    const cs = sanitizeSlugEnglish(slug);
-    if (cs) postData.customMetaData = JSON.stringify({desiredSlug: cs});
-}
-        const apiUrl = `https://www.googleapis.com/blogger/v3/blogs/${blogId}/${postType === 'page' ? 'pages' : 'posts'}/?key=${BLOGGER_CONFIG.API_KEY}`;
-        const r = await fetch(apiUrl, { method: 'POST', headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, body: JSON.stringify(postData) });
+        if (!token) throw new Error(lastBloggerAuthError || 'تعذر الحصول على صلاحية صالحة.');
+        const resource = postType === 'page' ? 'pages' : 'posts';
+        const postData = buildBloggerPostPayload({blogId, postType, title, labels, content: modweebArticleHTML});
+        const apiUrl = new URL(`https://www.googleapis.com/blogger/v3/blogs/${encodeURIComponent(blogId)}/${resource}/`);
+        if (BLOGGER_CONFIG.API_KEY) apiUrl.searchParams.set('key', BLOGGER_CONFIG.API_KEY);
+        const r = await fetch(apiUrl.toString(), { method: 'POST', headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, body: JSON.stringify(postData) });
         if (r.status === 401 && retry === 0) {
             if (await refreshAccessToken()) { if (publishBtn){publishBtn.innerHTML=origHTML;publishBtn.disabled=false;} return await publishToBlogger(1); }
-            throw new Error('فشل تجديد الصلاحية.');
+            throw new Error(lastBloggerAuthError || 'فشل تجديد الصلاحية.');
         }
         const result = await r.json();
         if (!r.ok) throw new Error(result.error?.message || 'خطأ ' + r.status);

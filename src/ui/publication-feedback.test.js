@@ -13,7 +13,7 @@ function fixture(value = '', clipboardFails = false) {
     openSheet: id => sheets.push(id), closeSheet() {},
     modweebShowStatus: text => statuses.push(text),
   };
-  const source = core.slice(core.indexOf('function showSuccessPopup('), core.indexOf('function sanitizeSlugEnglish('));
+  const source = core.slice(core.indexOf('function showSuccessPopup('), core.indexOf('function buildBloggerPostPayload('));
   runInNewContext(source, context);
   return { ...context, input, message, opened, copied, statuses, sheets };
 }
