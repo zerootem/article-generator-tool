@@ -77,6 +77,43 @@ describe('normalizeArticleSections', () => {
     expect(normalizeArticleSections({ sections: [{ type: 'keyPoints', items: ['١', '٢', '٣', '٤'] }] }, { hasKeyPoints: true })?.sections).toEqual([]);
   });
 
+  it('routes blur to the supported spoiler block and keeps accordion group opt-in', () => {
+    const blur = { type: 'spoiler', summary: 'تفصيل', spoilerBlurText: 'اكشف النص', accordionType: 'blur' };
+    const accordionBlur = { type: 'accordion', summary: 'عنوان', content: 'شرح', accordionType: 'blur' };
+    const group = { type: 'accordionGroup', accordions: [{ summary: 'عنوان', content: 'شرح' }] };
+    expect(normalizeArticleSections({ sections: [blur] }, { hasBlur: true })?.sections[0]).toMatchObject({ accordionType: 'blur', spoilerBlurText: 'اكشف النص' });
+    expect(normalizeArticleSections({ sections: [accordionBlur] }, { hasAccordionVariants: true })?.sections[0].accordionType).toBe('ac');
+    expect(normalizeArticleSections({ sections: [group] }, { hasAccordionVariants: true })?.sections[0].accordionType).toBe('group');
+    expect(normalizeArticleSections({ sections: [group] }, { hasAccordionVariants: false })?.sections).toEqual([]);
+  });
+
+  it('sanitizes table cells before the legacy renderer interpolates them into HTML', () => {
+    const url = 'https://example.com/guide';
+    const result = normalizeArticleSections({ sections: [{
+      type: 'table',
+      tableData: [['<img src=x onerror=alert(1)>خطر</img>', `<a href="${url}" onclick="alert(1)">دليل</a>`, '<script>alert(1)</script>']],
+    }] }, { hasTables: true, topic: `رابط الدليل ${url}` });
+    expect(result?.sections[0].tableData).toEqual([['خطر', `<a href="${url}" target="_blank" rel="noopener noreferrer">دليل</a>`, '']]);
+  });
+
+  it('sanitizes raw HTML in text fields that the legacy renderer inserts directly', () => {
+    const url = 'https://example.com/guide';
+    const result = normalizeArticleSections({ sections: [
+      { type: 'link', linkText: '<img src=x onerror=alert(1)>رابط</img>', linkUrl: url },
+      { type: 'button', buttonText: '<script>alert(1)</script>تحميل', buttonUrl: url },
+      { type: 'downloadBox', fileName: '<b>guide.pdf</b>', fileSize: '<svg onload=alert(1)>2 MB</svg>', downloadFile: url },
+      { type: 'relatedManual', relatedTitle: '<img src=x onerror=alert(1)>المزيد</img>', relatedLinks: [{ text: '<script>alert(1)</script>الدليل', url }] },
+      { type: 'toc', tocLabel: '<script>alert(1)</script>الفهرس', tocStyle: 'manual', tocManualItems: [{ text: '<img src=x onerror=alert(1)>قسم</img>', id: 'section' }] },
+      { type: 'paragraph', paragraphStyle: 'ref', content: '<p>نص مرجعي</p>', refSource: '<script>alert(1)</script>مصدر' },
+    ] }, { customRequest: `أضف رابطاً وزراً وصندوق تحميل للملف guide.pdf بحجم 2 MB وروابط يدوية ذات صلة باسم الدليل ${url}` });
+    expect(result?.sections.map((section: any) => section.linkText || section.buttonText || section.fileName || section.relatedTitle || section.tocLabel || section.refSource)).toEqual([
+      'رابط', 'تحميل', 'guide.pdf', 'المزيد', 'الفهرس', 'مصدر',
+    ]);
+    expect((result?.sections[3].relatedLinks as any[])[0].text).toBe('الدليل');
+    expect((result?.sections[4].tocManualItems as any[])[0].text).toBe('قسم');
+    expect(JSON.stringify(result)).not.toMatch(/<script|onerror=|onload=/i);
+  });
+
   it('preserves the exact terminal Post Reference paragraph required by the legacy structure', () => {
     const content = "<!--[ Post Reference paragraph ]--><p class='pRef'>المصدر: ModWeeb<br>تم إعداد وتنسيق المقال عبر ModWeeb AI</p>";
     const result = normalizeArticleSections({ sections: [{ type: 'paragraph', paragraphStyle: 'normal', content }] });

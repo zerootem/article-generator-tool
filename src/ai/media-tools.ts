@@ -115,6 +115,7 @@ export function installMediaTools(): void {
     w._smartLastResult = null;
     w._improveLastResult = '';
     w._improveTarget = null;
+    w.modweebLastArticleOutput = null;
     w._aiWritingMode = 'default';
     document.querySelectorAll<HTMLElement>('.writing-mode-btn').forEach((item) => item.classList.toggle('active', item.dataset.mode === 'default'));
     w.modweebCommitHTML?.('', { save: true });

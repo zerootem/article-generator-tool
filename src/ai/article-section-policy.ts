@@ -1,3 +1,5 @@
+import { analyzeArticleSections } from './article-output';
+
 export interface ArticleSectionPolicyOptions {
   topic?: string;
   customRequest?: string;
@@ -12,6 +14,8 @@ export interface ArticleSectionPolicyOptions {
   hasNotes?: boolean;
   hasAlerts?: boolean;
   hasBlur?: boolean;
+  hasMark?: boolean;
+  hasAccordionVariants?: boolean;
   hasCode?: boolean;
   hasImages?: boolean;
   hasYoutube?: boolean;
@@ -55,6 +59,7 @@ const SECTION_FIELDS: Record<string, string[]> = {
   relatedAuto: ['type', 'relatedAutoLabel', 'relatedMax', 'relatedDataLabel', 'relatedSortBy', 'relatedRandom'],
 };
 const REQUIRED_OPENING_NOTE = 'تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.';
+const REQUIRED_POST_REFERENCE = "<!--[ Post Reference paragraph ]--><p class='pRef'>المصدر: ModWeeb<br>تم إعداد وتنسيق المقال عبر ModWeeb AI</p>";
 
 function isRecord(value: unknown): value is RecordValue {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -70,18 +75,47 @@ function inputText(options: ArticleSectionPolicyOptions): string {
 
 function userUrls(options: ArticleSectionPolicyOptions): Set<string> {
   const candidates = inputText(options).match(/https?:\/\/[^\s<>"']+/gi) || [];
-  return new Set(candidates.map((url) => url.replace(/[),.;!?،؛]+$/g, '')));
+  const paths = inputText(options).match(/(?:^|\s)\/(?!\/)[A-Za-z0-9_\-./?=&%#\u0600-\u06ff]+/g) || [];
+  return new Set([...candidates, ...paths].map((url) => url.trim().replace(/[),.;!?،؛]+$/g, '')));
 }
 
 function validUrl(value: unknown, allowed: Set<string>): string | undefined {
   const candidate = text(value)?.replace(/[),.;!?،؛]+$/g, '');
   if (!candidate || !allowed.has(candidate)) return undefined;
+  if (candidate.startsWith('/') && !candidate.startsWith('//') && !/[\s<>"'\\]/.test(candidate)
+      && !candidate.split(/[/?#]/).some((part) => part === '.' || part === '..')) return candidate;
   try {
     const parsed = new URL(candidate);
     return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? candidate : undefined;
   } catch {
     return undefined;
   }
+}
+
+function sanitizeInlineHtml(value: string, urls: Set<string>): string {
+  const input = value.replace(/<(script|style|iframe|object|embed|form)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  return input.replace(/<!--[\s\S]*?-->|<\/?([a-z][\w-]*)\b([^>]*)>/gi, (tag, name: string, attributes: string) => {
+    if (tag.startsWith('<!--')) return tag === '<!--[ Post Reference paragraph ]-->' ? tag : '';
+    const type = String(name || '').toLowerCase();
+    const closing = /^<\//.test(tag);
+    if (['strong','b','em','i','code','br'].includes(type)) return type === 'br' ? '<br>' : closing ? `</${type}>` : `<${type}>`;
+    if (type === 'a') {
+      if (closing) return '</a>';
+      const href = attributes.match(/\bhref\s*=\s*(["'])(.*?)\1/i)?.[2] || '';
+      const safeUrl = validUrl(href, urls);
+      return safeUrl ? `<a href="${safeUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" target="_blank" rel="noopener noreferrer">` : '';
+    }
+    if (type === 'p') {
+      if (closing) return '</p>';
+      const className = attributes.match(/\bclass\s*=\s*(["'])(note|pRef)\1/i)?.[2];
+      return className ? `<p class="${className}">` : '<p>';
+    }
+    return '';
+  });
+}
+
+function sanitizePlainText(value: string, urls: Set<string>): string {
+  return sanitizeInlineHtml(value, urls).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function positiveRequest(customRequest: string, english: RegExp, arabic: RegExp): boolean {
@@ -91,6 +125,7 @@ function positiveRequest(customRequest: string, english: RegExp, arabic: RegExp)
 function allowedSectionTypes(options: ArticleSectionPolicyOptions, urls: Set<string>): Set<string> {
   const custom = options.customRequest || '';
   const types = new Set(['basics', 'heading', 'paragraph', 'toc', 'steps', 'accordion', 'faq']);
+  if (options.hasAccordionVariants) types.add('accordionGroup');
   if (options.hasNotes || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,35}\bnote\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,35}(?:ملاحظة|تنويه)/i)) types.add('note');
   if (options.hasAlerts || positiveRequest(custom, /\b(?:add|include|create|insert)\b.{0,35}\balert\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ).{0,35}(?:تنبيه)/i)) types.add('alert');
   if (options.hasQuotes || positiveRequest(custom, /\b(?:add|include|insert)\b.{0,35}\bquote\b/i, /(?:أضف|اضف|أدرج|ادرج).{0,35}(?:اقتباس)/i)) types.add('blockquote');
@@ -120,6 +155,7 @@ function allowedSectionTypes(options: ArticleSectionPolicyOptions, urls: Set<str
   if (positiveRequest(custom, /\b(?:add|include|create|use)\b.{0,40}\baccordion\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ|استخدم).{0,40}(?:قسم مطوي|أكورديون|قائمة قابلة للطي)/i)) types.add('accordion');
   if (positiveRequest(custom, /\b(?:add|include|create|use)\b.{0,40}\baccordion group\b/i, /(?:أضف|اضف|أدرج|ادرج|أنشئ|انشئ|استخدم).{0,40}(?:مجموعة أقسام مطوية|مجموعة أكورديون)/i)) types.add('accordionGroup');
   if (positiveRequest(custom, /\b(?:add|include|create|highlight)\b.{0,40}\bmark\b/i, /(?:أضف|اضف|أبرز|استخدم).{0,40}(?:تمييز|نص مميز|تظليل)/i)) types.add('mark');
+  if (options.hasMark) types.add('mark');
   return types;
 }
 
@@ -153,11 +189,16 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
         linkStyle: ['extL','alt','sec','button','buttonLn'], buttonIcon: ['','dl','demo'], audioPreload: ['none','metadata','auto'],
         videoPreload: ['none','metadata','auto'], videoType: ['video/mp4','video/webm','video/ogg'], relatedSortBy: ['updated','published'],
       };
-      if (typeof value === 'string' && validValues[key].includes(value)) result[key] = value;
+      if (typeof value === 'string' && validValues[key].includes(value) && (key !== 'accordionType' || value !== 'blur' || type === 'spoiler')) result[key] = value;
       continue;
     }
     if (['content','metaDescription','subtitle','headingBefore','headingAfter','dropCapChar','refSource','tocLabel','noteTitle','alertTitle','quoteAuthor','summary','spoilerBlurText','codeContent','codeComment','codeSource','codeLines','tabHtml','tabHtmlSource','tabCss','tabCssSource','tabJs','tabJsSource','tabJson','tabJsonSource','inlineCode','kbdText','markText','imageAlt','caption','linkText','buttonText','fileName','fileSize','audioTitle','relatedTitle','relatedAutoLabel','relatedDataLabel'].includes(key)) {
-      if (typeof value === 'string' && ((key !== 'audioTitle' && key !== 'relatedDataLabel') || inputContains(value, sourceText))) result[key] = value;
+      if (typeof value === 'string' && ((key !== 'audioTitle' && key !== 'relatedDataLabel') || inputContains(value, sourceText))) {
+        result[key] = type === 'paragraph' && key === 'content' && value === REQUIRED_POST_REFERENCE
+          ? REQUIRED_POST_REFERENCE
+          : ['content','summary','spoilerBlurText'].includes(key) ? sanitizeInlineHtml(value, urls)
+            : ['refSource','tocLabel','quoteAuthor','markText','caption','linkText','buttonText','fileName','fileSize','relatedTitle','relatedAutoLabel'].includes(key) ? sanitizePlainText(value, urls) : value;
+      }
       continue;
     }
     if (key === 'tableClasses' && typeof value === 'string') {
@@ -170,23 +211,23 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
       continue;
     }
     if (['steps','listItems','items'].includes(key)) {
-      if (Array.isArray(value)) result[key] = value.map(text).filter((item): item is string => !!item);
+      if (Array.isArray(value)) result[key] = value.map(text).filter((item): item is string => !!item).map((item) => sanitizeInlineHtml(item, urls));
       continue;
     }
     if (key === 'faqItems' && Array.isArray(value)) {
-      result[key] = value.filter(isRecord).map((item) => ({ question: text(item.question) || '', answer: text(item.answer) || '' })).filter((item) => item.question && item.answer).slice(0, 5);
+      result[key] = value.filter(isRecord).map((item) => ({ question: sanitizeInlineHtml(text(item.question) || '', urls), answer: sanitizeInlineHtml(text(item.answer) || '', urls) })).filter((item) => item.question && item.answer).slice(0, 5);
       continue;
     }
     if (key === 'tocManualItems' && Array.isArray(value)) {
-      result[key] = value.filter(isRecord).map((item) => ({ text: text(item.text) || '', id: text(item.id) || '' })).filter((item) => item.text);
+      result[key] = value.filter(isRecord).map((item) => ({ text: sanitizePlainText(text(item.text) || '', urls), id: text(item.id) || '' })).filter((item) => item.text);
       continue;
     }
     if (key === 'accordions' && Array.isArray(value)) {
-      result[key] = value.filter(isRecord).map((item) => ({ summary: text(item.summary) || '', content: text(item.content) || '', alt: item.alt === true })).filter((item) => item.summary && item.content);
+      result[key] = value.filter(isRecord).map((item) => ({ summary: sanitizeInlineHtml(text(item.summary) || '', urls), content: sanitizeInlineHtml(text(item.content) || '', urls), alt: item.alt === true })).filter((item) => item.summary && item.content);
       continue;
     }
     if (key === 'relatedLinks' && Array.isArray(value)) {
-      result[key] = value.filter(isRecord).map((item) => ({ text: text(item.text) || '', url: validUrl(item.url, urls) || '' }))
+      result[key] = value.filter(isRecord).map((item) => ({ text: sanitizePlainText(text(item.text) || '', urls), url: validUrl(item.url, urls) || '' }))
         .filter((item) => item.text && item.url && (inputContains(item.text, sourceText) || item.text === filenameFromUrl(item.url)));
       continue;
     }
@@ -209,7 +250,7 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
       continue;
     }
     if (key === 'tableData' && Array.isArray(value)) {
-      result[key] = value.slice(0, 10).filter(Array.isArray).map((row) => (row as unknown[]).slice(0, 10).map((cell) => String(cell ?? '').slice(0, 500)));
+      result[key] = value.slice(0, 10).filter(Array.isArray).map((row) => (row as unknown[]).slice(0, 10).map((cell) => sanitizeInlineHtml(String(cell ?? '').slice(0, 500), urls)));
       continue;
     }
     if (['imageUrl','thumbnailUrl','linkUrl','buttonUrl','downloadFile','audioUrl','videoUrl','videoPoster'].includes(key)) {
@@ -247,7 +288,10 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
     result.items = result.items.slice(0, 7);
   }
   if (['accordion','accordionGroup'].includes(type) && !text(result.summary) && (!Array.isArray(result.accordions) || result.accordions.length === 0)) return null;
-  if (type === 'accordion') result.accordionType = 'ac';
+  if (type === 'accordion') {
+    const requested = String(result.accordionType || 'ac');
+      result.accordionType = options.hasAccordionVariants && ['ac alt','sp','group','blur'].includes(requested) ? requested : 'ac';
+  }
   if (type === 'accordionGroup') result.accordionType = 'group';
   if (type === 'code' && !text(result.codeContent)) return null;
   if (type === 'codeTabs' && !['tabHtml','tabCss','tabJs','tabJson'].some((key) => text(result[key]))) return null;
@@ -283,5 +327,9 @@ export function normalizeArticleSections(data: unknown, options: ArticleSectionP
     const section = copyKnownFields(candidate, candidate.type, urls, options);
     return section ? [section] : [];
   });
-  return { ...data, sections };
+  const title = text(data.title) || '';
+  const metaDescription = text(data.metaDescription) || sections.find((section) => section.type === 'basics')?.metaDescription as string || '';
+  const tags = Array.isArray(data.tags) ? [...new Set(data.tags.map(text).filter((tag): tag is string => !!tag))].slice(0, 12) : [];
+  const analysis = analyzeArticleSections(sections, { keyword: options.mainKeyword || '', title, metaDescription });
+  return { title, metaDescription, tags, sections, ...analysis, htmlReady: '' };
 }

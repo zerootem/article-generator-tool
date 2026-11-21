@@ -23,7 +23,7 @@ describe('article prompt guidance', () => {
     expect(systemPrompt).toContain('لا تختلق تجربة شخصية');
     expect(systemPrompt).toContain('إحصائية أو دراسة أو سعرًا أو تاريخاً أو خاصية منتج أو اقتباساً أو مصدراً');
     expect(systemPrompt).toContain('نطاق الكلمات المختار هدف تحريري تقريبي قوي');
-    expect(systemPrompt).toContain('تكرار قسري');
+    expect(systemPrompt).toContain('لا تحشو التكرار');
   });
 
   it('documents all six heading levels and the legacy size-based H2 targets', () => {
@@ -109,7 +109,8 @@ describe('article prompt guidance', () => {
     expect(systemPrompt).toContain('thumbnailUrl');
     expect(systemPrompt).toContain('tableClasses المسموح بها');
     expect(systemPrompt).toContain('accordionGroup');
-    expect(systemPrompt).toContain('لا تضف حقولاً أو أنواعاً غير المخطط');
+    expect(systemPrompt).toContain('لا تضف حقولاً أو أنواع أقسام غير المخطط');
+    expect(systemPrompt).toContain('articleStats وseoReport وhtmlReady');
     expect(systemPrompt).toContain('تنسيق inline الآمن');
     expect(systemPrompt).not.toContain('<heading');
   });
@@ -134,14 +135,28 @@ describe('article prompt guidance', () => {
 
   it('supports the requested article types, including their legacy aliases', () => {
     const cases = [
-      ['guide', 'دليل إرشادي'], ['tutorial', 'شرح تعليمي'], ['comparison', 'مقارنة منظمة'],
+      ['none', 'مقال عام'], ['guide', 'دليل إرشادي'], ['tutorial', 'شرح تعليمي'], ['comparison', 'مقارنة منظمة'],
       ['review', 'مراجعة متوازنة'], ['list', 'قائمة مرتبة'], ['news', 'مقال إخباري'],
-      ['faq', 'صفحة أسئلة وأجوبة'], ['opinion', 'مقال رأي']
+      ['listicle', 'قائمة مرتبة'], ['casestudy', 'دراسة حالة'], ['summary', 'ملخص مركز'],
+      ['faq', 'صفحة أسئلة وأجوبة'], ['faqpage', 'صفحة أسئلة وأجوبة'], ['opinion', 'مقال رأي']
     ];
     for (const [articleType, expected] of cases) {
       expect(prompts.article({ topic: 'موضوع', articleType }).systemPrompt).toContain(expected);
     }
     expect(prompts.article({ topic: 'موضوع', articleType: 'faqpage' }).systemPrompt).toContain('صفحة أسئلة وأجوبة');
+  });
+
+  it('selects an explicit editorial template for every article type in the interface', () => {
+    const cases = [
+      ['none', 'مقال تفسيري عام:'], ['guide', 'دليل إرشادي:'], ['tutorial', 'درس تعليمي:'],
+      ['comparison', 'مقارنة: حدّد البدائل ومعايير المقارنة'], ['review', 'مراجعة: عرّف المنتج'],
+      ['listicle', 'قائمة مشروحة: اذكر معيار الإدراج'], ['news', 'خبر/شرح إخباري:'],
+      ['casestudy', 'دراسة حالة: استخدم فقط الحالة'], ['opinion', 'مقال رأي: صرّح بالأطروحة'],
+      ['summary', 'ملخص منشور: ابدأ بالفكرة'], ['faqpage', 'صفحة أسئلة وأجوبة: اجمع أسئلة']
+    ];
+    for (const [articleType, template] of cases) {
+      expect(prompts.article({ topic: 'موضوع', articleType }).systemPrompt).toContain(`قالب النوع الإلزامي لهذا المقال: ${template}`);
+    }
   });
 
   it('supports direct, question, input-grounded fact, and explicitly fictional openings', () => {
@@ -152,6 +167,17 @@ describe('article prompt guidance', () => {
     for (const [opening, expected] of cases) {
       expect(prompts.article({ topic: 'موضوع', opening }).systemPrompt).toContain(expected);
     }
+  });
+
+  it('supports distinct editorial opening strategies and optional interaction flags', () => {
+    const openingPrompts = ['brief', 'question', 'direct', 'definition', 'fact', 'contrast', 'problemSolution', 'scenario', 'benefit', 'myth', 'curiosity'].map(
+      (opening) => prompts.article({ topic: 'موضوع', opening }).systemPrompt
+    );
+    expect(new Set(openingPrompts.map((prompt) => prompt.split('\n').find((line) => line.startsWith('الافتتاحية:')))).size).toBeGreaterThan(8);
+    const interactive = prompts.article({ topic: 'موضوع', hasMark: true, hasBlur: true, hasAccordionVariants: true }).systemPrompt;
+    expect(interactive).toContain('استخدم mark لإبراز عبارة قصيرة');
+    expect(interactive).toContain('استخدم spoiler مع accordionType=blur');
+    expect(interactive).toContain('نوّع عناصر التفاعل');
   });
 
   it('supports the requested writing modes without encouraging unsupported claims', () => {

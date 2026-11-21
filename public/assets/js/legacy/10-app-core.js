@@ -1411,6 +1411,8 @@ async function aiGenerateArticle(){
         hasNotes:        chk('aiHasNotes'),
         hasAlerts:       chk('aiHasAlerts'),
         hasBlur:         chk('aiHasBlur'),
+        hasMark:         chk('aiHasMark'),
+        hasAccordionVariants: chk('aiHasAccordionVariants'),
         hasCode:         chk('aiHasCode'),
         hasImages:       chk('aiHasImages'),
         hasYoutube:      chk('aiHasYoutube'),
@@ -1432,6 +1434,7 @@ async function aiGenerateArticle(){
         if (typeof window.modweebNormalizeArticleSections !== 'function') throw new Error('تعذر تحميل سياسة التحقق من عناصر المقال؛ أعد تحميل الصفحة.');
         const data = window.modweebNormalizeArticleSections(parsedData, params);
         if (!data || !Array.isArray(data.sections) || data.sections.length === 0) throw new Error('لم يُرجع المزود أقسام مقال صالحة؛ جرّب نموذجاً آخر أو قلّل حجم المقال');
+        data.mainKeyword = params.mainKeyword;
         const videoId = params.hasYoutube && typeof window.modweebExtractYoutubeId === 'function'
             ? window.modweebExtractYoutubeId(params.youtubeReference) : '';
         /* لا نثق بأي معرّف فيديو أنشأه النموذج؛ يُقبل فقط رابط/معرّف أدخله المستخدم. */
@@ -1811,6 +1814,28 @@ function aiApplySections(data){
     }
 
     modweebSaveToHistory();
+    const htmlReady = typeof window.generateFullHTML === 'function' ? window.generateFullHTML() : modweebArticleHTML;
+    const title = data.title || (document.getElementById('bloggerPostTitle')||{}).value || '';
+    const metaDescription = data.metaDescription || (document.getElementById('bloggerMetaDescription')||{}).value || '';
+    const outputAnalysis = typeof window.modweebAnalyzeArticleHtml === 'function'
+        ? window.modweebAnalyzeArticleHtml(htmlReady || '', {
+            keyword: data.mainKeyword || (document.getElementById('aiMainKeyword')||{}).value || '',
+            title,
+            metaDescription
+        })
+        : { articleStats: data.articleStats || {}, seoReport: data.seoReport || {} };
+    data.htmlReady = htmlReady || '';
+    data.articleStats = outputAnalysis.articleStats;
+    data.seoReport = outputAnalysis.seoReport;
+    window.modweebLastArticleOutput = {
+        title,
+        metaDescription,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        articleStats: data.articleStats,
+        seoReport: data.seoReport,
+        htmlReady: data.htmlReady,
+        focusKeyword: data.mainKeyword || ''
+    };
     modweebShowStatus('تم توليد المقال (' + sections.length + ' قسم)');
 }
 
@@ -2412,7 +2437,7 @@ async function templateGenerateAndInsert(){
             hasConclusion: true, hasTables: id === 'comparison', hasH3: true, hasLists: true,
             hasItalics: false, hasQuotes: false, hasKeyPoints: true, hasInstructions: id === 'tutorial',
             hasBold: true, hasNotes: ['guide','tutorial'].includes(id), hasAlerts: false,
-            hasBlur: false, hasCode: false, hasImages: false, hasYoutube: false
+            hasBlur: false, hasMark: true, hasAccordionVariants: false, hasCode: false, hasImages: false, hasYoutube: false
         };
         const request = window.modweebPrompts.article(params);
         const raw = await window.modweebAI.call({ systemPrompt: request.systemPrompt, userPrompt: request.userPrompt, maxTokens: 16000, temperature: 0.7, jsonMode: true });
@@ -2420,6 +2445,7 @@ async function templateGenerateAndInsert(){
         if (typeof window.modweebNormalizeArticleSections !== 'function') throw new Error('تعذر تحميل سياسة التحقق من عناصر المقال؛ أعد تحميل الصفحة.');
         const data = window.modweebNormalizeArticleSections(parsedData, params);
         if (!data || !Array.isArray(data.sections) || !data.sections.length) throw new Error('لم يُرجع النموذج أقساماً صالحة.');
+        data.mainKeyword = focusKw;
         aiApplySections(data);
         const t = document.getElementById('bloggerPostTitle');
         if (title && t) { t.value = title; modweebAutoSlug(title); }
@@ -2469,7 +2495,28 @@ async function exportArticle(format){
         t.innerHTML = modweebArticleHTML;
         modweebDownloadText(t.textContent || '', title + '.txt', 'text/plain');
     } else if (format === 'json') {
-        modweebDownloadText(JSON.stringify({title, blocks: modweebBlocks, version: 2, exported: new Date().toISOString()}, null, 2), title + '.json', 'application/json');
+        const articleTitle = (document.getElementById('bloggerPostTitle')||{}).value || title;
+        const metaDescription = (document.getElementById('bloggerMetaDescription')||{}).value || '';
+        const outputMeta = window.modweebLastArticleOutput || {};
+        const outputAnalysis = typeof window.modweebAnalyzeArticleHtml === 'function'
+            ? window.modweebAnalyzeArticleHtml(modweebArticleHTML, {
+                keyword: outputMeta.focusKeyword || (document.getElementById('aiMainKeyword')||{}).value || '',
+                title: articleTitle,
+                metaDescription
+            })
+            : { articleStats: outputMeta.articleStats || {}, seoReport: outputMeta.seoReport || {} };
+        modweebDownloadText(JSON.stringify({
+            title: articleTitle,
+            metaDescription,
+            tags: (document.getElementById('bloggerPostLabels')||{}).value?.split(/[,،]/).map(tag => tag.trim()).filter(Boolean) || [],
+            articleType: (document.getElementById('aiArticleType')||{}).value || 'guide',
+            articleStats: outputAnalysis.articleStats,
+            seoReport: outputAnalysis.seoReport,
+            htmlReady: modweebArticleHTML,
+            blocks: modweebBlocks,
+            version: 3,
+            exported: new Date().toISOString()
+        }, null, 2), title + '.json', 'application/json');
     } else if (format === 'copy-snippet') {
         navigator.clipboard.writeText(modweebArticleHTML).then(() => { modweebShowStatus('تم النسخ', 2500); closeSheet('exportSheet'); });
         return;
