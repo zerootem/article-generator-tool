@@ -2774,17 +2774,14 @@ function buildBloggerPostPayload({blogId, postType, title, labels, content}){
     const articleContent = String(content || '');
     const pageContent = articleContent.replace(/<!--\s*more\s*-->\s*/gi, '');
     const payload = {
-        // Blogger API expects the resource kind "blogger" for posts and pages.
-        kind: 'blogger',
-        blog: {id: String(blogId || '').trim()},
-        title: String(title || '').trim(),
+        title: String(title || '').trim().slice(0, 150),
         content: isPage
             ? pageContent
             : articleContent.includes('<!--more-->') ? articleContent : '<!--more-->\n' + articleContent
     };
     // Pages do not support post labels or the post-only read-more marker.
     if (!isPage) {
-        const cleanLabels = String(labels || '').split(/[,،]/).map(label => label.trim()).filter(Boolean);
+        const cleanLabels = String(labels || '').split(/[,،]/).map(label => label.trim()).filter(Boolean).slice(0, 20);
         if (cleanLabels.length) payload.labels = cleanLabels;
     }
     // Blogger API does not expose a custom permalink field; Blogger derives it from the title.
@@ -2798,7 +2795,10 @@ async function publishToBlogger(retry){
         window.openBloggerSettingsFromPublish?.();
         return;
     }
-    const blogId = (document.getElementById('bloggerBlogId')||{}).value?.trim() || BLOGGER_CONFIG.BLOG_ID;
+    let blogId = (document.getElementById('bloggerBlogId')||{}).value?.trim() || BLOGGER_CONFIG.BLOG_ID;
+    /* اقبل رابط المدونة أو معرفًا رقميًا فقط */
+    const idMatch = String(blogId || '').match(/(\d{8,})/);
+    if (idMatch) blogId = idMatch[1];
     const postType = (document.getElementById('bloggerPostType')||{}).value || 'post';
     const title = (document.getElementById('bloggerPostTitle')||{}).value?.trim() || '';
     const labels = (document.getElementById('bloggerPostLabels')||{}).value?.trim() || '';
@@ -2821,7 +2821,10 @@ async function publishToBlogger(retry){
             throw new Error(lastBloggerAuthError || 'فشل تجديد الصلاحية.');
         }
         const result = await r.json();
-        if (!r.ok) throw new Error(result.error?.message || 'خطأ ' + r.status);
+        if (!r.ok) {
+            const det = result.error?.errors?.map(x => (x.reason ? x.reason + ': ' : '') + (x.message || '')).filter(Boolean).join(' — ');
+            throw new Error((result.error?.message || 'خطأ ' + r.status) + (det ? ' (' + det + ')' : '') + (r.status === 400 ? ' — تحقق من Blog ID في الإعدادات ومن صلاحية مفتاح API.' : ''));
+        }
         closeSheet('bloggerPublishSheet');
         showSuccessPopup(result.url, postType);
         modweebShowStatus('تم النشر بنجاح', 5000);
