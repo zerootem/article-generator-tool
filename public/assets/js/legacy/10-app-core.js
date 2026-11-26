@@ -2732,7 +2732,7 @@ function modweebAutoSlug(title, force){
     if (force || !s.value.trim()) s.value = modweebToSlug(title);
 }
 
-function toggleBloggerSection(){ openSheet('bloggerPublishSheet'); }
+function toggleBloggerSection(){ if (window.modweebRestoreBloggerDraft) window.modweebRestoreBloggerDraft(); openSheet('bloggerPublishSheet'); }
 function showFailurePopup(msg){ document.getElementById('failureMessage').textContent = msg; openSheet('failureSheet'); }
 function showSuccessPopup(url, type){
     const m = document.getElementById('successMessage');
@@ -2877,4 +2877,36 @@ if (cr && !cr.value.trim()) {
 
 (async function(){
     try { await getValidAccessToken(); } catch(e){}
+})();
+
+/* ============ حفظ حقول نافذة النشر في بلوجر محليًا ============ */
+(function initBloggerDraftPersistence(){
+  'use strict';
+  const KEY = 'modweebBloggerDraft';
+  const FIELDS = {bloggerBlogId:'blogId', bloggerPostType:'postType', bloggerPostTitle:'title', bloggerPostLabels:'labels', bloggerMetaDescription:'meta'};
+  function read(){ try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ return {}; } }
+  function save(){
+    const data = {};
+    Object.keys(FIELDS).forEach(id => { const el = document.getElementById(id); if (el) data[FIELDS[id]] = el.value; });
+    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e){}
+  }
+  function restore(){
+    const data = read();
+    Object.keys(FIELDS).forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value && data[FIELDS[id]]) el.value = data[FIELDS[id]];
+    });
+  }
+  function bind(){
+    Object.keys(FIELDS).forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', save);
+      el.addEventListener('change', save);
+    });
+    restore();
+  }
+  window.modweebSaveBloggerDraft = save;
+  window.modweebRestoreBloggerDraft = restore;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
 })();

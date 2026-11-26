@@ -3240,8 +3240,8 @@ async function decryptText(payload) {
       <div class="aiagent-field">
         <label for="aiagentDeepSeekModel">نموذج DeepSeek</label>
         <select id="aiagentDeepSeekModel" dir="ltr" aria-label="اختيار نموذج DeepSeek">
-          <option value="deepseek-flash">DeepSeek V4.1 Flash — سريع</option>
-          <option value="deepseek-v4-pro">DeepSeek V4 Pro — متقدم</option>
+          <option value="deepseek-flash">DeepSeek V4.1 Flash — سريع، سياق 1M، يدعم وضع التفكير</option>
+          <option value="deepseek-v4-pro">DeepSeek V4 Pro — متقدم، سياق 1M، أعلى دقة</option>
         </select>
       </div>
       ` : ''}
