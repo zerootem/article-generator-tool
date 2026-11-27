@@ -874,12 +874,13 @@
 <div id="aiPopup" class="ai-bottom-sheet">
   <div class="sheet-header">
     <h3>مركز الذكاء الاصطناعي</h3>
-    <div class="sheet-head-actions"><button type="button" id="aiSettingsToggle" class="sheet-icon-button" aria-label="إعدادات ومفاتيح الذكاء الاصطناعي" title="إعدادات ومفاتيح AI" aria-controls="aiSettingsPanel" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="5"/><path d="m11.5 11.5 9-9"/><path d="m16 7 2 2"/><path d="m18.5 4.5 2 2"/></svg></button><button class="sheet-close-btn" onclick="closeAIPopup()" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-head-actions"><button type="button" id="generationLogBtn" class="sheet-icon-button" aria-label="سجل عمليات التوليد" title="سجل عمليات التوليد" onclick="modweebOpenGenerationLog()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/><path d="M3 5v4h4"/></svg></button><button type="button" id="aiSettingsToggle" class="sheet-icon-button" aria-label="إعدادات ومفاتيح الذكاء الاصطناعي" title="إعدادات ومفاتيح AI" aria-controls="aiSettingsPanel" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="5"/><path d="m11.5 11.5 9-9"/><path d="m16 7 2 2"/><path d="m18.5 4.5 2 2"/></svg></button><button class="sheet-close-btn" onclick="closeAIPopup()" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
   </div>
   <div id="aiProgressBar" class="ai-progress-under-header" style="display:none;padding:8px 14px 0;">
-    <div style="font-size:0.8rem;color:var(--linkC);margin-bottom:5px;font-weight:500;"><span id="aiProgressText">جاري توليد المقال...</span></div>
-    <div style="height:5px;background:var(--contentL);border-radius:3px;overflow:hidden"><div style="height:100%;width:40%;background:var(--linkC);border-radius:3px;animation:aiSlide 1.4s ease-in-out infinite alternate"></div></div>
-    <div style="font-size:0.7rem;color:var(--notifC);margin-top:5px">قد يستغرق التوليد بعض الوقت</div>
+    <div class="ai-progress-head"><span id="aiProgressText">جاري توليد المقال...</span><span id="aiProgressPercent" class="ai-progress-percent">0%</span></div>
+    <div class="ai-progress-track"><div id="aiProgressFill" class="ai-progress-fill" style="width:0%"></div></div>
+    <div id="aiProgressStages" class="ai-progress-stages" aria-label="مراحل التوليد"></div>
+    <div id="aiProgressDetail" class="ai-progress-detail">قد يستغرق التوليد بعض الوقت</div>
   </div>
   <div id="aiGeneratePanel" class="sheet-body ai-popup-panel active" role="region" aria-label="إعدادات إنشاء المقال">
 
@@ -1071,28 +1072,60 @@
     <details class="ai-form-section">
       <summary class="ai-form-section-title">عناصر المقال</summary>
       <div class="ai-form-section-content">
-    <!-- 15.10 | عناصر المقال -->
-    <div class="sheet-field">
-      <label>عناصر المقال</label>
-      <div class="ai-pills-row">
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasConclusion" checked><span>خاتمة</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasTables"><span>جداول</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasH3" checked><span>H3</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasLists" checked><span>قوائم</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasItalics"><span>مائل</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasQuotes" checked><span>اقتباسات</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasKeyPoints" checked><span>أهم النقاط</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasInstructions"><span>تعليمات</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasBold" checked><span>عريض</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasNotes"><span>ملاحظات ونصائح</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasAlerts"><span>تنبيهات حسب الحاجة</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasBlur"><span>إخفاء / Blur</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasMark" checked><span>تمييز ذكي</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasAccordionVariants"><span>تنويع الأقسام المطوية</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasCode"><span>مثال كود</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasImages"><span>صورة من رابط صالح</span></label>
-        <label class="ai-pill-toggle"><input type="checkbox" id="aiHasYoutube"><span>إدراج فيديو YouTube</span></label>
+    <!-- 15.10 | عناصر المقال: بنية إلزامية + مجموعات اختيارية -->
+    <div class="sheet-field ai-elements-field">
+      <label>البنية الإلزامية (ثابتة دائماً)</label>
+      <div class="ai-pills-row ai-pills-required" aria-label="عناصر إلزامية لا يمكن تعطيلها">
+        <span class="ai-pill-toggle is-required" title="H1 وبقية العناوين الأساسية تُولَّد دائماً"><span>H1</span></span>
+        <span class="ai-pill-toggle is-required" title="عنوان H2 لكل قسم مع فقرة عادية وفقرة مسافة بادئة"><span>H2 لكل قسم</span></span>
+        <span class="ai-pill-toggle is-required" title="فقرة تمهيدية بحرف استهلالي"><span>مقدمة</span></span>
+        <span class="ai-pill-toggle is-required" title="ملاحظة معلومات أعلى المقال"><span>ملاحظة المصدر</span></span>
+        <span class="ai-pill-toggle is-required" title="أكورديون في نهاية كل قسم H2"><span>أكورديون لكل قسم</span></span>
+        <span class="ai-pill-toggle is-required" title="قسم الأسئلة الشائعة 4-5 أسئلة"><span>FAQ</span></span>
+        <span class="ai-pill-toggle is-required" title="فقرة المصدر في نهاية المقال"><span>pRef</span></span>
       </div>
+      <small class="ai-inline-help">تظهر هذه العناصر في كل مقال مهما كانت الإعدادات، ولا يمكن حذفها أو تعطيلها.</small>
+
+      <div class="ai-elements-group">
+        <label>بنية إضافية</label>
+        <div class="ai-pills-row">
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasConclusion" checked><span>خاتمة</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasH3" checked><span>H3</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasLists" checked><span>قوائم</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasTables"><span>جداول</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasQuotes" checked><span>اقتباسات</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasKeyPoints" checked><span>أهم النقاط</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasInstructions"><span>تعليمات</span></label>
+        </div>
+      </div>
+
+      <div class="ai-elements-group">
+        <label>أنماط نصية داخل الفقرات والعناصر</label>
+        <div class="ai-pills-row">
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasBold" checked><span>عريض</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasItalics"><span>مائل</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasMark" checked><span>تمييز ذكي</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasNotes"><span>ملاحظات ونصائح</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasAlerts"><span>تنبيهات حسب الحاجة</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasBlur"><span>إخفاء / Blur</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasAccordionVariants"><span>تنويع الأقسام المطوية</span></label>
+        </div>
+      </div>
+
+      <div class="ai-elements-group">
+        <label>وسائط وأكواد</label>
+        <div class="ai-pills-row">
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasCode"><span>مثال كود</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasImages"><span>صورة من رابط صالح</span></label>
+          <label class="ai-pill-toggle"><input type="checkbox" id="aiHasYoutube"><span>فيديو YouTube</span></label>
+        </div>
+      </div>
+
+      <div class="ai-elements-actions">
+        <button type="button" class="modweeb-gen-btn secondary sm" onclick="resetAiOptionalElements()" title="يعيد العناصر الاختيارية إلى وضعها الافتراضي فقط">إعادة تعيين الاختيارية</button>
+        <small class="ai-inline-help">لا يمس هذا الزر البنية الإلزامية أعلاه.</small>
+      </div>
+
       <div class="sheet-field" style="margin-top:8px">
         <label for="aiYoutubeReference">رابط أو معرّف YouTube موثوق (اختياري)</label>
         <input type="text" id="aiYoutubeReference" dir="ltr" placeholder="ضع الرابط أو Video ID إن توفر">
@@ -1100,7 +1133,6 @@
         <small class="ai-inline-help">اختر فيديو من YouTube وانسخ رابطه هنا؛ لا نخمن معرفات فيديو. ستحتاج إلى اتصال بالإنترنت.</small>
       </div>
     </div>
-
       </div>
     </details>
     <details class="ai-form-section ai-image-section">
@@ -1435,42 +1467,44 @@
   <!-- 25.2 | شريط عناصر المقال (قابل للإخفاء/الإظهار) -->
   <div class="unified-toolbar unified-elements-toolbar" id="unifiedElementsToolbar" aria-label="عناصر المقال">
 
-    <!-- 25.2.1 | عناوين وفقرات واقتباسات وملاحظات -->
+    <!-- أزرار العناصر: كل زر عنصر مستقل وقائمته تعرض أنماطه وخصائصه فقط -->
     <div class="unified-tool-group" data-unified-menu-group>
       <button class="unified-menu-trigger" type="button" data-unified-menu="heading" title="العناوين"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M5 4v16M19 4v16M5 12h14M5 4h4M15 4h4M5 20h4M15 20h4"/></svg><span>عناوين</span></button>
       <button class="unified-menu-trigger" type="button" data-unified-menu="paragraph" title="الفقرات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M5 5h14M5 10h10M5 15h14M5 20h8"/></svg><span>فقرات</span></button>
-      <button class="unified-menu-trigger" type="button" data-unified-menu="quote" title="الاقتباسات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M7 7h5v5H7zM12 12H7c0 3 1 5 4 5M17 7h5v5h-5zM22 12h-5c0 3 1 5 4 5"/></svg><span>اقتباسات</span></button>
-      <button class="unified-menu-trigger" type="button" data-unified-menu="noteAlert" title="الملاحظات والتنبيهات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h6M8 16h4"/></svg><span>ملاحظات</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="quote" title="الاقتباسات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M7 7h5v5H7zM12 12H7c0 3 1 5 4 5M17 7h5v5h-5zM22 12h-5c0 3 1 5 4 5"/></svg><span>اقتباس</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="note" title="الملاحظات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h6M8 16h4"/></svg><span>ملاحظة</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="alert" title="التنبيهات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg><span>تنبيه</span></button>
     </div>
-
-    <!-- 25.2.2 | وسائط -->
     <div class="unified-tool-group" data-unified-menu-group>
-      <button class="unified-menu-trigger" type="button" data-unified-menu="media" title="الصور والفيديو"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.3"/><path d="m4 17 5-5 3 3 2-2 6 6"/></svg><span>وسائط</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="image" title="الصور"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.3"/><path d="m4 17 5-5 3 3 2-2 6 6"/></svg><span>صورة</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="youtube" title="YouTube"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10 9 5 3-5 3V9Z"/></svg><span>يوتيوب</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="audio" title="مشغل الصوت"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg><span>صوت</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="video" title="مشغل الفيديو"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3V9Z"/></svg><span>فيديو</span></button>
     </div>
-
-    <!-- 25.2.3 | أزرار + جداول + أكواد + محتويات + ذات صلة + أساسيات -->
     <div class="unified-tool-group" data-unified-menu-group>
-      <button class="unified-menu-trigger" type="button" data-unified-menu="buttonLink" title="الأزرار والروابط"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="4" y="7" width="16" height="10" rx="2"/><path d="M8 12h8"/></svg><span>أزرار وروابط</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="button" title="الأزرار"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="4" y="7" width="16" height="10" rx="2"/><path d="M8 12h8"/></svg><span>زر</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="link" title="الروابط الخارجية"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M10 14a4 4 0 0 1 0-6l2-2a4 4 0 0 1 6 6l-1 1"/><path d="M14 10a4 4 0 0 1 0 6l-2 2a4 4 0 0 1-6-6l1-1"/></svg><span>رابط</span></button>
       <button class="unified-menu-trigger" type="button" data-unified-menu="download" title="صندوق التحميل"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>تحميل</span></button>
       <button class="unified-menu-trigger" type="button" data-unified-menu="table" title="الجداول"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M4 15h16M10 4v16M15 4v16"/></svg><span>جدول</span></button>
-      <button class="unified-menu-trigger" type="button" data-unified-menu="codeSteps" title="الأكواد والخطوات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg><span>كود وخطوات</span></button>
+    </div>
+    <div class="unified-tool-group" data-unified-menu-group>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="list" title="القوائم"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>قائمة</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="steps" title="الخطوات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M4 6h2v2H4zM9 7h11M4 11h2v2H4zM9 12h11M4 16h2v2H4zM9 17h11"/></svg><span>خطوات</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="code" title="الأكواد"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg><span>كود</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="inlineCode" title="الكود المضمن"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="m10 8-3 4 3 4M14 8l3 4-3 4"/></svg><span>كود مضمن</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="keyboard" title="اختصارات لوحة المفاتيح"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M7 14h10"/></svg><span>اختصار</span></button>
+    </div>
+    <div class="unified-tool-group" data-unified-menu-group>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="faq" title="الأسئلة الشائعة"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h16"/><path d="m17 9 3 3-3 3"/></svg><span>FAQ</span></button>
+      <button class="unified-menu-trigger" type="button" data-unified-menu="accordion" title="الأكورديون"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M16 7h2M16 17h2"/></svg><span>أكورديون</span></button>
       <button class="unified-menu-trigger" type="button" data-unified-menu="toc" title="جدول المحتويات"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M8 6h12M8 12h12M8 18h12M3 6h.01M3 12h.01M3 18h.01"/></svg><span>محتويات</span></button>
       <button class="unified-menu-trigger" type="button" data-unified-menu="related" title="المنشورات ذات الصلة"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 13h6M8 17h4"/></svg><span>ذات صلة</span></button>
       <button class="unified-menu-trigger" type="button" data-unified-menu="basics" title="أساسيات Blogger"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg><span>أساسيات</span></button>
-    </div>
-
-    <!-- 25.2.4 | FAQ + تمييز + اختصار + فاصلة -->
-    <div class="unified-tool-group" data-unified-menu-group>
-      <button class="unified-menu-trigger" type="button" data-unified-menu="faqAccordion" title="FAQ والأكورديون"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h16"/><path d="m17 9 3 3-3 3"/></svg><span>FAQ وأكورديون</span></button>
       <button class="unified-menu-trigger" type="button" data-unified-menu="highlight" title="تمييز النص"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="m5 16 9-9 4 4-9 9H5v-4Z"/><path d="M14 7 16 5l3 3-2 2M4 20h16"/></svg><span>تمييز</span></button>
-      <button class="unified-menu-trigger" type="button" data-unified-menu="keyboard" title="اختصار لوحة المفاتيح"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M7 14h10"/></svg><span>اختصار</span></button>
-      <button class="unified-menu-trigger" type="button" data-unified-action="more" title="إدراج فاصل بلوجر"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M3 12h18"/><path d="M7 8h10M7 16h10"/></svg><span>فاصلة</span></button>
-      </div>
-      
+      <button class="unified-menu-trigger" type="button" data-unified-action="more" title="فاصل Blogger"><svg class="iconax" viewBox="0 0 24 24" stroke-width="1.5"><path d="M3 12h18"/><path d="M7 8h10M7 16h10"/></svg><span>فاصلة</span></button>
     </div>
-  
-  
-<div id="modweebGenStatus" class="modweeb-gen-status mw-status" role="status" aria-live="polite"></div>
+  </div>
+  <div id="modweebGenStatus" class="modweeb-gen-status mw-status" role="status" aria-live="polite"></div>
 
   <!-- 25.3 | منطقة العمل: محرر + معاينة -->
   <div class="unified-workspace">

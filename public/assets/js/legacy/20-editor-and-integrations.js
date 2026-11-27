@@ -45,7 +45,14 @@ window.closeAllModweebMenus = function(){
 };
 
   const help = {
-    heading: 'ينشئ عنواناً HTML من H1 إلى H6 مع دعم data-before/data-after.',
+    heading: 'ينشئ عنواناً HTML من H1 إلى H6 مع دعم data-before/data-after، ويمكن اختيار بادئة أو لاحقة بصرية جاهزة ثم تعديلها.',
+    note: 'ملاحظة معلومات أو تحذير أو سؤال (p.note).',
+    alert: 'تنبيه بستة أنواع مع خيار الإطار.',
+    link: 'رابط خارجي آمن بأنماط extL / alt / sec / زر.',
+    list: 'قائمة نقطية أو بنمط s1.',
+    steps: 'قائمة خطوات مرقمة.',
+    code: 'أكواد كتلية أو متعددة التبويبات.',
+    more: 'فاصل المقال <!--more-->.',
     paragraph: 'فقرة عادية أو بمسافة بادئة أو حرف استهلالي أو مرجعية.',
     image: 'صورة بنمط قياسي أو كامل أو مع تعليق أو شبكة أو تمرير.',
     link: 'رابط خارجي آمن بأنماط متعددة (extL / alt / sec / زر).',
@@ -77,63 +84,49 @@ window.closeAllModweebMenus = function(){
 };
 
   const menuData = {
-    heading: [['heading','عنوان',[['h1','H1'],['h2','H2'],['h3','H3'],['h4','H4'],['h5','H5'],['h6','H6']]]],
+    heading: [
+        ['heading','عنوان',[['h1','H1'],['h2','H2'],['h3','H3'],['h4','H4'],['h5','H5'],['h6','H6']]],
+        ['heading','بادئة بصرية (data-before)',[['h2|before:#','H2 · #'],['h2|before://','H2 · //'],['h3|before:01','H3 · 01'],['h2|before:●','H2 · ●']]],
+        ['heading','لاحقة بصرية (data-after)',[['h2|after:→','H2 · →'],['h2|after:—','H2 · —'],['h3|after:✦','H3 · ✦']]]
+    ],
     paragraph: [['paragraph','فقرة',[['normal','عادية'],['indent','مسافة بادئة'],['dropcap','حرف استهلالي'],['ref','مرجعية']]]],
     quote: [['blockquote','اقتباس',[['normal','عادي'],['s1','نمط s1'],['s2','نمط s2']]]],
-    noteAlert: [
-        ['note','ملاحظة',[['info','معلومات'],['warning','تحذير'],['question','سؤال (qs)']]],
-        ['alert','تنبيه',[['info','معلومات'],['warning','تحذير'],['success','نجاح'],['error','خطأ'],['tip','نصيحة'],['question','سؤال']]]
-    ],
-    media: [
-        ['image','صورة',[['standard','قياسية'],['full','كاملة العرض'],['figure','مع تعليق'],['grid','شبكة'],['scroll','تمرير'],['lazyload','تحميل كسول'],['showall','عرض الكل']]],
-        ['lazyYt','YouTube',[['lazy','كسول'],['defer','مؤجل (Defer)']]],
-        ['audioPlayer','مشغل صوت',[['default','HTML5 Audio']]],
-        ['videoPlayer','مشغل فيديو',[['default','HTML5 Video']]]
-    ],
-    buttonLink: [
-        ['button','زر',[['default','زر']]],
-        ['link','رابط',[['extL','خارجي'],['alt','alt'],['sec','sec'],['button','زر'],['buttonLn','زر خطي']]]
-    ],
+    note: [['note','ملاحظة',[['info','معلومات'],['warning','تحذير'],['question','سؤال']]]],
+    alert: [['alert','تنبيه',[['info','معلومات'],['warning','تحذير'],['success','نجاح'],['error','خطأ'],['tip','نصيحة'],['question','سؤال'],['warning outline','تحذير بإطار'],['info outline','معلومات بإطار']]]],
+    image: [['image','صورة',[['standard','قياسية'],['full','كاملة العرض'],['figure','مع تعليق'],['grid','شبكة'],['scroll','تمرير'],['lazyload','تحميل كسول'],['showall','عرض الكل']]]],
+    youtube: [['lazyYt','YouTube',[['lazy','كسول'],['defer','مؤجل (Defer)']]]],
+    audio: [['audioPlayer','مشغل صوت',[['default','HTML5 Audio']]]],
+    video: [['videoPlayer','مشغل فيديو',[['default','HTML5 Video']]]],
+    button: [['button','زر',[['default','زر']]]],
+    link: [['link','رابط خارجي',[['extL','نمط extL'],['alt','نمط extL alt'],['sec','نمط sec'],['button','زر'],['buttonLn','زر خطي']]]],
     download: [['downloadBox','تحميل',[['default','Download Box']]]],
     table: [['table','جدول',[['default','جدول']]]],
-    codeSteps: [
-        ['steps','خطوات',[['default','Steps']]],
-        ['list','قائمة',[['default','ul'],['s1','ul.s1']]],
-        ['code','كود',[['html','HTML'],['css','CSS'],['js','JavaScript'],['json','JSON']]],
-        ['codeTabs','أكواد متعددة',[['default','HTML + CSS + JS + JSON']]],
-        ['inlineCode','كود مضمن',[['default','مصطلح']]]
-    ],
+    list: [['list','قائمة',[['default','ul'],['s1','ul.s1']]]],
+    steps: [['steps','خطوات',[['default','Steps']]]],
+    code: [['code','كود',[['html','HTML'],['css','CSS'],['js','JavaScript'],['json','JSON']]],['codeTabs','أكواد متعددة',[['default','HTML + CSS + JS + JSON']]]],
+    inlineCode: [['inlineCode','كود مضمن',[['default','مصطلح']]]],
+    keyboard: [['kbd','اختصار',[['default','اختصار']]]],
+    faq: [['faq','أسئلة شائعة',[['default','FAQ Schema']]]],
+    accordion: [['accordion','أكورديون',[['sp','Spoiler'],['ac','عادي'],['ac alt','نمط alt'],['group','مجمع'],['blur','Blur Text']]]],
     toc: [['toc','محتويات',[['automatic','تلقائي'],['manual','يدوي']]]],
-    related: [
-        ['relatedManual','يدوية',[['default','منشورات يدوية']]],
-        ['relatedAuto','تلقائية',[['default','منشورات تلقائية']]]
-    ],
+    related: [['relatedManual','منشورات يدوية',[['default','يدوية']]],['relatedAuto','منشورات تلقائية',[['default','تلقائية']]]],
     basics: [['basics','أساسيات',[['default','Meta وMore']]]],
-    faqAccordion: [
-        ['faq','أسئلة شائعة',[['default','FAQ Schema']]],
-        ['accordion','أكورديون',[['sp','Spoiler'],['ac','عادي'],['ac alt','نمط alt'],['group','مجمع'],['blur','Blur Text']]]
-    ],
     highlight: [['mark','تمييز',[
-        ['','عادي (أصفر)'],
-        ['block','كتلة (block)'],
-        ['red','أحمر (red)'],
-        ['gray','رمادي (gray)'],
-        ['orange','برتقالي (orange)'],
-        ['blue','أزرق (blue)'],
-        ['green','أخضر (green)'],
-        ['gold','ذهبي (gold)'],
-        ['purple','بنفسجي (purple)']
+        ['','عادي (أصفر)'],['block','كتلة (block)'],['red','أحمر (red)'],['gray','رمادي (gray)'],
+        ['orange','برتقالي (orange)'],['blue','أزرق (blue)'],['green','أخضر (green)'],['gold','ذهبي (gold)'],['purple','بنفسجي (purple)']
     ]]],
-    keyboard: [['kbd','اختصار',[['default','اختصار']]]]
+    more: [['more','فاصل بلوجر',[['default','<!--more-->']]]]
 };
 
   const menuTitles = {
-    heading: 'مستويات العناوين', paragraph: 'أنماط الفقرات', quote: 'أنماط الاقتباس',
-    noteAlert: 'الملاحظات والتنبيهات', media: 'الصور والفيديو', buttonLink: 'الأزرار والروابط',
-    download: 'صندوق التحميل', table: 'جدول', codeSteps: 'الأكواد والخطوات',
-    toc: 'جدول المحتويات', related: 'المنشورات ذات الصلة', basics: 'أساسيات Blogger',
-    faqAccordion: 'الأسئلة والأكورديون', highlight: 'تمييز النص', keyboard: 'اختصار لوحة المفاتيح'
-  };
+    heading: 'أنماط العناوين والبادئة واللاحقة', paragraph: 'أنماط الفقرات', quote: 'أنماط الاقتباس',
+    note: 'ملاحظة', alert: 'تنبيه', image: 'أنماط الصور', youtube: 'فيديو YouTube', audio: 'مشغل صوت', video: 'مشغل فيديو',
+    button: 'زر', link: 'رابط خارجي', download: 'صندوق التحميل', table: 'جدول', list: 'قائمة', steps: 'خطوات',
+    code: 'الأكواد', inlineCode: 'كود مضمن', keyboard: 'اختصار لوحة المفاتيح', faq: 'الأسئلة الشائعة',
+    accordion: 'الأكورديون', toc: 'جدول المحتويات', related: 'المنشورات ذات الصلة', basics: 'أساسيات Blogger',
+    highlight: 'تمييز النص', more: 'فاصل Blogger'
+};
+
   function clone(v){ return JSON.parse(JSON.stringify(v)); }
   function escapeAttr(v){ return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function blocksForOutput(){ return (modweebBlocks || []).filter(b => !state.draftId || b.id !== state.draftId); }
@@ -343,15 +336,22 @@ window.closeAllModweebMenus = function(){
     const draft = modweebBlocks.pop();
     if (!draft) return {id: 'draft-' + Date.now(), type};
     draft.id = 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-    if (type === 'heading') draft.headingLevel = option || 'h2';
+    if (type === 'heading') {
+        const parts = String(option || 'h2').split('|');
+        draft.headingLevel = /^h[1-6]$/.test(parts[0]) ? parts[0] : 'h2';
+        const visual = parts[1] || '';
+        if (visual.startsWith('before:')) draft.headingBefore = visual.slice(7);
+        if (visual.startsWith('after:')) draft.headingAfter = visual.slice(6);
+    }
     if (type === 'paragraph') draft.paragraphStyle = option || 'normal';
     if (type === 'image') draft.imageStyle = option || 'standard';
     if (type === 'link') draft.linkStyle = option || 'extL';
     if (type === 'blockquote') draft.quoteStyle = option || 'normal';
     if (type === 'note') draft.noteStyle = option === 'question' ? 'question' : (option || 'info');
     if (type === 'alert') {
-        draft.alertStyle = option || 'info';
-        if (option === 'tip' || option === 'question') draft.alertStyle = option;
+        const value = String(option || 'info');
+        draft.alertStyle = value.replace(' outline', '') || 'info';
+        draft.alertOutlined = value.includes('outline');
     }
     if (type === 'code') draft.codeLanguage = option || 'html';
     if (type === 'accordion' || type === 'spoiler' || type === 'accordionGroup') {

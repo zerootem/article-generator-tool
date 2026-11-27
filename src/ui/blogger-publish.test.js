@@ -17,7 +17,7 @@ async function runLockedPublish(){
   const statuses = [];
   let settingsOpened = 0;
   const start = core.indexOf('async function publishToBlogger(retry){');
-  const end = core.indexOf('\n}\n\n/* ============================================================\n   25.', start);
+  const end = core.indexOf('\n/* ====', start);
   const context = {
     window: {
       modweebCrypto: {isUnlocked: () => false},
@@ -25,7 +25,7 @@ async function runLockedPublish(){
     },
     modweebShowStatus(message, duration){ statuses.push({message, duration}); },
   };
-  runInNewContext(core.slice(start, end + 2) + '\nglobalThis.publishForTest = publishToBlogger;', context);
+  runInNewContext(core.slice(start, end) + '\nglobalThis.publishForTest = publishToBlogger;', context);
   await context.publishForTest();
   return {statuses, settingsOpened};
 }

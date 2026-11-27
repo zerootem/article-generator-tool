@@ -9,6 +9,7 @@ import { installModalDensity } from './ui/modal-density';
 import { installInterfaceLanguage } from './i18n';
 import { installApplication } from './pwa';
 import { installPullToRefresh } from './ui/pull-to-refresh';
+import { installGenerationLog } from './ui/generation-log';
 
 export interface WorkerAIRequest {
   systemPrompt: string;
@@ -377,5 +378,6 @@ installModalDensity();
 installInterfaceLanguage();
 installApplication();
 installPullToRefresh();
+installGenerationLog();
 
 (window as any).__hideArticleBoot?.();
