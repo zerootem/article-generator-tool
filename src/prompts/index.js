@@ -66,16 +66,16 @@ function buildArticlePrompt(params = {}) {
   if (!hasYoutube) preferences.push('خيار YouTube معطّل: لا تستخدم lazyYt.');
 
   const typeCatalog = `مخطط sections الحالي. أخرج الأنواع والحقول المكتوبة هنا فقط، وبأسماء الحقول نفسها:
-- basics: {"type":"basics","metaDescription":"وصف دقيق للمقال","thumbnailUrl":"رابط صورة قدمه المستخدم فقط أو اتركه فارغاً"}
+- basics: {"type":"basics","basicsMode":"all|snippet|thumbnail","metaDescription":"وصف دقيق للمقال","thumbnailUrl":"رابط صورة قدمه المستخدم فقط أو اتركه فارغاً"}
 - heading: {"type":"heading","content":"...","headingLevel":"h1|h2|h3|h4|h5|h6","headingBefore":"اختياري","headingAfter":"اختياري"}
 - paragraph: {"type":"paragraph","content":"نص أو تنسيق inline مسموح فقط","paragraphStyle":"normal|indent|dropcap|ref","dropCapChar":"اختياري؛ حرف البداية عند dropcap فقط","refSource":"مصدر حقيقي مذكور في المدخلات عند استخدام ref"}
 - note: {"type":"note","content":"...","noteStyle":"info|warning|question","noteTitle":"عنوان قصير اختياري"}
-- alert: {"type":"alert","content":"...","alertStyle":"info|warning|success|error|tip|question","alertOutlined":false,"alertTitle":"عنوان قصير اختياري"}
+- alert: {"type":"alert","content":"...","alertStyle":"default|info|warning|success|error|tip|question","alertOutlined":false,"alertTitle":"عنوان قصير اختياري"}
 - blockquote: {"type":"blockquote","content":"اقتباس موثق فقط","quoteAuthor":"نسبة موثقة فقط","quoteStyle":"normal|s1|s2"}
 - steps: {"type":"steps","steps":["خطوة عملية", "خطوة عملية"]}
 - list: {"type":"list","listItems":["...", "..."],"listStyle":"default|s1"}
 - keyPoints: {"type":"keyPoints","items":["...", "..."]}
-- table: {"type":"table","tableRows":2,"tableCols":2,"tableData":[["رأس 1","رأس 2"],["...","..."]],"tableClasses":"bordered stripped hovered"}
+- table: {"type":"table","tableRows":2,"tableCols":2,"tableData":[["رأس 1","رأس 2"],["...","..."]],"tableClasses":"bordered stripped hovered|noborder|cborder|sticky|vab|full|mh100|mhvh|mh200|mh300|sp5|sp10|sp20|primary|warning|success|error|clr"}
 - accordion: {"type":"accordion","summary":"...","content":"...","accordionType":"ac|ac alt|sp|group|blur","accordions":[{"summary":"...","content":"...","alt":false}]}
 - accordionGroup: {"type":"accordionGroup","summary":"...","content":"...","accordionType":"group","accordions":[{"summary":"...","content":"...","alt":false}]}
 - spoiler: {"type":"spoiler","summary":"عنوان اختياري عند استخدام نمط طي غير blur","content":"...","accordionType":"sp|ac|ac alt|group|blur","spoilerBlurText":"نص مناسب للإخفاء في نمط blur"}
@@ -84,14 +84,14 @@ function buildArticlePrompt(params = {}) {
 - codeTabs: {"type":"codeTabs","tabHtml":"...","tabHtmlSource":"مسار اختياري","tabCss":"...","tabCssSource":"مسار اختياري","tabJs":"...","tabJsSource":"مسار اختياري","tabJson":"...","tabJsonSource":"مسار اختياري"}
 - inlineCode: {"type":"inlineCode","inlineCode":"مصطلح أو أمر قصير"}
 - kbd: {"type":"kbd","kbdText":"اختصار لوحة مفاتيح حقيقي"}
-- mark: {"type":"mark","markText":"نص قصير","markClass":"|block|red|gray|orange|blue|green|gold|purple"}
-- image: {"type":"image","imageStyle":"standard|full|figure|grid|scroll|lazyload|showall","imageUrl":"رابط HTTP(S) قدمه المستخدم حرفياً","imageAlt":"وصف دقيق","imageWidth":1280,"imageHeight":720,"imageLightbox":true,"imageCaptionStyle":"figure|table","imageDisableCaption":false,"caption":"...","gridUrls":"روابط فعلية قدمها المستخدم، رابط في كل سطر","scrollHeight":"h150|h200|h250"}
-- lazyYt: {"type":"lazyYt","youtubeId":"لا تنشئه؛ التطبيق يستخرجه من مرجع المستخدم","youtubeMode":"lazy|defer","ratio":"16/9|4/3"}
+- mark: {"type":"mark","markText":"نص قصير","markClass":"|block|red|gray|orange|blue|green|gold|purple","markBefore":"اختياري","markAfter":"اختياري"}
+- image: {"type":"image","imageStyle":"standard|full|figure|grid|scroll|scroll2|lazyload|showall","imageUrl":"رابط HTTP(S) قدمه المستخدم حرفياً","imageAlt":"وصف دقيق","imageWidth":1280,"imageHeight":720,"imageLightbox":true,"imageCaptionStyle":"figure|table","imageDisableCaption":false,"caption":"...","gridUrls":"روابط فعلية قدمها المستخدم، رابط في كل سطر","scrollHeight":"h150|h200|h250"}
+- lazyYt: {"type":"lazyYt","youtubeId":"لا تنشئه؛ التطبيق يستخرجه من مرجع المستخدم","youtubeMode":"lazy|defer","ratio":"16/9|4/3|1/1"}
 - link: {"type":"link","linkText":"...","linkUrl":"رابط HTTP(S) قدمه المستخدم","linkStyle":"extL|alt|sec|button|buttonLn"}
 - button: {"type":"button","buttonText":"...","buttonUrl":"رابط HTTP(S) قدمه المستخدم","buttonIcon":"|dl|demo","buttonOutlined":false}
-- downloadBox: {"type":"downloadBox","fileName":"اسم ملف قدمه المستخدم","fileSize":"حجم قدمه المستخدم","downloadFile":"رابط HTTP(S) قدمه المستخدم"}
-- audioPlayer: {"type":"audioPlayer","audioUrl":"رابط مباشر لملف MP3 قدمه المستخدم","audioTitle":"عنوان ذكره المستخدم فقط","audioPreload":"none|metadata|auto"}
-- videoPlayer: {"type":"videoPlayer","videoUrl":"رابط ملف فيديو مباشر قدمه المستخدم","videoPoster":"رابط صورة غلاف قدمه المستخدم حرفياً أو اتركه فارغاً","videoType":"video/mp4|video/webm|video/ogg","videoPreload":"none|metadata|auto","videoWidth":"100%"}
+- downloadBox: {"type":"downloadBox","fileName":"اسم ملف قدمه المستخدم","fileSize":"حجم قدمه المستخدم","downloadFile":"رابط HTTP(S) قدمه المستخدم","downloadType":"zip|rar|pdf|apk|docx|xlsx|mp3|mp4"}
+- audioPlayer: {"type":"audioPlayer","audioUrl":"رابط مباشر لملف MP3 قدمه المستخدم","audioTitle":"عنوان ذكره المستخدم فقط","audioPreload":"none|metadata|auto","audioLoop":false,"audioMuted":false}
+- videoPlayer: {"type":"videoPlayer","videoUrl":"رابط ملف فيديو مباشر قدمه المستخدم","videoPoster":"رابط صورة غلاف قدمه المستخدم حرفياً أو اتركه فارغاً","videoType":"video/mp4|video/webm|video/ogg","videoPreload":"none|metadata|auto","videoWidth":"100%","videoHeight":"auto","videoLoop":false,"videoMuted":false}
 - relatedManual: {"type":"relatedManual","relatedTitle":"عنوان قصير","relatedLinks":[{"text":"عنوان قدمه المستخدم","url":"رابط HTTP(S) قدمه المستخدم"}]}
 - relatedAuto: {"type":"relatedAuto","relatedAutoLabel":"منشورات ذات صلة","relatedMax":6,"relatedDataLabel":"وسم يذكره المستخدم فقط","relatedSortBy":"updated|published","relatedRandom":true}
 

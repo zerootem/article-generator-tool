@@ -28,10 +28,10 @@ type RecordValue = Record<string, unknown>;
 export type NormalizedArticleOutput = RecordValue & { sections: RecordValue[] };
 
 const SECTION_FIELDS: Record<string, string[]> = {
-  basics: ['type', 'metaDescription', 'thumbnailUrl', 'subtitle'],
+  basics: ['type', 'basicsMode', 'metaDescription', 'thumbnailUrl', 'subtitle'],
   heading: ['type', 'content', 'headingLevel', 'headingBefore', 'headingAfter'],
   paragraph: ['type', 'content', 'paragraphStyle', 'dropCapChar', 'refSource'],
-  toc: ['type', 'tocLabel', 'tocStyle', 'tocManualItems'],
+  toc: ['type', 'tocLabel', 'tocStyle', 'tocOpen', 'tocManualItems'],
   note: ['type', 'content', 'noteStyle', 'noteTitle'],
   alert: ['type', 'content', 'alertStyle', 'alertOutlined', 'alertTitle'],
   blockquote: ['type', 'content', 'quoteAuthor', 'quoteStyle'],
@@ -47,14 +47,14 @@ const SECTION_FIELDS: Record<string, string[]> = {
   codeTabs: ['type', 'tabHtml', 'tabHtmlSource', 'tabCss', 'tabCssSource', 'tabJs', 'tabJsSource', 'tabJson', 'tabJsonSource'],
   inlineCode: ['type', 'inlineCode'],
   kbd: ['type', 'kbdText'],
-  mark: ['type', 'markText', 'markClass'],
-  image: ['type', 'imageStyle', 'imageUrl', 'imageAlt', 'imageWidth', 'imageHeight', 'imageLightbox', 'imageCaptionStyle', 'imageDisableCaption', 'caption', 'gridUrls', 'scrollHeight'],
+  mark: ['type', 'markText', 'markClass', 'markBefore', 'markAfter'],
+  image: ['type', 'imageStyle', 'imageUrl', 'imageAlt', 'imageWidth', 'imageHeight', 'imageLightbox', 'imageCaptionStyle', 'imageDisableCaption', 'caption', 'gridUrls', 'scrollHeight', 'imageScrollStyle'],
   lazyYt: ['type', 'youtubeId', 'youtubeMode', 'ratio'],
   link: ['type', 'linkText', 'linkUrl', 'linkStyle'],
   button: ['type', 'buttonText', 'buttonUrl', 'buttonIcon', 'buttonOutlined'],
-  downloadBox: ['type', 'fileName', 'fileSize', 'downloadFile'],
-  audioPlayer: ['type', 'audioUrl', 'audioTitle', 'audioPreload'],
-  videoPlayer: ['type', 'videoUrl', 'videoPoster', 'videoType', 'videoPreload', 'videoWidth'],
+  downloadBox: ['type', 'fileName', 'fileSize', 'downloadFile', 'downloadType'],
+  audioPlayer: ['type', 'audioUrl', 'audioTitle', 'audioPreload', 'audioAutoplay', 'audioLoop', 'audioMuted'],
+  videoPlayer: ['type', 'videoUrl', 'videoPoster', 'videoType', 'videoPreload', 'videoWidth', 'videoHeight', 'videoAutoplay', 'videoLoop', 'videoMuted'],
   relatedManual: ['type', 'relatedTitle', 'relatedLinks'],
   relatedAuto: ['type', 'relatedAutoLabel', 'relatedMax', 'relatedDataLabel', 'relatedSortBy', 'relatedRandom'],
 };
@@ -179,20 +179,20 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
   for (const key of SECTION_FIELDS[type]) {
     if (key === 'type' || section[key] === undefined) continue;
     const value = section[key];
-    if (['headingLevel', 'paragraphStyle', 'tocStyle', 'noteStyle', 'alertStyle', 'quoteStyle', 'listStyle', 'accordionType', 'codeLanguage', 'imageStyle', 'imageCaptionStyle', 'scrollHeight', 'markClass', 'youtubeMode', 'ratio', 'linkStyle', 'buttonIcon', 'audioPreload', 'videoPreload', 'videoType', 'relatedSortBy'].includes(key)) {
+    if (['headingLevel', 'paragraphStyle', 'tocStyle', 'noteStyle', 'alertStyle', 'quoteStyle', 'listStyle', 'accordionType', 'codeLanguage', 'imageStyle', 'imageCaptionStyle', 'imageScrollStyle', 'scrollHeight', 'markClass', 'youtubeMode', 'ratio', 'linkStyle', 'buttonIcon', 'audioPreload', 'videoPreload', 'videoType', 'relatedSortBy', 'basicsMode', 'downloadType'].includes(key)) {
       const validValues: Record<string, string[]> = {
-        headingLevel: ['h1','h2','h3','h4','h5','h6'], paragraphStyle: ['normal','indent','dropcap','ref'], tocStyle: ['automatic','manual'],
-        noteStyle: ['info','warning','question'], alertStyle: ['info','warning','success','error','tip','question'], quoteStyle: ['normal','s1','s2'],
+        headingLevel: ['h1','h2','h3','h4','h5','h6'], paragraphStyle: ['normal','indent','dropcap','ref'], tocStyle: ['automatic','manual'], basicsMode: ['all','snippet','thumbnail'], downloadType: ['zip','rar','pdf','apk','docx','xlsx','mp3','mp4'], imageScrollStyle: ['glImg','psImg'],
+        noteStyle: ['info','warning','question'], alertStyle: ['default','info','warning','success','error','tip','question'], quoteStyle: ['normal','s1','s2'],
         listStyle: ['default','s1'], accordionType: ['ac','ac alt','sp','group','blur'], codeLanguage: ['html','css','js','json'],
-        imageStyle: ['standard','full','figure','grid','scroll','lazyload','showall'], imageCaptionStyle: ['figure','table'], scrollHeight: ['h150','h200','h250'],
-        markClass: ['','block','red','gray','orange','blue','green','gold','purple'], youtubeMode: ['lazy','defer'], ratio: ['16/9','4/3'],
+        imageStyle: ['standard','full','figure','grid','scroll','scroll2','lazyload','showall'], imageCaptionStyle: ['figure','table'], scrollHeight: ['h150','h200','h250'],
+        markClass: ['','block','red','gray','orange','blue','green','gold','purple'], youtubeMode: ['lazy','defer'], ratio: ['16/9','4/3','1/1','21/9'],
         linkStyle: ['extL','alt','sec','button','buttonLn'], buttonIcon: ['','dl','demo'], audioPreload: ['none','metadata','auto'],
         videoPreload: ['none','metadata','auto'], videoType: ['video/mp4','video/webm','video/ogg'], relatedSortBy: ['updated','published'],
       };
       if (typeof value === 'string' && validValues[key].includes(value) && (key !== 'accordionType' || value !== 'blur' || type === 'spoiler')) result[key] = value;
       continue;
     }
-    if (['content','metaDescription','subtitle','headingBefore','headingAfter','dropCapChar','refSource','tocLabel','noteTitle','alertTitle','quoteAuthor','summary','spoilerBlurText','codeContent','codeComment','codeSource','codeLines','tabHtml','tabHtmlSource','tabCss','tabCssSource','tabJs','tabJsSource','tabJson','tabJsonSource','inlineCode','kbdText','markText','imageAlt','caption','linkText','buttonText','fileName','fileSize','audioTitle','relatedTitle','relatedAutoLabel','relatedDataLabel'].includes(key)) {
+    if (['content','metaDescription','subtitle','headingBefore','headingAfter','dropCapChar','refSource','tocLabel','noteTitle','alertTitle','quoteAuthor','summary','spoilerBlurText','codeContent','codeComment','codeSource','codeLines','tabHtml','tabHtmlSource','tabCss','tabCssSource','tabJs','tabJsSource','tabJson','tabJsonSource','inlineCode','kbdText','markText','markBefore','markAfter','imageAlt','caption','linkText','buttonText','fileName','fileSize','audioTitle','relatedTitle','relatedAutoLabel','relatedDataLabel','videoHeight'].includes(key)) {
       if (typeof value === 'string' && ((key !== 'audioTitle' && key !== 'relatedDataLabel') || inputContains(value, sourceText))) {
         result[key] = type === 'paragraph' && key === 'content' && value === REQUIRED_POST_REFERENCE
           ? REQUIRED_POST_REFERENCE
@@ -206,7 +206,7 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
       if (safeClasses.length) result[key] = [...new Set(safeClasses)].join(' ');
       continue;
     }
-    if (['alertOutlined','codeCopy','codeHighlight','codeSyntax','imageLightbox','imageDisableCaption','buttonOutlined','relatedRandom'].includes(key)) {
+    if (['alertOutlined','codeCopy','codeHighlight','codeSyntax','imageLightbox','imageDisableCaption','buttonOutlined','relatedRandom','tocOpen','audioAutoplay','audioLoop','audioMuted','videoAutoplay','videoLoop','videoMuted'].includes(key)) {
       if (typeof value === 'boolean') result[key] = value;
       continue;
     }

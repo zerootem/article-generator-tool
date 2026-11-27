@@ -86,31 +86,50 @@ window.closeAllModweebMenus = function(){
   const menuData = {
     heading: [
         ['heading','عنوان',[['h1','H1'],['h2','H2'],['h3','H3'],['h4','H4'],['h5','H5'],['h6','H6']]],
-        ['heading','بادئة بصرية (data-before)',[['h2|before:#','H2 · #'],['h2|before://','H2 · //'],['h3|before:01','H3 · 01'],['h2|before:●','H2 · ●']]],
-        ['heading','لاحقة بصرية (data-after)',[['h2|after:→','H2 · →'],['h2|after:—','H2 · —'],['h3|after:✦','H3 · ✦']]]
+        ['heading','بادئة بصرية (data-before)',[['h2|before:#','H2 · #'],['h2|before://','H2 · //'],['h3|before:01','H3 · 01'],['h2|before:●','H2 · ●'],['h2|before:★ ','H2 · ★']]],
+        ['heading','لاحقة بصرية (data-after)',[['h2|after:→','H2 · →'],['h2|after:—','H2 · —'],['h3|after:✦','H3 · ✦'],['h3|after: ✓','H3 · ✓']]]
     ],
-    paragraph: [['paragraph','فقرة',[['normal','عادية'],['indent','مسافة بادئة'],['dropcap','حرف استهلالي'],['ref','مرجعية']]]],
-    quote: [['blockquote','اقتباس',[['normal','عادي'],['s1','نمط s1'],['s2','نمط s2']]]],
-    note: [['note','ملاحظة',[['info','معلومات'],['warning','تحذير'],['question','سؤال']]]],
-    alert: [['alert','تنبيه',[['info','معلومات'],['warning','تحذير'],['success','نجاح'],['error','خطأ'],['tip','نصيحة'],['question','سؤال'],['warning outline','تحذير بإطار'],['info outline','معلومات بإطار']]]],
-    image: [['image','صورة',[['standard','قياسية'],['full','كاملة العرض'],['figure','مع تعليق'],['grid','شبكة'],['scroll','تمرير'],['lazyload','تحميل كسول'],['showall','عرض الكل']]]],
-    youtube: [['lazyYt','YouTube',[['lazy','كسول'],['defer','مؤجل (Defer)']]]],
-    audio: [['audioPlayer','مشغل صوت',[['default','HTML5 Audio']]]],
-    video: [['videoPlayer','مشغل فيديو',[['default','HTML5 Video']]]],
-    button: [['button','زر',[['default','زر']]]],
-    link: [['link','رابط خارجي',[['extL','نمط extL'],['alt','نمط extL alt'],['sec','نمط sec'],['button','زر'],['buttonLn','زر خطي']]]],
-    download: [['downloadBox','تحميل',[['default','Download Box']]]],
-    table: [['table','جدول',[['default','جدول']]]],
+    paragraph: [['paragraph','فقرة',[['normal','عادية'],['indent','مسافة بادئة (pIndent)'],['dropcap','حرف استهلالي (dropCap)'],['ref','مرجعية (pRef)']]]],
+    quote: [['blockquote','اقتباس',[['normal','قياسي'],['s1','نمط s1'],['s2','نمط s2']]]],
+    note: [['note','ملاحظة',[['info','معلومات (note)'],['warning','تحذير (note wr)'],['question','سؤال (note qs)']]]],
+    alert: [['alert','تنبيه',[
+        ['default','افتراضي (alert)'],['outline','إطار فقط (alert outline)'],
+        ['info','معلومات'],['warning','تحذير'],['success','نجاح'],['error','خطأ'],['tip','نصيحة'],['question','سؤال'],
+        ['info outline','معلومات بإطار'],['warning outline','تحذير بإطار'],['success outline','نجاح بإطار'],
+        ['error outline','خطأ بإطار'],['tip outline','نصيحة بإطار'],['question outline','سؤال بإطار']
+    ]]],
+    image: [['image','صورة',[
+        ['standard','قياسية'],['full','كاملة العرض (full)'],['lightbox','قياسية + Lightbox'],
+        ['figure','مع تعليق (figure)'],['figure-table','مع تعليق (table.tr-caption)'],
+        ['grid','شبكة (psImg)'],['scroll','تمرير نمط 1 (glImg)'],['scroll2','تمرير نمط 2 (psImg scImg)'],
+        ['lazyload','تحميل كسول (lazyload)'],['showall','عرض الكل (Show All)']
+    ]]],
+    youtube: [['lazyYt','YouTube',[
+        ['lazy|16/9','Lazy 16:9'],['lazy|4/3','Lazy 4:3'],['lazy|1/1','Lazy 1:1'],
+        ['defer|16/9','Defer 16:9'],['defer|4/3','Defer 4:3']
+    ]]],
+    audio: [['audioPlayer','مشغل صوت',[['metadata','preload: metadata'],['none','preload: none'],['auto','preload: auto']]]],
+    video: [['videoPlayer','مشغل فيديو',[['mp4|metadata','MP4 · metadata'],['mp4|none','MP4 · none'],['webm|metadata','WebM · metadata'],['ogg|metadata','OGG · metadata']]]],
+    button: [['button','زر',[['default','زر'],['outlined','زر خطي (button ln)'],['dl','زر بأيقونة تحميل'],['demo','زر بأيقونة عرض']]]],
+    link: [['link','رابط خارجي',[['extL','extL'],['alt','extL alt'],['sec','extL sec'],['button','زر'],['buttonLn','زر خطي']]]],
+    download: [['downloadBox','تحميل',[['zip','ZIP'],['rar','RAR'],['pdf','PDF'],['apk','APK'],['docx','DOCX'],['xlsx','XLSX'],['mp3','MP3'],['mp4','MP4']]]],
+    table: [['table','جدول',[
+        ['default','قياسي'],['bordered','بحدود (bordered)'],['noborder','بلا حدود'],['cborder','إطار الحاوية'],
+        ['stripped','صفوف متبادلة'],['hovered','تحويم الصف'],['sticky','رأس ثابت'],['vab','محاذاة vab'],
+        ['full','عرض كامل'],['mh100','أقصى ارتفاع 100%'],['mhvh','أقصى ارتفاع الشاشة'],['mh200','أقصى ارتفاع 200px'],
+        ['mh300','أقصى ارتفاع 300px'],['sp5','حشو sp5'],['sp10','حشو sp10'],['sp20','حشو sp20'],
+        ['primary','رأس primary'],['warning','رأس warning'],['success','رأس success'],['error','رأس error'],['clr','رأس clr']
+    ]]],
     list: [['list','قائمة',[['default','ul'],['s1','ul.s1']]]],
-    steps: [['steps','خطوات',[['default','Steps']]]],
+    steps: [['steps','خطوات',[['default','ol.steps']]]],
     code: [['code','كود',[['html','HTML'],['css','CSS'],['js','JavaScript'],['json','JSON']]],['codeTabs','أكواد متعددة',[['default','HTML + CSS + JS + JSON']]]],
-    inlineCode: [['inlineCode','كود مضمن',[['default','مصطلح']]]],
-    keyboard: [['kbd','اختصار',[['default','اختصار']]]],
+    inlineCode: [['inlineCode','كود مضمن',[['default','code']]]],
+    keyboard: [['kbd','اختصار',[['default','kbd']]]],
     faq: [['faq','أسئلة شائعة',[['default','FAQ Schema']]]],
-    accordion: [['accordion','أكورديون',[['sp','Spoiler'],['ac','عادي'],['ac alt','نمط alt'],['group','مجمع'],['blur','Blur Text']]]],
-    toc: [['toc','محتويات',[['automatic','تلقائي'],['manual','يدوي']]]],
-    related: [['relatedManual','منشورات يدوية',[['default','يدوية']]],['relatedAuto','منشورات تلقائية',[['default','تلقائية']]]],
-    basics: [['basics','أساسيات',[['default','Meta وMore']]]],
+    accordion: [['accordion','أكورديون',[['ac','عادي (ac)'],['ac alt','بديل (ac alt)'],['group','مجمع (showH)'],['sp','Spoiler (details.sp)'],['blur','نص ضبابي (span.spoiler)']]]],
+    toc: [['toc','محتويات',[['automatic-open','تلقائي مفتوح'],['automatic','تلقائي مطوي'],['manual-open','يدوي مفتوح'],['manual','يدوي مطوي']]]],
+    related: [['relatedManual','منشورات يدوية',[['default','pRelate']]],['relatedAuto','منشورات تلقائية',[['default','details.sp.arp']]]],
+    basics: [['basics','أساسيات',[['all','مقتطف + صورة مصغرة + more'],['snippet','مقتطف + more'],['thumbnail','صورة مصغرة + more']]]],
     highlight: [['mark','تمييز',[
         ['','عادي (أصفر)'],['block','كتلة (block)'],['red','أحمر (red)'],['gray','رمادي (gray)'],
         ['orange','برتقالي (orange)'],['blue','أزرق (blue)'],['green','أخضر (green)'],['gold','ذهبي (gold)'],['purple','بنفسجي (purple)']
@@ -336,31 +355,66 @@ window.closeAllModweebMenus = function(){
     const draft = modweebBlocks.pop();
     if (!draft) return {id: 'draft-' + Date.now(), type};
     draft.id = 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+    const opt = String(option || '');
     if (type === 'heading') {
-        const parts = String(option || 'h2').split('|');
+        const parts = opt.split('|');
         draft.headingLevel = /^h[1-6]$/.test(parts[0]) ? parts[0] : 'h2';
         const visual = parts[1] || '';
         if (visual.startsWith('before:')) draft.headingBefore = visual.slice(7);
         if (visual.startsWith('after:')) draft.headingAfter = visual.slice(6);
     }
-    if (type === 'paragraph') draft.paragraphStyle = option || 'normal';
-    if (type === 'image') draft.imageStyle = option || 'standard';
-    if (type === 'link') draft.linkStyle = option || 'extL';
-    if (type === 'blockquote') draft.quoteStyle = option || 'normal';
-    if (type === 'note') draft.noteStyle = option === 'question' ? 'question' : (option || 'info');
+    if (type === 'paragraph') draft.paragraphStyle = opt || 'normal';
+    if (type === 'image') {
+        const map = { 'figure-table': 'figure', 'lightbox': 'standard', 'scroll2': 'scroll2' };
+        draft.imageStyle = map[opt] || opt || 'standard';
+        if (opt === 'figure-table') draft.imageCaptionStyle = 'table';
+        if (opt === 'lightbox') draft.imageLightbox = true;
+    }
+    if (type === 'link') draft.linkStyle = opt || 'extL';
+    if (type === 'blockquote') draft.quoteStyle = opt || 'normal';
+    if (type === 'note') draft.noteStyle = opt || 'info';
     if (type === 'alert') {
-        const value = String(option || 'info');
-        draft.alertStyle = value.replace(' outline', '') || 'info';
+        const value = opt || 'default';
+        draft.alertStyle = value.replace(' outline', '') || 'default';
         draft.alertOutlined = value.includes('outline');
     }
-    if (type === 'code') draft.codeLanguage = option || 'html';
+    if (type === 'code') draft.codeLanguage = opt || 'html';
     if (type === 'accordion' || type === 'spoiler' || type === 'accordionGroup') {
-        draft.accordionType = option || 'ac';
+        draft.accordionType = opt || 'ac';
+        if (draft.accordionType === 'sp') draft.summary = 'Spoiler:';
     }
-    if (type === 'toc') draft.tocStyle = option || 'automatic';
-    if (type === 'lazyYt') draft.youtubeMode = option || 'lazy';
-    if (type === 'list') draft.listStyle = option || 'default';
-    if (type === 'mark') draft.markClass = option || '';
+    if (type === 'toc') {
+        draft.tocStyle = opt.startsWith('manual') ? 'manual' : 'automatic';
+        draft.tocOpen = opt.endsWith('-open');
+    }
+    if (type === 'lazyYt') {
+        const [mode, ratio] = (opt || 'lazy|16/9').split('|');
+        draft.youtubeMode = mode || 'lazy';
+        draft.ratio = ratio || '16/9';
+    }
+    if (type === 'audioPlayer') draft.audioPreload = opt || 'metadata';
+    if (type === 'videoPlayer') {
+        const [vType, preload] = (opt || 'mp4|metadata').split('|');
+        draft.videoType = 'video/' + (vType || 'mp4');
+        draft.videoPreload = preload || 'metadata';
+    }
+    if (type === 'button') {
+        draft.buttonOutlined = opt === 'outlined';
+        draft.buttonIcon = opt === 'dl' ? 'dl' : opt === 'demo' ? 'demo' : '';
+    }
+    if (type === 'downloadBox') draft.downloadType = opt || 'zip';
+    if (type === 'table') {
+        const presets = {
+            default: 'bordered stripped hovered', bordered: 'bordered', noborder: 'noborder', cborder: 'cborder',
+            stripped: 'stripped', hovered: 'hovered', sticky: 'sticky', vab: 'vab', full: 'full',
+            mh100: 'mh100', mhvh: 'mhvh', mh200: 'mh200', mh300: 'mh300', sp5: 'sp5', sp10: 'sp10', sp20: 'sp20',
+            primary: 'primary', warning: 'warning', success: 'success', error: 'error', clr: 'clr'
+        };
+        draft.tableClasses = presets[opt] || presets.default;
+    }
+    if (type === 'basics') draft.basicsMode = opt || 'all';
+    if (type === 'list') draft.listStyle = opt || 'default';
+    if (type === 'mark') draft.markClass = opt || '';
     return draft;
 }
   function selectedRange(type){
@@ -379,6 +433,7 @@ window.closeAllModweebMenus = function(){
     const form = document.getElementById('unifiedElementForm');
     if (form) form.innerHTML = modweebRenderEditor(state.draft);
   }
+  window.modweebRefreshElementForm = renderDraft;
   function openRawHTMLFallback(range){
     state.draft = null; state.draftId = null; state.targetRange = range; state.draftInserted = false;
     state.rawHTMLDraft = range.raw;

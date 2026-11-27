@@ -132,6 +132,15 @@ function modweebAddBlock(type){
 
 function modweebAddBlockAndReturn(type){ modweebAddBlock(type); return modweebBlocks[modweebBlocks.length - 1]; }
 
+function modweebToggleTableClass(id, cls, on){
+    const b = modweebBlocks.find(x => x.id === id);
+    if (!b) return;
+    const set = new Set(String(b.tableClasses || '').split(/\s+/).filter(Boolean));
+    if (on) set.add(cls); else set.delete(cls);
+    b.tableClasses = Array.from(set).join(' ');
+    if (typeof window.modweebRefreshElementForm === 'function') window.modweebRefreshElementForm();
+    modweebScheduleRender();
+}
 function updateBlock(id, key, value){
     const b = modweebBlocks.find(x => x.id === id);
     if (b) { b[key] = value; modweebScheduleRender(); }
@@ -371,14 +380,15 @@ function modweebRenderEditor(b){
                 <option value="standard" ${b.imageStyle==="standard"?"selected":""}>قياسية</option>
                 <option value="full" ${b.imageStyle==="full"?"selected":""}>كاملة العرض (full)</option>
                 <option value="figure" ${b.imageStyle==="figure"?"selected":""}>مع تعليق</option>
-                <option value="grid" ${b.imageStyle==="grid"?"selected":""}>شبكة (grImg)</option>
-                <option value="scroll" ${b.imageStyle==="scroll"?"selected":""}>تمرير (glImg)</option>
+                <option value="grid" ${b.imageStyle==="grid"?"selected":""}>شبكة (psImg)</option>
+                <option value="scroll" ${b.imageStyle==="scroll"?"selected":""}>تمرير نمط 1 (glImg)</option>
+                <option value="scroll2" ${b.imageStyle==="scroll2"?"selected":""}>تمرير نمط 2 (psImg scImg)</option>
                 <option value="lazyload" ${b.imageStyle==="lazyload"?"selected":""}>تحميل كسول</option>
                 <option value="showall" ${b.imageStyle==="showall"?"selected":""}>عرض الكل (Show All)</option>
             </select>`;
             h += `<input class="modweeb-gen-input" type="url" placeholder="رابط الصورة" value="${modweebEscapeAttr(b.imageUrl||"")}" onchange="updateBlock('${t}','imageUrl',this.value)">`;
             h += `<input class="modweeb-gen-input" type="text" placeholder="نص بديل (alt)" value="${modweebEscapeAttr(b.imageAlt||"")}" onchange="updateBlock('${t}','imageAlt',this.value)">`;
-            if (b.imageStyle === "full") {
+            if (["standard","full","figure","lightbox"].includes(b.imageStyle)) {
                 h += `<div class="modweeb-flex">
                     <input class="modweeb-gen-input" type="number" placeholder="العرض" value="${b.imageWidth||"1280"}" onchange="updateBlock('${t}','imageWidth',this.value)">
                     <input class="modweeb-gen-input" type="number" placeholder="الارتفاع" value="${b.imageHeight||"720"}" onchange="updateBlock('${t}','imageHeight',this.value)">
@@ -391,17 +401,17 @@ function modweebRenderEditor(b){
                 </select>`;
                 h += `<input class="modweeb-gen-input" type="text" placeholder="نص التعليق" value="${modweebEscapeAttr(b.caption||"")}" onchange="updateBlock('${t}','caption',this.value)">`;
             }
-            if (["grid", "scroll", "showall"].includes(b.imageStyle)) {
+            if (["grid", "scroll", "scroll2", "showall"].includes(b.imageStyle)) {
                 h += `<textarea class="modweeb-gen-textarea" placeholder="روابط الصور (كل رابط في سطر)" onchange="updateBlock('${t}','gridUrls',this.value)">${b.gridUrls||""}</textarea>`;
             }
-            if (b.imageStyle === "scroll") {
+            if (b.imageStyle === "scroll" || b.imageStyle === "scroll2") {
                 h += `<select class="modweeb-gen-select" onchange="updateBlock('${t}','scrollHeight',this.value)">
                     <option value="h150" ${b.scrollHeight==="h150"?"selected":""}>150px</option>
                     <option value="h200" ${b.scrollHeight==="h200"?"selected":""}>200px</option>
                     <option value="h250" ${b.scrollHeight==="h250"?"selected":""}>250px</option>
                 </select>`;
             }
-            if (["standard","full","figure","grid","scroll","showall"].includes(b.imageStyle)) {
+            if (["standard","full","figure","grid","scroll","scroll2","showall"].includes(b.imageStyle)) {
                 h += `<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;margin-top:4px;cursor:pointer">
                     <input type="checkbox" ${b.imageLightbox?"checked":""} onchange="updateBlock('${t}','imageLightbox',this.checked)"> تفعيل Lightbox (zmImg)
                 </label>`;
@@ -446,6 +456,10 @@ function modweebRenderEditor(b){
             let h = `<input class="modweeb-gen-input" type="text" placeholder="اسم الملف" value="${modweebEscapeAttr(b.fileName||"")}" onchange="updateBlock('${t}','fileName',this.value)">`;
             h += `<input class="modweeb-gen-input" type="text" placeholder="الحجم" value="${modweebEscapeAttr(b.fileSize||"")}" onchange="updateBlock('${t}','fileSize',this.value)">`;
             h += `<input class="modweeb-gen-input" type="url" placeholder="رابط التحميل" value="${modweebEscapeAttr(b.downloadFile||"")}" onchange="updateBlock('${t}','downloadFile',this.value)">`;
+            const dlTypes = [['zip','ZIP'],['rar','RAR'],['pdf','PDF'],['apk','APK'],['docx','DOCX'],['xlsx','XLSX'],['mp3','MP3'],['mp4','MP4']];
+            h += `<select class="modweeb-gen-select" onchange="updateBlock('${t}','downloadType',this.value)">`;
+            dlTypes.forEach(([v,l]) => { h += `<option value="${v}" ${b.downloadType===v?"selected":""}>${l}</option>`; });
+            h += `</select>`;
             return h;
         }
 
@@ -476,6 +490,7 @@ function modweebRenderEditor(b){
         /* ─── Alert ─── */
         case "alert": {
             let h = `<select class="modweeb-gen-select" onchange="updateBlock('${t}','alertStyle',this.value)">
+                <option value="default" ${(!b.alertStyle||b.alertStyle==="default")?"selected":""}>افتراضي (alert)</option>
                 <option value="info" ${b.alertStyle==="info"?"selected":""}>معلومات</option>
                 <option value="warning" ${b.alertStyle==="warning"?"selected":""}>تحذير</option>
                 <option value="success" ${b.alertStyle==="success"?"selected":""}>نجاح</option>
@@ -486,7 +501,7 @@ function modweebRenderEditor(b){
             h += `<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;margin-top:4px;cursor:pointer">
                 <input type="checkbox" ${b.alertOutlined?"checked":""} onchange="updateBlock('${t}','alertOutlined',this.checked)"> نمط Outline (مخطط)
             </label>`;
-            const alertTitles = {info:'Info!',warning:'Warning!',success:'Success!',error:'Error!',tip:'Tip!',question:'Question'};
+            const alertTitles = {default:'Alert',info:'Info!',warning:'Warning!',success:'Success!',error:'Error!',tip:'Tip!',question:'Question'};
             h += `<input class="modweeb-gen-input" type="text" placeholder="${alertTitles[b.alertStyle||'info']||'Info!'}" value="${modweebEscapeAttr(b.alertTitle||'')}" onchange="updateBlock('${t}','alertTitle',this.value)">`;
             h += `<textarea class="modweeb-gen-textarea" placeholder="نص التنبيه" onchange="updateBlock('${t}','content',this.value)">${b.content||""}</textarea>`;
             return h;
@@ -500,7 +515,13 @@ function modweebRenderEditor(b){
                 <input class="modweeb-gen-input" type="number" min="1" max="10" value="${b.tableCols}" onchange="updateBlock('${t}','tableCols',parseInt(this.value)||2);modweebScheduleRender();" placeholder="أعمدة">
             </div>`;
             h += `<input class="modweeb-gen-input" type="text" placeholder="كلاسات الجدول" value="${modweebEscapeAttr(b.tableClasses||"")}" onchange="updateBlock('${t}','tableClasses',this.value)">`;
-            h += `<p style="font-size:.68rem;color:var(--notifC);margin:2px 0 6px;line-height:1.5">خيارات: bordered, noborder, cborder, stripped, hovered, sticky, vab, full, mh100/mhvh/mh200/mh300, sp5/sp10/sp20, primary/warning/success/error/clr/clb</p>`;
+            const tblClasses = String(b.tableClasses||'').split(/\s+/).filter(Boolean);
+            const tblOptions = [['bordered','bordered'],['noborder','noborder'],['cborder','cborder'],['stripped','stripped'],['hovered','hovered'],['sticky','sticky'],['vab','vab'],['full','full'],['mh100','mh100'],['mhvh','mhvh'],['mh200','mh200'],['mh300','mh300'],['sp5','sp5'],['sp10','sp10'],['sp20','sp20'],['primary','primary'],['warning','warning'],['success','success'],['error','error'],['clr','clr']];
+            h += `<p style="font-size:.68rem;color:var(--notifC);margin:2px 0 4px;line-height:1.5">أنماط الجدول (اختيار متعدد):</p><div class="modweeb-flex" style="flex-wrap:wrap;gap:4px">`;
+            tblOptions.forEach(([cls,label]) => {
+                h += `<label class="modweeb-tbl-chip"><input type="checkbox" ${tblClasses.includes(cls)?'checked':''} onchange="modweebToggleTableClass('${t}','${cls}',this.checked)"><span>${label}</span></label>`;
+            });
+            h += `</div>`;
             h += `<div style="display:grid;grid-template-columns:repeat(${b.tableCols},1fr);gap:2px;">`;
             for (let r = 0; r < b.tableRows; r++)
                 for (let c = 0; c < b.tableCols; c++)
@@ -631,7 +652,8 @@ function modweebRenderEditor(b){
                 }
                 h += `</div><button class="modweeb-gen-btn secondary sm" onclick="addAccordionItem('${t}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>إضافة عنصر</button>`;
             } else {
-                h += `<input class="modweeb-gen-input" type="text" placeholder="العنوان" value="${modweebEscapeAttr(b.summary||"")}" onchange="updateBlock('${t}','summary',this.value)">`;
+                const summaryPh = b.accordionType === "sp" ? "Spoiler:" : "العنوان";
+                h += `<input class="modweeb-gen-input" type="text" placeholder="${summaryPh}" value="${modweebEscapeAttr(b.summary||"")}" onchange="updateBlock('${t}','summary',this.value)">`;
                 h += `<textarea class="modweeb-gen-textarea" placeholder="المحتوى" onchange="updateBlock('${t}','content',this.value)">${b.content||""}</textarea>`;
             }
             return h;
@@ -644,6 +666,9 @@ function modweebRenderEditor(b){
                 <option value="manual" ${b.tocStyle==="manual"?"selected":""}>يدوي</option>
             </select>`;
             h += `<input class="modweeb-gen-input" type="text" placeholder="العنوان" value="${modweebEscapeAttr(b.tocLabel||"جدول المحتويات")}" onchange="updateBlock('${t}','tocLabel',this.value)">`;
+            h += `<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;margin:4px 0;cursor:pointer">
+                <input type="checkbox" ${b.tocOpen?"checked":""} onchange="updateBlock('${t}','tocOpen',this.checked)"> مفتوح افتراضياً (open)
+            </label>`;
             if (b.tocStyle === 'manual') {
                 if (!Array.isArray(b.tocManualItems)) b.tocManualItems = [{text:"", id:""}];
                 h += `<div class="modweeb-list-items">`;
@@ -701,7 +726,12 @@ function modweebRenderEditor(b){
                 <option value="defer" ${b.youtubeMode==="defer"?"selected":""}>Defer (iframe مؤجل)</option>
             </select>`;
             h += `<input class="modweeb-gen-input" type="text" placeholder="معرف الفيديو (video_id)" value="${modweebEscapeAttr(b.youtubeId||"")}" onchange="updateBlock('${t}','youtubeId',this.value)">`;
-            h += `<input class="modweeb-gen-input" type="text" placeholder="النسبة (4/3 أو 16/9)" value="${modweebEscapeAttr(b.ratio||"4/3")}" onchange="updateBlock('${t}','ratio',this.value)">`;
+            h += `<select class="modweeb-gen-select" onchange="updateBlock('${t}','ratio',this.value)">
+                <option value="16/9" ${(b.ratio||'16/9')==='16/9'?"selected":""}>16:9</option>
+                <option value="4/3" ${b.ratio==='4/3'?"selected":""}>4:3</option>
+                <option value="1/1" ${b.ratio==='1/1'?"selected":""}>1:1</option>
+                <option value="21/9" ${b.ratio==='21/9'?"selected":""}>21:9</option>
+            </select>`;
             return h;
         }
 
@@ -713,6 +743,11 @@ function modweebRenderEditor(b){
                 <option value="none" ${b.audioPreload==="none"?"selected":""}>preload: none</option>
                 <option value="auto" ${b.audioPreload==="auto"?"selected":""}>preload: auto</option>
             </select>`;
+            h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:4px">`;
+            h += `<label class="modweeb-tbl-chip"><input type="checkbox" ${b.audioAutoplay?"checked":""} onchange="updateBlock('${t}','audioAutoplay',this.checked)"><span>autoplay</span></label>`;
+            h += `<label class="modweeb-tbl-chip"><input type="checkbox" ${b.audioLoop?"checked":""} onchange="updateBlock('${t}','audioLoop',this.checked)"><span>loop</span></label>`;
+            h += `<label class="modweeb-tbl-chip"><input type="checkbox" ${b.audioMuted?"checked":""} onchange="updateBlock('${t}','audioMuted',this.checked)"><span>muted</span></label>`;
+            h += `</div>`;
             return h;
         }
 
@@ -725,12 +760,31 @@ function modweebRenderEditor(b){
                 <option value="none" ${b.videoPreload==="none"?"selected":""}>preload: none</option>
                 <option value="auto" ${b.videoPreload==="auto"?"selected":""}>preload: auto</option>
             </select>`;
+            h += `<select class="modweeb-gen-select" onchange="updateBlock('${t}','videoType',this.value)">
+                <option value="video/mp4" ${(b.videoType||'video/mp4')==='video/mp4'?"selected":""}>video/mp4</option>
+                <option value="video/webm" ${b.videoType==='video/webm'?"selected":""}>video/webm</option>
+                <option value="video/ogg" ${b.videoType==='video/ogg'?"selected":""}>video/ogg</option>
+            </select>`;
+            h += `<div class="modweeb-flex">
+                <input class="modweeb-gen-input" type="text" placeholder="العرض (مثال: 100%)" value="${modweebEscapeAttr(b.videoWidth||"100%")}" onchange="updateBlock('${t}','videoWidth',this.value)">
+                <input class="modweeb-gen-input" type="text" placeholder="الارتفاع (auto)" value="${modweebEscapeAttr(b.videoHeight||"auto")}" onchange="updateBlock('${t}','videoHeight',this.value)">
+            </div>`;
+            h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:4px">`;
+            h += `<label class="modweeb-tbl-chip"><input type="checkbox" ${b.videoAutoplay?"checked":""} onchange="updateBlock('${t}','videoAutoplay',this.checked)"><span>autoplay</span></label>`;
+            h += `<label class="modweeb-tbl-chip"><input type="checkbox" ${b.videoLoop?"checked":""} onchange="updateBlock('${t}','videoLoop',this.checked)"><span>loop</span></label>`;
+            h += `<label class="modweeb-tbl-chip"><input type="checkbox" ${b.videoMuted?"checked":""} onchange="updateBlock('${t}','videoMuted',this.checked)"><span>muted</span></label>`;
+            h += `</div>`;
             return h;
         }
 
         /* ─── Basics ─── */
-        case "basics":
-            return `<p class="note" style="font-size:.75rem;color:var(--notifC)">وصف مقتطف المقال (Post Snippet)</p>
+        case "basics": {
+            let h = `<select class="modweeb-gen-select" onchange="updateBlock('${t}','basicsMode',this.value)">
+                <option value="all" ${(b.basicsMode||"all")==="all"?"selected":""}>مقتطف + صورة مصغرة + more</option>
+                <option value="snippet" ${b.basicsMode==="snippet"?"selected":""}>مقتطف + more فقط</option>
+                <option value="thumbnail" ${b.basicsMode==="thumbnail"?"selected":""}>صورة مصغرة + more فقط</option>
+            </select>`;
+            h += `<p class="note" style="font-size:.75rem;color:var(--notifC)">وصف مقتطف المقال (Post Snippet)</p>
                 <textarea class="modweeb-gen-textarea" placeholder="الوصف" onchange="updateBlock('${t}','metaDescription',this.value)">${b.metaDescription||""}</textarea>
                 <p class="note" style="font-size:.75rem;color:var(--notifC);margin-top:6px">رابط الصورة المصغرة (اتركه فارغاً لاستخدام الافتراضية)</p>
                 <input class="modweeb-gen-input" type="url" placeholder="https://..." dir="ltr" value="${modweebEscapeAttr(b.thumbnailUrl||"")}" onchange="updateBlock('${t}','thumbnailUrl',this.value)">
@@ -740,6 +794,8 @@ function modweebRenderEditor(b){
                 </button>
                 <p class="note" style="font-size:.75rem;color:var(--notifC);margin-top:6px">العنوان الفرعي (Header Subtitle)</p>
                 <input class="modweeb-gen-input" type="text" placeholder="العنوان الفرعي" value="${modweebEscapeAttr(b.subtitle||"")}" onchange="updateBlock('${t}','subtitle',this.value)">`;
+            return h;
+        }
 
         /* ─── Mark (highlight) ─── */
         case "mark": {
@@ -755,6 +811,10 @@ function modweebRenderEditor(b){
                 <option value="purple" ${b.markClass==="purple"?"selected":""}>بنفسجي (purple)</option>
             </select>`;
             h += `<input class="modweeb-gen-input" type="text" placeholder="النص" value="${modweebEscapeAttr(b.markText||"")}" onchange="updateBlock('${t}','markText',this.value)">`;
+            h += `<div class="modweeb-flex">
+                <input class="modweeb-gen-input" type="text" placeholder="data-before (نص قبل)" value="${modweebEscapeAttr(b.markBefore||"")}" onchange="updateBlock('${t}','markBefore',this.value)">
+                <input class="modweeb-gen-input" type="text" placeholder="data-after (نص بعد)" value="${modweebEscapeAttr(b.markAfter||"")}" onchange="updateBlock('${t}','markAfter',this.value)">
+            </div>`;
             return h;
         }
 
@@ -823,7 +883,9 @@ function modweebRenderPreviewItem(b){
         case "mark": {
             if (!b.markText) return "";
             const cls = b.markClass ? ` class="${modweebEscapeAttr(b.markClass)}"` : '';
-            return `<mark${cls}>${b.markText}</mark>`;
+            const before = b.markBefore ? ` data-before="${modweebEscapeAttr(b.markBefore)}"` : '';
+            const after = b.markAfter ? ` data-after="${modweebEscapeAttr(b.markAfter)}"` : '';
+            return `<mark${cls}${before}${after}>${b.markText}</mark>`;
         }
 
         /* ─── Image (all styles + lightbox) ─── */
@@ -831,7 +893,7 @@ function modweebRenderPreviewItem(b){
             const wrapLightbox = (imgHtml, altText) => {
                 if (!b.imageLightbox) return imgHtml;
                 const safeAlt = modweebEscapeAttr(altText || '');
-                return `<div class="zmImg" data-text="${safeAlt}">${imgHtml}</div>`;
+                return `<div class="lbx" data-text="${safeAlt}">${imgHtml}</div>`;
             };
             const lightboxAttr = b.imageLightbox ? '' : ' data-lightbox="false"';
             const captionAttr = b.imageDisableCaption ? ' data-caption="false"' : '';
@@ -850,12 +912,15 @@ function modweebRenderPreviewItem(b){
             if (b.imageStyle === "grid") {
                 const urls = (b.gridUrls||"").split("\n").filter(x => x.trim());
                 if (!urls.length) urls.push(b.imageUrl||"#");
-                return `<div class="psImg grImg">${urls.map(u => wrapLightbox(`<img alt="${modweebEscapeAttr(b.imageAlt||"")}" height="720" loading="lazy" src="${modweebEscapeAttr(u)}" width="1280">`, b.imageAlt)).join("")}</div>`;
+                return `<div class="psImg">${urls.map(u => wrapLightbox(`<img alt="${modweebEscapeAttr(b.imageAlt||"")}" height="720" loading="lazy" src="${modweebEscapeAttr(u)}" width="1280">`, b.imageAlt)).join("")}</div>`;
             }
-            if (b.imageStyle === "scroll") {
+            if (b.imageStyle === "scroll" || b.imageStyle === "scroll2") {
                 const urls = (b.gridUrls||"").split("\n").filter(x => x.trim());
                 if (!urls.length) urls.push(b.imageUrl||"#");
-                return `<div class="glImg ${b.scrollHeight||"h150"}">${urls.map(u => wrapLightbox(`<img alt="${modweebEscapeAttr(b.imageAlt||"")}" height="720" loading="lazy" src="${modweebEscapeAttr(u)}" width="1280">`, b.imageAlt)).join("")}</div>`;
+                const imgs = urls.map(u => wrapLightbox(`<img alt="${modweebEscapeAttr(b.imageAlt||"")}" height="720" loading="lazy" src="${modweebEscapeAttr(u)}" width="1280">`, b.imageAlt)).join("");
+                return b.imageStyle === "scroll2"
+                    ? `<div class="psImg scImg scrlH">${imgs}</div>`
+                    : `<div class="glImg ${b.scrollHeight||"h150"}">${imgs}</div>`;
             }
             if (b.imageStyle === "lazyload") {
                 return `<img class="lazyload" alt="${modweebEscapeAttr(b.imageAlt||"")}" data-src="${modweebEscapeAttr(b.imageUrl||"#")}" src="data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=">`;
@@ -894,8 +959,8 @@ function modweebRenderPreviewItem(b){
 
         /* ─── Download Box ─── */
         case "downloadBox": {
-            const fname = b.fileName || "file.zip";
-            const ext = fname.split(".").pop();
+            const ext = b.downloadType || (b.fileName ? b.fileName.split(".").pop() : "zip");
+            const fname = b.fileName || "file." + ext;
             return `<div class="dlBox"><span class="fT" data-text="${modweebEscapeAttr(ext)}"></span><div class="fN"><span>${fname}</span><span class="fS">${b.fileSize||"0B"}</span></div><a class="button" href="${modweebEscapeAttr(b.downloadFile||"#")}" rel="nofollow noreferrer noopener" target="_blank" aria-label="Download"><i class="icon dl"></i></a></div>`;
         }
 
@@ -917,15 +982,15 @@ function modweebRenderPreviewItem(b){
 
         /* ─── Alert (all variants + outline) ─── */
         case "alert": {
-            const st = b.alertStyle || "info";
+            const stParts = String(b.alertStyle || "default").split(/\s+/).filter(Boolean);
             const labels = {
-                info: 'Info!', warning: 'Warning!', success: 'Success!', error: 'Error!',
+                default: 'Alert', info: 'Info!', warning: 'Warning!', success: 'Success!', error: 'Error!',
                 tip: 'Tip!', question: 'Question'
             };
-            const base = st.split(' ')[0];
-            const outlined = b.alertOutlined || st.includes('outline');
-            const cls = 'alert ' + base + (outlined ? ' outline' : '');
-            const lbl = modweebEscapeHtml(b.alertTitle || labels[base] || 'Info!');
+            const base = stParts.find(p => p !== 'outline') || 'default';
+            const outlined = b.alertOutlined || stParts.includes('outline');
+            const cls = 'alert' + (base !== 'default' ? ' ' + base : '') + (outlined ? ' outline' : '');
+            const lbl = modweebEscapeHtml(b.alertTitle || labels[base] || 'Alert');
             return `<div class="${cls}"><b>${lbl}</b>\n  ${b.content||""}\n</div>`;
         }
 
@@ -1026,7 +1091,7 @@ function modweebWrapAccordionContent(content){
             }
             /* Details.sp */
             if (b.accordionType === "sp") {
-                return `<details class="sp"><summary data-show="Show all" data-hide="Hide all">Spoiler:</summary><div>${modweebWrapAccordionContent(b.content)}</div></details>`;
+                return `<details class="sp"><summary data-show="Show all" data-hide="Hide all">${b.summary||"Spoiler:"}</summary><div>${modweebWrapAccordionContent(b.content)}</div></details>`;
             }
             /* Accordion (ac / ac alt) */
             if (b.accordionType === "ac" || b.accordionType === "ac alt") {
@@ -1056,14 +1121,15 @@ function modweebWrapAccordionContent(content){
         /* ─── TOC (auto / manual) ─── */
         case "toc": {
             const label = b.tocLabel || "جدول المحتويات";
+            const openAttr = b.tocOpen ? " open" : "";
             if (b.tocStyle === 'manual' && Array.isArray(b.tocManualItems) && b.tocManualItems.some(i => i.text && i.id)) {
-                let h = `<details class="sp toc" open><summary data-show="Show all" data-hide="Hide all">${label}</summary><div class="aToc"><ol>`;
+                let h = `<details class="sp toc"${openAttr}><summary data-show="Show all" data-hide="Hide all">${label}</summary><div><ol>`;
                 b.tocManualItems.forEach(it => {
                     if (it.text && it.id) h += `<li><a href="#${modweebEscapeAttr(it.id)}">${it.text}</a></li>`;
                 });
                 return h + `</ol></div></details>`;
             }
-            return `<details class="sp toc" open><summary data-show="Show all" data-hide="Hide all">${label}</summary><div class="aToc"></div></details>`;
+            return `<details class="sp toc"${openAttr}><summary data-show="Show all" data-hide="Hide all">${label}</summary><div class="aToc"></div></details>`;
         }
 
         /* ─── Related Manual ─── */
@@ -1085,16 +1151,14 @@ function modweebWrapAccordionContent(content){
             attrs.push(`data-max-posts="${b.relatedMax||6}"`);
             if (b.relatedSortBy) attrs.push(`data-sort-by="${modweebEscapeAttr(b.relatedSortBy)}"`);
             if (b.relatedRandom) attrs.push(`data-random="true"`);
-            const max = parseInt(b.relatedMax)||6;
-            const placeholders = Array(max).fill('<li></li>').join('');
-            return `<details class="sp arp" open><summary data-show="Show all" data-hide="Hide all">${b.relatedAutoLabel||"منشورات ذات صلة"}</summary><div class="aRel loading lazyload" ${attrs.join(' ')}><ol>${placeholders}</ol></div></details>`;
+            return `<details class="sp arp" open><summary data-show="Show all" data-hide="Hide all">${b.relatedAutoLabel||"منشورات ذات صلة"}</summary><div class="aRel" ${attrs.join(' ')}></div></details>`;
         }
 
         /* ─── Lazy YouTube (lazy / defer) ─── */
         case "lazyYt": {
             const vid = (b.youtubeId||"").trim();
             if (!vid) return `<div style="background:#111;padding:2rem;text-align:center;color:#aaa;border-radius:8px;font-size:.85rem">يوتيوب: أدخل معرّف الفيديو</div>`;
-            const ratioStyle = b.ratio && b.ratio !== '4/3' ? ` style="--ratio: ${(b.ratio||'').replace('/', ' / ')}"` : '';
+            const ratioStyle = b.ratio && b.ratio !== '16/9' ? ` style="--ratio: ${(b.ratio||'').replace('/', ' / ')}"` : '';
             if (b.youtubeMode === 'defer') {
                 return `<div class="videoYt"${ratioStyle}><iframe class="lazyload" title="YouTube video player" data-src="https://www.youtube.com/embed/${modweebEscapeAttr(vid)}" referrerpolicy="strict-origin-when-cross-origin" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
             }
@@ -1105,26 +1169,38 @@ function modweebWrapAccordionContent(content){
         /* ─── Audio Player ─── */
         case "audioPlayer": {
             if (!b.audioUrl) return `<div style="padding:1rem;text-align:center;color:var(--notifC);border:1px dashed var(--contentL);border-radius:8px;font-size:.85rem">مشغل صوت: أدخل رابط الملف</div>`;
-            return `<audio controls preload="${modweebEscapeAttr(b.audioPreload||'metadata')}"><source src="${modweebEscapeAttr(b.audioUrl)}" type="audio/mpeg">Your browser does not support HTML5 audio.</audio>`;
+            const aAttrs = ['controls', `preload="${modweebEscapeAttr(b.audioPreload||'metadata')}"`];
+            if (b.audioAutoplay) aAttrs.push('autoplay');
+            if (b.audioLoop) aAttrs.push('loop');
+            if (b.audioMuted) aAttrs.push('muted');
+            return `<audio ${aAttrs.join(' ')}><source src="${modweebEscapeAttr(b.audioUrl)}" type="audio/mpeg">Your browser does not support HTML5 audio.</audio>`;
         }
 
         /* ─── Video Player ─── */
         case "videoPlayer": {
             if (!b.videoUrl) return `<div style="padding:1rem;text-align:center;color:var(--notifC);border:1px dashed var(--contentL);border-radius:8px;font-size:.85rem">مشغل فيديو: أدخل رابط الملف</div>`;
             const poster = b.videoPoster ? ` poster="${modweebEscapeAttr(b.videoPoster)}"` : '';
-            return `<video controls preload="${modweebEscapeAttr(b.videoPreload||'metadata')}" playsinline width="${modweebEscapeAttr(b.videoWidth||'100%')}"${poster}><source src="${modweebEscapeAttr(b.videoUrl)}" type="${modweebEscapeAttr(b.videoType||'video/mp4')}">Your browser does not support HTML5 video.</video>`;
+            const vAttrs = ['controls', `preload="${modweebEscapeAttr(b.videoPreload||'metadata')}"`, 'playsinline',
+                `width="${modweebEscapeAttr(b.videoWidth||'100%')}"`, `height="${modweebEscapeAttr(b.videoHeight||'auto')}"`];
+            if (b.videoAutoplay) vAttrs.push('autoplay');
+            if (b.videoLoop) vAttrs.push('loop');
+            if (b.videoMuted) vAttrs.push('muted');
+            return `<video ${vAttrs.join(' ')}${poster}><source src="${modweebEscapeAttr(b.videoUrl)}" type="${modweebEscapeAttr(b.videoType||'video/mp4')}">Your browser does not support HTML5 video.</video>`;
         }
 
         /* ─── Basics (snippet + thumbnail + subtitle) ─── */
         case "basics": {
             let s = "";
-            if (b.metaDescription) {
+            const mode = b.basicsMode || 'all';
+            if (mode !== 'thumbnail' && b.metaDescription) {
                 s += `<!--[ Explicitly sets post snippet ]-->\n<div hidden aria-hidden="true">${modweebEscapeHtml(b.metaDescription)}</div>\n\n`;
             }
             const defaultThumb = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjiqVg3Qyh-Y547iBeyBfYuNMi9aPKNJcRwTb6LAIbEfWzgb60s1CquIJWpvR-wNub1ZwTiB2Ru_5jssRujk5Xl0nPJwnfjwU79o1RUMnYvk6ReWxCiDWD-Z1qln2R8UY4Y9zOXK91-_yqSt_8WH0peehqiMzcq5sphV4yEKlazglzkhx7LWCBbLW81ZwQ/s1920/modweb-articles-ai.webp";
             const thumbUrl = (b.thumbnailUrl && b.thumbnailUrl.trim()) ? b.thumbnailUrl.trim() : defaultThumb;
-            s += `<!--[ Explicitly sets post thumbnail ]-->\n`;
-            s += `<!--[\n  <div class='separator'><img src='${thumbUrl}'/></div>\n]-->\n\n`;
+            if (mode !== 'snippet') {
+                s += `<!--[ Explicitly sets post thumbnail ]-->\n`;
+                s += `<!--[\n  <div class='separator'><img src='${thumbUrl}'/></div>\n]-->\n\n`;
+            }
             s += `<!--more-->\n`;
             if (b.subtitle) {
                 s += `<style>.headH::after{content:'${modweebEscapeAttr(b.subtitle)}';}</style>\n`;

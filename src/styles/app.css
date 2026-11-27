@@ -1759,3 +1759,8 @@ html[lang="en"] .ai-bottom-sheet :is(input, textarea)[dir="auto"]:placeholder-sh
 .ai-elements-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ai-elements-actions .modweeb-gen-btn{height:30px;min-height:30px;font-size:.68rem}
 .ai-elements-actions .ai-inline-help{flex:1;min-width:140px}
+
+/* ===== Element editor chips (table classes / media flags) ===== */
+.modweeb-tbl-chip{display:inline-flex;align-items:center;gap:4px;font-size:.66rem;line-height:1.4;padding:2px 7px;border:1px solid var(--contentL);border-radius:99px;background:var(--contentB);color:var(--bodyC);cursor:pointer;user-select:none}
+.modweeb-tbl-chip:has(input:checked){border-color:var(--linkC);background:color-mix(in srgb,var(--linkC) 12%,transparent);color:var(--linkC);font-weight:600}
+.modweeb-tbl-chip input{margin:0;accent-color:var(--linkC)}
