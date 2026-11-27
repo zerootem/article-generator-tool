@@ -112,7 +112,7 @@ describe('article prompt guidance', () => {
     expect(systemPrompt).toContain('tabCssSource');
     expect(systemPrompt).toContain('tabJsSource');
     expect(systemPrompt).toContain('tabJsonSource');
-    expect(systemPrompt).toContain('linkStyle":"extL|alt|sec|button|buttonLn');
+    expect(systemPrompt).toContain('linkStyle":"extL|extL alt|sec|button|buttonLn');
     expect(systemPrompt).toContain('audioPreload":"none|metadata|auto');
     expect(systemPrompt).toContain('videoType":"video/mp4|video/webm|video/ogg');
     expect(systemPrompt).toContain('relatedSortBy":"updated|published');

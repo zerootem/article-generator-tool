@@ -222,7 +222,7 @@ window.closeAllModweebMenus = function(){
   function updatePreview(){
     const html = state.editor ? state.editor.value : (modweebArticleHTML || '');
     const t = document.getElementById('unifiedPreview');
-    if (t) t.innerHTML = html.trim() ? '<div class="modweeb-preview-content">' + html + '</div>' : '<div class="unified-empty" data-ui-copy>أضف عنصراً من الشريط لبدء المقال</div>';
+    if (t) t.innerHTML = html.trim() ? '<div class="modweeb-preview-content pS">' + html + '</div>' : '<div class="unified-empty" data-ui-copy>أضف عنصراً من الشريط لبدء المقال</div>';
     const meta = document.getElementById('unifiedPreviewMeta');
     if (meta) meta.textContent = (html.match(/<[^/!][^>]*>/g) || []).length + ' عنصر HTML';
     updateFooter();
@@ -847,17 +847,18 @@ document.addEventListener('keydown', e => {
 window.addEventListener('resize', closeMenus);
 
 /* إغلاق القائمة عند التمرير في أي شريط */
-const unifiedToolbar = document.getElementById('unifiedToolbar');
-if (unifiedToolbar) {
-  unifiedToolbar.addEventListener('scroll', closeMenus, { passive: true });
+let mwScrollTick = false;
+function closeMenusOnScroll(e){
+  const target = e && e.target;
+  if (target && target.closest && target.closest('.unified-menu')) return;
+  if (!document.querySelector('.unified-menu.open')) return;
+  if (mwScrollTick) return;
+  mwScrollTick = true;
+  requestAnimationFrame(() => { mwScrollTick = false; closeMenus(); });
 }
-const unifiedElementsToolbar = document.getElementById('unifiedElementsToolbar');
-if (unifiedElementsToolbar) {
-  unifiedElementsToolbar.addEventListener('scroll', closeMenus, { passive: true });
-}
-
-/* إغلاق عند أي تمرير في الصفحة (لأي عنصر قابل للتمرير) */
-window.addEventListener('scroll', closeMenus, { passive: true, capture: true });
+window.addEventListener('scroll', closeMenusOnScroll, { passive: true, capture: true });
+window.addEventListener('wheel', closeMenusOnScroll, { passive: true, capture: true });
+window.addEventListener('touchmove', closeMenusOnScroll, { passive: true, capture: true });
     setLineNumbers();
     updatePreview();
   }

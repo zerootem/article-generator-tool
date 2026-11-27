@@ -1,4 +1,6 @@
-/* Pull-to-refresh for the article generator tool page (touch devices). */
+/* Pull-to-refresh for the article generator tool page (touch devices).
+   Only the page itself can be pulled; horizontally scrollable toolbars are ignored
+   so they keep scrolling smoothly and never get blocked by preventDefault(). */
 const THRESHOLD = 72;
 const MAX_DISTANCE = 120;
 
@@ -19,6 +21,13 @@ function inEditable(target: EventTarget | null): boolean {
   return !!element.closest('input, textarea, select, [contenteditable="true"], .sheet.show, .ai-bottom-sheet.show');
 }
 
+/** Horizontal scrollers must keep native panning; never intercept their gestures. */
+function inHorizontalScroller(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  if (!element?.closest) return false;
+  return !!element.closest('.unified-toolbar, .unified-elements-toolbar, .modweeb-gen-header-actions, .modweeb-gen-toolbar, .ai-popup-tabs, .smart-assistant-tabs, .blogger-publish-tabs, .seo-tabs, .unified-menu');
+}
+
 export function installPullToRefresh(): void {
   if (!('ontouchstart' in window)) return;
   if ((window as any).__modweebPullToRefresh) return;
@@ -34,6 +43,7 @@ export function installPullToRefresh(): void {
   const label = indicator.querySelector('.mw-ptr-label') as HTMLElement | null;
 
   let startY = 0;
+  let startX = 0;
   let pulling = false;
   let distance = 0;
   let container: HTMLElement | null = null;
@@ -61,10 +71,11 @@ export function installPullToRefresh(): void {
   };
 
   document.addEventListener('touchstart', (event) => {
-    if (event.touches.length !== 1 || inEditable(event.target)) return;
+    if (event.touches.length !== 1 || inEditable(event.target) || inHorizontalScroller(event.target)) return;
     container = scrollableAncestor(event.target as Element);
     if (!container || container.scrollTop > 0) return;
     startY = event.touches[0].clientY;
+    startX = event.touches[0].clientX;
     pulling = true;
     distance = 0;
     ready = false;
@@ -73,6 +84,12 @@ export function installPullToRefresh(): void {
   document.addEventListener('touchmove', (event) => {
     if (!pulling || event.touches.length !== 1) return;
     const dy = event.touches[0].clientY - startY;
+    const dx = event.touches[0].clientX - startX;
+    // Horizontal gesture wins: release the pull so native panning is never blocked.
+    if (Math.abs(dx) > Math.abs(dy) || Math.abs(dx) > 10) {
+      reset();
+      return;
+    }
     if (dy <= 0 || (container && container.scrollTop > 0)) {
       if (dy < 0) reset();
       return;

@@ -186,7 +186,7 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
         listStyle: ['default','s1'], accordionType: ['ac','ac alt','sp','group','blur'], codeLanguage: ['html','css','js','json'],
         imageStyle: ['standard','full','figure','grid','scroll','scroll2','lazyload','showall'], imageCaptionStyle: ['figure','table'], scrollHeight: ['h150','h200','h250'],
         markClass: ['','block','red','gray','orange','blue','green','gold','purple'], youtubeMode: ['lazy','defer'], ratio: ['16/9','4/3','1/1','21/9'],
-        linkStyle: ['extL','alt','sec','button','buttonLn'], buttonIcon: ['','dl','demo'], audioPreload: ['none','metadata','auto'],
+        linkStyle: ['extL','extL alt','alt','sec','button','buttonLn'], buttonIcon: ['','dl','demo'], audioPreload: ['none','metadata','auto'],
         videoPreload: ['none','metadata','auto'], videoType: ['video/mp4','video/webm','video/ogg'], relatedSortBy: ['updated','published'],
       };
       if (typeof value === 'string' && validValues[key].includes(value) && (key !== 'accordionType' || value !== 'blur' || type === 'spoiler')) result[key] = value;

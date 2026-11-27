@@ -45,6 +45,8 @@ function buildArticlePrompt(params = {}) {
   if (hasAccordionVariants) preferences.push('نوّع عناصر التفاعل بين ac alt أو sp أو blur أو group إذا خدم كل نمط غرضاً مختلفاً؛ أكورديون نهاية كل H2 الإلزامي يبقى accordionType:"ac".');
   if (hasCode) preferences.push('أدرج code أو codeTabs أو inlineCode عند الحاجة التقنية الحقيقية فقط؛ اختر لغة من القائمة المدعومة، واستخدم kbd لاختصار لوحة مفاتيح حقيقي فقط.');
   if (hasYoutube) preferences.push('لا تنشئ lazyYt أو معرّف فيديو؛ التطبيق يضيف الفيديو من مرجع YouTube الذي أدخله المستخدم بعد التوليد.');
+  preferences.push('استغل خصائص العناصر كلها بدلاً من الافتراضي فقط، ضمن الخيارات المفعّلة: نوّع paragraphStyle بين normal وindent، واستخدم ref فقط مع مصدر حقيقي، ونوّع quoteStyle بين s1 وs2، وnoteStyle بين info وwarning وquestion، وalertStyle مع alertOutlined بحسب طبيعة المعلومة، وlistStyle بين default وs1، واختر tableClasses مناسبة للمحتوى، وmarkClass بألوان مختلفة، وheadingBefore/headingAfter فقط عندما تضيف معنى (مثل «خطوة 1»)، وimageCaptionStyle وscrollHeight عند الصور، وaccordionType المناسب مع بقاء أكورديون نهاية H2 بنمط ac.');
+  preferences.push('لا تكرر النمط نفسه في أكثر من عنصرين متتاليين؛ ونوّع أشكال الفقرات (عادي ثم بادئة ثم عادي) وتنوّع عناصر الإبراز بحيث لا يتحول المقال إلى قائمة متكررة من عنصر واحد.');
   if (hasConclusion) preferences.push('أضف قسم الخاتمة المحدد في الهيكل الإلزامي، بخلاصة مفيدة بلا دعوة تسويقية أو ادعاء غير مدعوم.');
   if (!hasH3) preferences.push('خيار H3 معطّل: لا تستخدم عناوين h3.');
   if (!hasH4) preferences.push('خيار H4 وما بعده معطّل: لا تستخدم h4 أو h5 أو h6.');
@@ -75,7 +77,7 @@ function buildArticlePrompt(params = {}) {
 - steps: {"type":"steps","steps":["خطوة عملية", "خطوة عملية"]}
 - list: {"type":"list","listItems":["...", "..."],"listStyle":"default|s1"}
 - keyPoints: {"type":"keyPoints","items":["...", "..."]}
-- table: {"type":"table","tableRows":2,"tableCols":2,"tableData":[["رأس 1","رأس 2"],["...","..."]],"tableClasses":"bordered stripped hovered|noborder|cborder|sticky|vab|full|mh100|mhvh|mh200|mh300|sp5|sp10|sp20|primary|warning|success|error|clr"}
+- table: {"type":"table","tableRows":2,"tableCols":2,"tableData":[["رأس 1","رأس 2"],["...","..."]],"tableClasses":"bordered stripped hovered|noborder|cborder|sticky|vab|full|mh100|mhvh|mh200|mh300|sp5|sp10|sp20|primary|warning|success|error|clr|clb"}
 - accordion: {"type":"accordion","summary":"...","content":"...","accordionType":"ac|ac alt|sp|group|blur","accordions":[{"summary":"...","content":"...","alt":false}]}
 - accordionGroup: {"type":"accordionGroup","summary":"...","content":"...","accordionType":"group","accordions":[{"summary":"...","content":"...","alt":false}]}
 - spoiler: {"type":"spoiler","summary":"عنوان اختياري عند استخدام نمط طي غير blur","content":"...","accordionType":"sp|ac|ac alt|group|blur","spoilerBlurText":"نص مناسب للإخفاء في نمط blur"}
@@ -87,7 +89,7 @@ function buildArticlePrompt(params = {}) {
 - mark: {"type":"mark","markText":"نص قصير","markClass":"|block|red|gray|orange|blue|green|gold|purple","markBefore":"اختياري","markAfter":"اختياري"}
 - image: {"type":"image","imageStyle":"standard|full|figure|grid|scroll|scroll2|lazyload|showall","imageUrl":"رابط HTTP(S) قدمه المستخدم حرفياً","imageAlt":"وصف دقيق","imageWidth":1280,"imageHeight":720,"imageLightbox":true,"imageCaptionStyle":"figure|table","imageDisableCaption":false,"caption":"...","gridUrls":"روابط فعلية قدمها المستخدم، رابط في كل سطر","scrollHeight":"h150|h200|h250"}
 - lazyYt: {"type":"lazyYt","youtubeId":"لا تنشئه؛ التطبيق يستخرجه من مرجع المستخدم","youtubeMode":"lazy|defer","ratio":"16/9|4/3|1/1"}
-- link: {"type":"link","linkText":"...","linkUrl":"رابط HTTP(S) قدمه المستخدم","linkStyle":"extL|alt|sec|button|buttonLn"}
+- link: {"type":"link","linkText":"...","linkUrl":"رابط HTTP(S) قدمه المستخدم","linkStyle":"extL|extL alt|sec|button|buttonLn"}
 - button: {"type":"button","buttonText":"...","buttonUrl":"رابط HTTP(S) قدمه المستخدم","buttonIcon":"|dl|demo","buttonOutlined":false}
 - downloadBox: {"type":"downloadBox","fileName":"اسم ملف قدمه المستخدم","fileSize":"حجم قدمه المستخدم","downloadFile":"رابط HTTP(S) قدمه المستخدم","downloadType":"zip|rar|pdf|apk|docx|xlsx|mp3|mp4"}
 - audioPlayer: {"type":"audioPlayer","audioUrl":"رابط مباشر لملف MP3 قدمه المستخدم","audioTitle":"عنوان ذكره المستخدم فقط","audioPreload":"none|metadata|auto","audioLoop":false,"audioMuted":false}

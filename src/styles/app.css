@@ -420,7 +420,7 @@ html.dark .modweeb-preview-content .alert.question,body.dark .modweeb-preview-co
 /* ============================================================
    23 | شريط الأدوات الموحد
    ============================================================ */
-.unified-toolbar{position:relative;z-index:20;display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:0px solid var(--contentL);background:var(--contentB);overflow-x:auto;overflow-y:visible;scrollbar-width:thin}.unified-shell .unified-toolbar.unified-controls-toolbar,body .unified-toolbar.unified-controls-toolbar{justify-content:flex-start!important;align-items:center!important;padding-top:2px!important;padding-bottom:4px!important;padding-inline:10px!important}.unified-shell .unified-toolbar.unified-controls-toolbar::before,.unified-shell .unified-toolbar.unified-controls-toolbar::after,body .unified-toolbar.unified-controls-toolbar::before,body .unified-toolbar.unified-controls-toolbar::after{content:'';margin:auto;flex:0 0 0}
+.unified-toolbar{position:relative;z-index:20;display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:0px solid var(--contentL);background:var(--contentB);overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y;scroll-behavior:auto}.unified-shell .unified-toolbar.unified-controls-toolbar,body .unified-toolbar.unified-controls-toolbar{justify-content:flex-start!important;align-items:center!important;padding-top:2px!important;padding-bottom:4px!important;padding-inline:10px!important}.unified-shell .unified-toolbar.unified-controls-toolbar::before,.unified-shell .unified-toolbar.unified-controls-toolbar::after,body .unified-toolbar.unified-controls-toolbar::before,body .unified-toolbar.unified-controls-toolbar::after{content:'';margin:auto;flex:0 0 0}
 
 .unified-tool-group{display:flex;align-items:center;gap:5px;flex:0 0 auto;padding-inline-end:8px;border-inline-end:1px solid var(--contentL)}
 .unified-tool-group:last-child{border:0}
@@ -439,7 +439,12 @@ html.dark .modweeb-preview-content .alert.question,body.dark .modweeb-preview-co
 /* ============================================================
    24 | القوائم المنسدلة (Unified Menu)
    ============================================================ */
-.unified-menu{position:fixed;z-index:2147483647;display:none;min-width:140px;max-width:220px;padding:6px;border:1px solid var(--contentL);border-radius:10px;background:var(--contentB);box-shadow:0 8px 24px var(--panelShadow),0 2px 6px var(--panelShadow);font-size:13px;isolation:isolate;counter-reset:mwMenuCounter}
+.unified-menu{position:fixed;z-index:2147483647;display:none;min-width:140px;max-width:220px;padding:6px;border:1px solid var(--contentL);border-radius:10px;background:var(--contentB);box-shadow:0 8px 24px var(--panelShadow),0 2px 6px var(--panelShadow);font-size:13px;isolation:isolate;counter-reset:mwMenuCounter;max-height:min(216px,52dvh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--scrollB) transparent;touch-action:pan-y}
+.unified-menu::-webkit-scrollbar{width:6px}
+.unified-menu::-webkit-scrollbar-track{background:transparent}
+.unified-menu::-webkit-scrollbar-thumb{background:var(--scrollB);border-radius:99px}
+.unified-menu::-webkit-scrollbar-thumb:hover{background:var(--scrollBh)}
+.unified-menu[data-translate-menu],.unified-menu[data-theme-menu]{max-height:none;overflow:visible}
 .unified-menu.open{display:block;animation:unifiedMenuIn .12s ease-out}
 @keyframes unifiedMenuIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
 .unified-menu button{display:flex;width:100%;align-items:center;gap:8px;padding:8px 10px;border:0;border-radius:7px;background:transparent;color:var(--bodyC);font:400 11px/1.4 Geist,sans-serif;text-align:right;cursor:pointer;counter-increment:mwMenuCounter;position:relative;padding-inline-start:20px!important}
@@ -535,7 +540,7 @@ body .modweeb-generator,body .unified-shell,body .ai-bottom-sheet,body .ai-overl
 /* ============================================================
    31 | شريط عناصر المقال (منفصل)
    ============================================================ */
-.unified-elements-toolbar{border:1px solid var(--contentL);background:var(--contentBs);transition:max-height .25s ease,opacity .2s ease,padding .2s ease;max-height:60px;overflow-y:hidden}
+.unified-elements-toolbar{border:1px solid var(--contentL);background:var(--contentBs);transition:max-height .25s ease,opacity .2s ease,padding .2s ease;max-height:60px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
 
 /* حد سفلي لشريط التحكم يظهر فقط عند إخفاء شريط عناصر المقال */
 .unified-shell:has(.unified-elements-toolbar.hidden) .unified-controls-toolbar,

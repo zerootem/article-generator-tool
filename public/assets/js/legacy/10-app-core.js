@@ -945,8 +945,8 @@ function modweebRenderPreviewItem(b){
             if (b.linkStyle === "button") return `<a class="button" href="${url}" target="_blank" rel="noopener">${txt}</a>`;
             if (b.linkStyle === "buttonLn") return `<a class="button ln" href="${url}" target="_blank" rel="noopener">${txt}</a>`;
             let cls = "extL";
-            if (b.linkStyle === "alt") cls += " alt";
-            if (b.linkStyle === "sec") cls += " sec";
+            if (b.linkStyle === "alt" || b.linkStyle === "extL alt") cls += " alt";
+            if (b.linkStyle === "sec" || b.linkStyle === "extL sec") cls += " sec";
             return `<a class="${cls}" href="${url}" rel="nofollow noreferrer noopener" target="_blank">${txt}</a>`;
         }
 
