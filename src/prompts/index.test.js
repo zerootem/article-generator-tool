@@ -84,7 +84,7 @@ describe('article prompt guidance', () => {
     const prompt = prompts.article({ topic: 'موضوع', opening: 'brief', hasKeyPoints: true }).systemPrompt;
     expect(prompt).toContain('1. basics');
     expect(prompt).toContain('2. heading h1');
-    expect(prompt).toContain('3. toc');
+    expect(prompt).not.toContain('"type":"toc"');
     expect(prompt).toContain('note (noteStyle: "info")');
     expect(prompt).toContain('تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.');
     expect(prompt).toContain('paragraph (paragraphStyle: "dropcap")');
@@ -130,7 +130,7 @@ describe('article prompt guidance', () => {
     const { systemPrompt } = prompts.article({ topic: 'موضوع' });
     expect(systemPrompt).toContain('2–4 روابط خارجية ذات صلة');
     expect(systemPrompt).toContain('لا تختلق اسم جهة أو عنوان صفحة أو URL');
-    expect(systemPrompt).toContain('rel="noopener noreferrer"');
+    expect(systemPrompt).toContain("rel='nofollow noreferrer noopener'");
     expect(systemPrompt).toContain('لا تضف accordionGroup أو relatedAuto أو link أو button أو downloadBox');
   });
 

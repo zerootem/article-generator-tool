@@ -1653,3 +1653,30 @@ html[dir="ltr"] .sheet-back-footer-btn svg { transform: rotate(180deg); }
 /* Empty natural-language fields use the UI direction; filled fields retain dir=auto. */
 html[lang="ar"] .ai-bottom-sheet :is(input, textarea)[dir="auto"]:placeholder-shown { direction: rtl; }
 html[lang="en"] .ai-bottom-sheet :is(input, textarea)[dir="auto"]:placeholder-shown { direction: ltr; }
+
+/* ============================================================
+   المحادثة مع النموذج داخل نافذة المساعد
+   ============================================================ */
+.smart-chat-messages{display:flex;flex-direction:column;gap:8px;flex:1 1 auto;min-height:160px;max-height:46vh;overflow-y:auto;padding:4px 2px;overscroll-behavior:contain}
+.smart-chat-empty{color:var(--notifC);font-size:.75rem;line-height:1.7;padding:10px;border:1px dashed var(--contentL);border-radius:10px;text-align:start}
+.smart-chat-msg{display:flex;flex-direction:column;gap:5px;max-width:94%;align-self:flex-start}
+.smart-chat-msg.user{align-self:flex-end}
+.smart-chat-bubble{padding:8px 11px;border-radius:12px;background:var(--contentBa);border:1px solid var(--contentL);color:var(--bodyC);font-size:.78rem;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.smart-chat-msg.user .smart-chat-bubble{border-color:var(--linkBd);background:var(--linkShadow)}
+.smart-chat-msg-actions{display:flex;gap:6px}
+.smart-chat-apply{min-height:30px!important;padding:4px 10px!important;font-size:.72rem!important}
+.smart-chat-applied{font-size:.7rem;color:var(--seoGood);padding-inline-start:2px}
+.smart-chat-compose{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.smart-chat-compose textarea{width:100%;resize:vertical;min-height:70px;padding:9px 11px;border:1px solid var(--contentL);border-radius:10px;background:var(--contentB);color:var(--bodyC);font:500 .8rem/1.6 Geist,sans-serif}
+.smart-chat-actions{display:flex;justify-content:flex-end;gap:6px}
+.smart-assistant-tabs[hidden]{display:none!important}
+
+/* ============================================================
+   السحب للأسفل لإعادة تحديث الصفحة
+   ============================================================ */
+.mw-ptr-indicator{position:fixed;top:0;left:50%;z-index:100000;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:0 0 14px 14px;background:var(--contentB);border:1px solid var(--contentL);border-top:none;box-shadow:0 6px 18px rgba(0,0,0,.12);color:var(--bodyC);font:600 .72rem/1 Geist,sans-serif;opacity:0;transform:translate(-50%,-56px);pointer-events:none;transition:transform .18s ease,opacity .18s ease}
+.mw-ptr-icon{display:inline-flex;width:16px;height:16px;transform:rotate(var(--ptr-rotate,0deg));transition:transform .05s linear}
+.mw-ptr-icon svg{width:16px;height:16px}
+.mw-ptr-indicator.ready{border-color:var(--linkBd);color:var(--linkC)}
+.mw-ptr-indicator.refreshing .mw-ptr-icon{animation:mwPtrSpin .8s linear infinite}
+@keyframes mwPtrSpin{to{transform:rotate(360deg)}}

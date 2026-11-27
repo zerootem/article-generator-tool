@@ -8,6 +8,7 @@ import { installMediaTools } from './ai/media-tools';
 import { installModalDensity } from './ui/modal-density';
 import { installInterfaceLanguage } from './i18n';
 import { installApplication } from './pwa';
+import { installPullToRefresh } from './ui/pull-to-refresh';
 
 export interface WorkerAIRequest {
   systemPrompt: string;
@@ -240,15 +241,18 @@ bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
 });
 (window as any).bloggerHeaderBack = () => (window as any).setBloggerPublishTab('compose');
 
-(window as any).setSmartAssistantTab = (name: 'assistant' | 'edit' | 'outline', activeButton?: HTMLElement | null) => {
-  const panels: Record<string, string> = { assistant: 'smartGeneratePanel', edit: 'smartEditPanel', outline: 'smartOutlinePanel' };
+(window as any).setSmartAssistantTab = (name: 'assistant' | 'edit' | 'outline' | 'chat', activeButton?: HTMLElement | null) => {
+  const panels: Record<string, string> = { assistant: 'smartGeneratePanel', edit: 'smartEditPanel', outline: 'smartOutlinePanel', chat: 'smartChatPanel' };
   const button = activeButton || document.querySelector<HTMLElement>(`.smart-assistant-tab[onclick*="'${name}'"]`);
   const panel = byId(panels[name]);
   selectTab('.smart-assistant-tab', button, '.smart-assistant-panel', panel);
+  const tabs = document.querySelector<HTMLElement>('.smart-assistant-tabs');
+  if (tabs) tabs.hidden = name === 'outline';
   const back = byId('smartHeaderBack');
   if (back) back.hidden = name !== 'edit';
   const footer = byId('smartGenerateFooter');
   if (footer) { footer.hidden = false; footer.dataset.mode = name; }
+  const generateHidden = name === 'chat';
   const insertMode = byId('smartInsertMode');
   const insertLabel = document.querySelector<HTMLElement>('.smart-insert-mode-label');
   const outputOptions = document.querySelector<HTMLElement>('.smart-output-options');
@@ -257,15 +261,16 @@ bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
   if (outputOptions) outputOptions.hidden = name !== 'assistant';
   const generateButton = byId('smartGenBtn');
   if (generateButton) generateButton.textContent = name === 'edit' ? 'إنشاء التعديل' : name === 'outline' ? 'اقتراح مخطط' : 'توليد';
+  if (generateButton) generateButton.hidden = generateHidden;
   const insertButton = byId('smartInsertBtn');
   if (insertButton) {
     insertButton.textContent = name === 'edit' ? 'تطبيق التعديل' : name === 'outline' ? 'اعتماد المخطط' : 'إدراج';
     insertButton.setAttribute('aria-label', name === 'outline' ? 'اعتماد المخطط لاستخدامه عند توليد المقال' : name === 'edit' ? 'تطبيق التعديل على المقال' : 'إدراج النتيجة في المحرر');
     const hasOutline = name === 'outline' && !!(window as any)._articleOutlineDraft;
-    insertButton.style.display = (name === 'edit' ? !!(window as any)._smartLastHTML : name === 'outline' ? hasOutline : !!(window as any)._smartLastHTML) ? 'inline-flex' : 'none';
+    insertButton.style.display = !generateHidden && (name === 'edit' ? !!(window as any)._smartLastHTML : name === 'outline' ? hasOutline : !!(window as any)._smartLastHTML) ? 'inline-flex' : 'none';
   }
   const copyButton = byId('smartCopyBtn');
-  if (copyButton) copyButton.style.display = name === 'outline' && (window as any)._articleOutlineDraft ? 'inline-flex' : (window as any)._smartLastHTML ? 'inline-flex' : 'none';
+  if (copyButton) copyButton.style.display = !generateHidden && (name === 'outline' && (window as any)._articleOutlineDraft ? true : !!(window as any)._smartLastHTML) ? 'inline-flex' : 'none';
   // Keep the one result/progress component visible in the active work panel.
   if (panel) {
     const progress = byId('smartProgressBar');
@@ -284,7 +289,7 @@ bloggerHeaderSettingsToggle?.addEventListener('click', (event) => {
   (window as any)._smartAssistantMode = name;
 };
 (window as any).smartHeaderBack = () => (window as any).setSmartAssistantTab('assistant');
-(window as any).openSmartAssistant = (name: 'assistant' | 'edit' | 'outline' = 'assistant') => {
+(window as any).openSmartAssistant = (name: 'assistant' | 'edit' | 'outline' | 'chat' = 'assistant') => {
   (window as any).openSheet?.('smartAssistantSheet');
   (window as any).setSmartAssistantTab(name);
   const topic = (byId('aiTopic') as HTMLInputElement | null)?.value || (byId('aiMainKeyword') as HTMLInputElement | null)?.value || '';
@@ -371,5 +376,6 @@ installMediaTools();
 installModalDensity();
 installInterfaceLanguage();
 installApplication();
+installPullToRefresh();
 
 (window as any).__hideArticleBoot?.();

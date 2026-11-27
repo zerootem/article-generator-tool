@@ -366,6 +366,118 @@ async function smartGenerate(): Promise<void> {
   }
 }
 
+type ChatMessage = { role: 'user' | 'assistant'; text: string; pendingHtml?: string; applied?: boolean; baseHtml?: string };
+let smartChatHistory: ChatMessage[] = [];
+
+function renderSmartChat(): void {
+  const host = byId('smartChatMessages');
+  if (!host) return;
+  host.innerHTML = '';
+  if (!smartChatHistory.length) {
+    const empty = document.createElement('div');
+    empty.className = 'smart-chat-empty';
+    empty.id = 'smartChatEmpty';
+    empty.textContent = 'لا توجد رسائل بعد. ابدأ بسؤال مثل: «أضف قسم مقارنة بعد القسم الثالث» أو «احذف قسم الأسعار».';
+    host.appendChild(empty);
+    return;
+  }
+  smartChatHistory.forEach((message, index) => {
+    const row = document.createElement('div');
+    row.className = `smart-chat-msg ${message.role}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'smart-chat-bubble';
+    bubble.textContent = message.text;
+    row.appendChild(bubble);
+    if (message.pendingHtml) {
+      const actions = document.createElement('div');
+      actions.className = 'smart-chat-msg-actions';
+      const apply = document.createElement('button');
+      apply.type = 'button';
+      apply.className = 'modweeb-gen-btn primary smart-chat-apply';
+      apply.textContent = 'تطبيق على المقال';
+      apply.addEventListener('click', () => smartChatApply(index));
+      actions.appendChild(apply);
+      row.appendChild(actions);
+    } else if (message.role === 'assistant' && message.applied) {
+      const done = document.createElement('div');
+      done.className = 'smart-chat-applied';
+      done.textContent = 'تم تطبيق هذا التعديل على المقال.';
+      row.appendChild(done);
+    }
+    host.appendChild(row);
+  });
+  host.scrollTop = host.scrollHeight;
+}
+
+async function smartChatSend(): Promise<void> {
+  const input = byId('smartChatInput') as HTMLTextAreaElement | null;
+  const sendButton = byId('smartChatSendBtn') as HTMLButtonElement | null;
+  const text = input?.value.trim() || '';
+  if (!text) { showMessage('اكتب رسالتك أولاً.'); return; }
+  const editor = byId('unifiedCodeEditor') as HTMLTextAreaElement | null;
+  if (!editor) { showMessage('محرر المقال غير متاح.'); return; }
+  const baseHtml = editor.value;
+  if (baseHtml.length > 60000) { showMessage('المقال طويل جداً للمحادثة الكاملة؛ استخدم «تعديل المقال» مع تحديد مقطع.', 6000); return; }
+  if (input) input.value = '';
+  smartChatHistory.push({ role: 'user', text });
+  renderSmartChat();
+  if (sendButton) { sendButton.disabled = true; sendButton.textContent = 'جارٍ الرد…'; }
+  try {
+    const topic = (byId('smartContextTopic') as HTMLInputElement | null)?.value.trim() || '';
+    const language = (byId('aiLanguage') as HTMLSelectElement | null)?.value || 'ar';
+    const historyText = smartChatHistory.slice(-11, -1).map((m) => `${m.role === 'user' ? 'المستخدم' : 'المساعد'}: ${m.text}`).join('\n');
+    const systemPrompt = `أنت محرر مقال محترف داخل أداة ModWeeb لتوليد المقالات، وتتحدث مع المستخدم باللغة ${language === 'ar' ? 'العربية' : 'English'}.
+تستطيع قراءة HTML المقال الحالي وتنفيذ أي طلب عليه: إضافة قسم أو عنصر، حذف عنصر، إعادة صياغة، تصحيح، ترتيب، تغيير العناوين، أو شرح فقط.
+أعد JSON صالحاً فقط بلا Markdown خارجه، بهذا الشكل حصراً: {"reply":"رد قصير مفيد للمستخدم","articleHtml":"HTML الكامل للمقال بعد التعديل، أو سلسلة فارغة \\"\\" إذا كان الرد شرحاً أو سؤالاً بلا تعديل"}.
+قواعد التعديل:
+- إذا طلب المستخدم تعديلاً فارجع articleHtml كاملاً بعد التعديل، وليس مقتطفاً، واحتفظ بكل ما لم يُطلب تغييره حرفياً.
+- حافظ على بنية القالب: H1 واحد، أقسام H2 متسلسلة، أكورديون ac في نهاية كل قسم، فقرة pRef الأخيرة الثابتة، وأبقِ ملاحظة البداية إن وجدت.
+- لا تضف جدول محتويات toc ولا عنواناً فرعياً (subtitle) ولا <style>.
+- الأنماط المسموحة داخل الفقرات: <b> <em> <code> <mark> <br>، والروابط بأحد النمطين: <a class='extL' href='URL' rel='nofollow noreferrer noopener' target='_blank'>اسم</a> أو <a class='extL alt' href='URL' rel='nofollow noreferrer noopener' target='_blank'>اسم</a>، وأضف نمطاً واحداً على الأقل من note (info|warning|question) أو blockquote s2 في كل قسم إن كان القسم بلا عنصر إضافي، مع تنويع الأنماط بين الفقرات (normal/indent).
+- إن كانت تعليمات داخل أكورديون فاكتبها كقائمة مرقمة <ol><li>...</li></ol>.
+- لا تختلق روابط أو مصادر أو حقائق؛ إن احتجت رابطاً ولم يتوفر فلا تضعه.
+- إن كان طلب المستخدم غير واضح، اسأل سؤالاً توضيحياً واحداً وضع articleHtml فارغاً.${topic ? `\nموضوع المقال: ${topic}.` : ''}`;
+    const userPrompt = `${historyText ? `سياق المحادثة السابقة:\n${historyText}\n\n` : ''}طلب المستخدم الحالي: ${text}\n\nHTML المقال الحالي:\n${baseHtml}`;
+    const raw = await callAI(systemPrompt, userPrompt, { maxTokens: 16000, jsonMode: true });
+    let reply = '';
+    let nextHtml = '';
+    try {
+      const result = parseJson(raw);
+      reply = String(result?.reply || '').trim();
+      nextHtml = cleanHtml(String(result?.articleHtml || '')).trim();
+    } catch {
+      reply = String(raw || '').trim();
+    }
+    if (!reply) reply = nextHtml ? 'أعددت التعديل المقترح؛ راجعه ثم اضغط «تطبيق على المقال».' : 'لم يُرجع النموذج رداً.';
+    if (nextHtml && nextHtml === baseHtml.trim()) nextHtml = '';
+    smartChatHistory.push({ role: 'assistant', text: reply, pendingHtml: nextHtml || undefined, baseHtml: nextHtml ? baseHtml : undefined });
+    renderSmartChat();
+  } catch (error) {
+    smartChatHistory.push({ role: 'assistant', text: `تعذر إكمال الطلب: ${error instanceof Error ? error.message : 'خطأ غير معروف'}` });
+    renderSmartChat();
+  } finally {
+    if (sendButton) { sendButton.disabled = false; sendButton.textContent = 'إرسال'; }
+  }
+}
+
+function smartChatApply(index: number): void {
+  const message = smartChatHistory[index];
+  const editor = byId('unifiedCodeEditor') as HTMLTextAreaElement | null;
+  if (!message?.pendingHtml || !editor) return;
+  if (editor.value !== message.baseHtml) { showMessage('تغيّر المقال منذ اقتراح التعديل؛ أعد إرسال الطلب لتجنب فقد أي جزء.'); return; }
+  applyEditorHtml(message.pendingHtml, message.pendingHtml.length);
+  message.pendingHtml = undefined;
+  message.applied = true;
+  renderSmartChat();
+  showMessage('تم تطبيق تعديل المحادثة على المقال وحفظه في سجل التراجع.');
+}
+
+function smartChatClear(): void {
+  smartChatHistory = [];
+  renderSmartChat();
+  showMessage('تم مسح المحادثة.');
+}
+
 function smartCopyResult(): void {
   const result = w._smartLastResult || {};
   const text = result.mode === 'outline'
@@ -563,6 +675,10 @@ export function installArticleAssistant(): void {
     }
   };
 
+  w.smartChatSend = smartChatSend;
+  w.smartChatApply = smartChatApply;
+  w.smartChatClear = smartChatClear;
+  w.modweebClearSmartChat = smartChatClear;
   w.smartGenerate = smartGenerate;
   w.smartInsertResult = smartInsertResult;
   w.smartCopyResult = smartCopyResult;

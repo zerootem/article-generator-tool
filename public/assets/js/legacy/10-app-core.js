@@ -163,7 +163,7 @@ function undo(){ if (modweebHistoryIndex > 0) { modweebBlocks = JSON.parse(JSON.
 function redo(){ if (modweebHistoryIndex < modweebHistory.length - 1) { modweebBlocks = JSON.parse(JSON.stringify(modweebHistory[++modweebHistoryIndex])); modweebRenderBlocks(); modweebShowStatus("تم الإعادة"); } }
 
 function saveToLocalStorage(){
-    try { localStorage.setItem("modweebGeneratorV2", JSON.stringify({blocks: modweebBlocks, timestamp: Date.now()})); modweebShowStatus("تم الحفظ"); } catch(e){ modweebShowStatus("فشل الحفظ"); }
+    try { localStorage.setItem("modweebGeneratorV2", JSON.stringify({blocks: modweebBlocks, timestamp: Date.now()})); window.modweebArticleDirty = false; modweebShowStatus("تم الحفظ"); } catch(e){ modweebShowStatus("فشل الحفظ"); }
 }
 
 function modweebLoadFromLocalStorage(){
@@ -1008,6 +1008,12 @@ function modweebRenderPreviewItem(b){
         case "kbd": return b.kbdText ? `<kbd>${modweebEscapeHtml(b.kbdText)}</kbd>` : "";
         case "inlineCode": return b.inlineCode ? `<code>${modweebEscapeHtml(b.inlineCode)}</code>` : "";
 
+function modweebWrapAccordionContent(content){
+    const c = String(content||"");
+    if (/^\s*<(p|ol|ul|div|blockquote|table|pre|h[1-6]|details|figure)\b/i.test(c)) return c;
+    return `<p>${c}</p>`;
+}
+
         /* ─── Spoiler / Accordion / Group / Blur ─── */
         case "spoiler":
         case "accordion":
@@ -1020,18 +1026,18 @@ function modweebRenderPreviewItem(b){
             }
             /* Details.sp */
             if (b.accordionType === "sp") {
-                return `<details class="sp"><summary data-show="Show all" data-hide="Hide all">Spoiler:</summary><div><p>${b.content||""}</p></div></details>`;
+                return `<details class="sp"><summary data-show="Show all" data-hide="Hide all">Spoiler:</summary><div>${modweebWrapAccordionContent(b.content)}</div></details>`;
             }
             /* Accordion (ac / ac alt) */
             if (b.accordionType === "ac" || b.accordionType === "ac alt") {
                 const alt = b.accordionType === "ac alt" ? " alt" : "";
-                return `<details class="ac${alt}"><summary>${b.summary||"العنوان"}</summary><div><p>${b.content||""}</p></div></details>`;
+                return `<details class="ac${alt}"><summary>${b.summary||"العنوان"}</summary><div>${modweebWrapAccordionContent(b.content)}</div></details>`;
             }
             /* Grouped (showH) */
             if (b.accordionType === "group") {
                 let h = `<div class="showH">`;
                 for (const it of (b.accordions||[])) {
-                    h += `<details class="ac${it.alt?" alt":""}"><summary>${it.summary||""}</summary><div><p>${it.content||""}</p></div></details>`;
+                    h += `<details class="ac${it.alt?" alt":""}"><summary>${it.summary||""}</summary><div>${modweebWrapAccordionContent(it.content)}</div></details>`;
                 }
                 return h + `</div>`;
             }
@@ -2828,6 +2834,10 @@ async function publishToBlogger(retry){
         closeSheet('bloggerPublishSheet');
         showSuccessPopup(result.url, postType);
         modweebShowStatus('تم النشر بنجاح', 5000);
+        if (window.modweebArticleDirty) {
+            window.modweebCleanupAfterPublish?.();
+            modweebShowStatus('تم النشر وتنظيف مدخلات النشر والذكاء الاصطناعي المؤقتة (المقال لم يكن محفوظاً).', 6000);
+        }
     } catch(e) {
         showFailurePopup('فشل النشر: ' + e.message);
         modweebShowStatus('فشل النشر: ' + e.message, 5000);
@@ -2909,4 +2919,37 @@ if (cr && !cr.value.trim()) {
   window.modweebSaveBloggerDraft = save;
   window.modweebRestoreBloggerDraft = restore;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+})();
+
+/* ============ تتبّع تغييرات المقال + تنظيف المدخلات المؤقتة بعد النشر ============ */
+(function initPublishTempCleanup(){
+    window.modweebArticleDirty = window.modweebArticleDirty || false;
+    document.addEventListener('input', function(event){
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (target.closest('#blocksContainer, #unifiedCodeEditor')) window.modweebArticleDirty = true;
+    }, true);
+    window.modweebCleanupAfterPublish = function(){
+        try { localStorage.removeItem('modweebBloggerDraft'); } catch(e){}
+        ['bloggerPostTitle','bloggerPostSlug','bloggerPostLabels','bloggerMetaDescription'].forEach(function(id){
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        ['smartPromptInput','smartEditPrompt','smartContextTopic','articleOutlineTopic','articleOutlineKeyword','articleOutlineTitle','articleOutlineFaqQuestions'].forEach(function(id){
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        const preview = document.getElementById('smartResultPreview');
+        if (preview) preview.style.display = 'none';
+        const content = document.getElementById('smartResultContent');
+        if (content) content.textContent = '';
+        const outlineResult = document.getElementById('articleOutlineResult');
+        if (outlineResult) outlineResult.hidden = true;
+        const outlineEmpty = document.getElementById('articleOutlineEmpty');
+        if (outlineEmpty) outlineEmpty.hidden = false;
+        window._smartLastHTML = '';
+        window._smartLastResult = null;
+        window._articleOutlineDraft = null;
+        try { window.modweebClearSmartChat?.(); } catch(e){}
+    };
 })();

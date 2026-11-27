@@ -563,7 +563,7 @@
   <div class="smart-assistant-tabs" role="tablist" aria-label="أدوات المساعد الذكي">
     <button type="button" class="smart-assistant-tab active" aria-selected="true" onclick="setSmartAssistantTab('assistant',this)">إنشاء محتوى</button>
     <button type="button" class="smart-assistant-tab" aria-selected="false" onclick="setSmartAssistantTab('edit',this)">تعديل المقال</button>
-    <button type="button" class="smart-assistant-tab" aria-selected="false" onclick="setSmartAssistantTab('outline',this)">مخطط المقال</button>
+    <button type="button" class="smart-assistant-tab" aria-selected="false" onclick="setSmartAssistantTab('chat',this)">محادثة</button>
   </div>
   <div class="sheet-body smart-assistant-panel active" id="smartGeneratePanel">
 
@@ -620,6 +620,19 @@
     <div class="sheet-field"><label for="smartEditPrompt">التعديل المطلوب</label><textarea id="smartEditPrompt" rows="4" dir="rtl" placeholder="مثال: أضف قسم العيوب بعد قسم المميزات، وحافظ على ترتيب العناوين."></textarea></div>
     <div class="sheet-field"><label for="smartEditScope">نطاق التعديل</label><select id="smartEditScope" dir="rtl"><option value="article">المقال بالكامل مع الحفاظ على بقية المحتوى</option><option value="selection">النص المحدد في المحرر فقط</option></select></div>
     <div id="smartEditHint" class="ai-inline-help" role="status">سيتم حفظ التغيير في سجل التراجع قبل تطبيقه.</div>
+  </div>
+  <div class="sheet-body smart-assistant-panel" id="smartChatPanel" hidden>
+    <p class="ai-inline-help">تحدّث مع النموذج المتصل عن مقالك: اطلب إضافة قسم أو حذف عنصر أو إعادة صياغة أي جزء. إن اقترح النموذج تعديلاً على المقال يظهر زر «تطبيق على المقال» بعد مراجعته.</p>
+    <div id="smartChatMessages" class="smart-chat-messages" role="log" aria-live="polite" aria-label="رسائل المحادثة">
+      <div class="smart-chat-empty" id="smartChatEmpty">لا توجد رسائل بعد. ابدأ بسؤال مثل: «أضف قسم مقارنة بعد القسم الثالث» أو «احذف قسم الأسعار».</div>
+    </div>
+    <div class="smart-chat-compose">
+      <textarea id="smartChatInput" rows="3" dir="auto" placeholder="اكتب رسالتك للنموذج عن المقال..."></textarea>
+      <div class="smart-chat-actions">
+        <button type="button" class="modweeb-gen-btn secondary" onclick="smartChatClear()">مسح المحادثة</button>
+        <button type="button" class="modweeb-gen-btn primary" id="smartChatSendBtn" onclick="smartChatSend()">إرسال</button>
+      </div>
+    </div>
   </div>
   <div class="sheet-body smart-assistant-panel" id="smartOutlinePanel" hidden>
     <div class="article-outline-intro">

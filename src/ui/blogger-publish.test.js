@@ -78,8 +78,8 @@ describe('Blogger API publication', () => {
       blogId: ' 123456 ', postType: 'post', title: '  Example title  ',
       labels: ' تقنية, أخبار، مراجعات ', content: '<p>Article body</p>',
     });
-    expect(payload.kind).toBe('blogger');
-    expect(payload.blog).toEqual({id: '123456'});
+    expect(payload).not.toHaveProperty('kind');
+    expect(payload).not.toHaveProperty('blog');
     expect(payload.title).toBe('Example title');
     expect(payload.labels).toEqual(['تقنية', 'أخبار', 'مراجعات']);
     expect(payload.content).toBe('<!--more-->\n<p>Article body</p>');
@@ -92,7 +92,7 @@ describe('Blogger API publication', () => {
       blogId: '123456', postType: 'page', title: 'Contact',
       labels: 'page-label', content: '<!--more-->\n<p>Contact details</p>',
     });
-    expect(payload.kind).toBe('blogger');
+    expect(payload).not.toHaveProperty('kind');
     expect(payload.content).toBe('<p>Contact details</p>');
     expect(payload).not.toHaveProperty('labels');
   });
