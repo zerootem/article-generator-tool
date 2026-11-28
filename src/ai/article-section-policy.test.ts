@@ -260,7 +260,7 @@ describe('normalizeArticleSections', () => {
     expect(result?.sections).toEqual([]);
   });
 
-  it('keeps only user-supplied quotation text and attribution', () => {
+  it('keeps unattributed quotations and strips unverified attribution', () => {
     const providedQuote = 'التعلم المستمر يفتح أبواباً جديدة';
     const result = normalizeArticleSections({
       sections: [
@@ -269,9 +269,11 @@ describe('normalizeArticleSections', () => {
       ],
     }, { hasQuotes: true, customRequest: `استخدم هذا الاقتباس: «${providedQuote}»` });
 
-    expect(result?.sections).toHaveLength(1);
+    expect(result?.sections).toHaveLength(2);
     expect(result?.sections[0].content).toBe(providedQuote);
     expect(result?.sections[0]).not.toHaveProperty('quoteAuthor');
+    expect(result?.sections[1].content).toBe('اقتباس لم يقدمه المستخدم');
+    expect(result?.sections[1]).not.toHaveProperty('quoteAuthor');
   });
 
   it('returns null for a malformed top-level response', () => {

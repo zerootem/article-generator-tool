@@ -98,7 +98,18 @@ function sanitizeInlineHtml(value: string, urls: Set<string>): string {
     if (tag.startsWith('<!--')) return tag === '<!--[ Post Reference paragraph ]-->' ? tag : '';
     const type = String(name || '').toLowerCase();
     const closing = /^<\//.test(tag);
-    if (['strong','b','em','i','code','br'].includes(type)) return type === 'br' ? '<br>' : closing ? `</${type}>` : `<${type}>`;
+    if (['strong','b','em','i','code','br','u','small','sup','sub'].includes(type)) return type === 'br' ? '<br>' : closing ? `</${type}>` : `<${type}>`;
+    if (type === 'mark') {
+      if (closing) return '</mark>';
+      const markClass = attributes.match(/\bclass\s*=\s*(["'])(.*?)\1/i)?.[2] || '';
+      const safeMark = markClass.split(/\s+/).filter((item) => ['block','red','gray','orange','blue','green','gold','purple'].includes(item));
+      return safeMark.length ? `<mark class="${[...new Set(safeMark)].join(' ')}">` : '<mark>';
+    }
+    if (type === 'span') {
+      if (closing) return '</span>';
+      const spanClass = attributes.match(/\bclass\s*=\s*(["'])(.*?)\1/i)?.[2] || '';
+      return /(^|\s)blur(\s|$)/.test(spanClass) ? '<span class="blur">' : '';
+    }
     if (type === 'a') {
       if (closing) return '</a>';
       const href = attributes.match(/\bhref\s*=\s*(["'])(.*?)\1/i)?.[2] || '';
@@ -275,7 +286,8 @@ function copyKnownFields(section: RecordValue, type: string, urls: Set<string>, 
   if (type === 'paragraph' && !text(result.content)) return null;
   if (type === 'blockquote') {
     const quote = text(result.content);
-    if (!quote || !inputContains(quote, sourceText)) return null;
+    if (!quote) return null;
+    /* الاقتباس غير المنسوب مسموح (حكمة أو خلاصة عامة)؛ النسبة لا تُقبل إلا إذا وردت في مدخلات المستخدم. */
     if (text(result.quoteAuthor) && !inputContains(String(result.quoteAuthor), sourceText)) delete result.quoteAuthor;
   }
   if (type === 'list' && (!Array.isArray(result.listItems) || result.listItems.length === 0)) return null;

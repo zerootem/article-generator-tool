@@ -1641,7 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function insertInternalLink(url, title) {
     const safeUrl   = modweebEscapeAttr(url);
     const safeTitle = modweebEscapeHtml(title);
-    const html = `<a href="${safeUrl}" target="_blank" rel="noopener">${safeTitle}</a>`;
+    const html = `<a class="extL" href="${safeUrl}" rel="nofollow noreferrer noopener" target="_blank">${safeTitle}</a>`;
 
     // إدراج في المحرر الموحد
     if (typeof window.modweebCommitHTML === 'function') {

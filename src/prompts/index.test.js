@@ -88,7 +88,7 @@ describe('article prompt guidance', () => {
     expect(prompt).toContain('note (noteStyle: "info")');
     expect(prompt).toContain('تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.');
     expect(prompt).toContain('paragraph (paragraphStyle: "dropcap")');
-    expect(prompt).toContain('keyPoints بعد المقدمة الموسعة مباشرة');
+    expect(prompt).toContain('keyPoints إلزاماً بعد فقرتي المقدمة');
     expect(prompt).toContain('paragraph (paragraphStyle: "indent")');
     expect(prompt).toContain('accordion (accordionType: "ac") في نهاية كل قسم H2');
     expect(prompt).toContain('3–7 خطوات كاملة قابلة للتنفيذ');
@@ -186,9 +186,9 @@ describe('article prompt guidance', () => {
     );
     expect(new Set(openingPrompts.map((prompt) => prompt.split('\n').find((line) => line.startsWith('الافتتاحية:')))).size).toBeGreaterThan(8);
     const interactive = prompts.article({ topic: 'موضوع', hasMark: true, hasBlur: true, hasAccordionVariants: true }).systemPrompt;
-    expect(interactive).toContain('استخدم mark لإبراز عبارة قصيرة');
-    expect(interactive).toContain('استخدم spoiler مع accordionType=blur');
-    expect(interactive).toContain('نوّع عناصر التفاعل');
+    expect(interactive).toContain('استخدم <mark>...</mark> داخل الفقرات');
+    expect(interactive).toContain('accordionType:"blur"');
+    expect(interactive).toContain('نوّع عناصر التفاعل: اجعل نحو ربع');
   });
 
   it('supports the requested writing modes without encouraging unsupported claims', () => {

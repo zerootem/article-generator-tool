@@ -28,26 +28,28 @@ function buildArticlePrompt(params = {}) {
   const h2Target = H2_TARGET_MAP[size] || H2_TARGET_MAP.md;
 
   const preferences = [];
-  if (hasH3) preferences.push('يمكن استخدام H3 لتقسيم فكرة فرعية حقيقية أو جزء طويل؛ لا تضع H3 في كل قسم.');
+  if (hasH3) preferences.push('أدرج 3–6 عناوين H3 (headingLevel:"h3") داخل أقسام H2 الأطول لتقسيم أفكار فرعية حقيقية، لا في كل قسم.');
   if (hasH4) preferences.push('يجوز استخدام H4 وما بعده عند وجود تسلسل فرعي واضح فقط؛ H5 وH6 نادران ويستخدمان حصراً للحفاظ على بنية متداخلة مفهومة.');
-  if (hasLists) preferences.push('استخدم list عندما تسهّل عرض عناصر متوازية، ولا تكرر القائمة لمجرد التنويع.');
-  if (hasBold) preferences.push('استخدم العريض باعتدال لإبراز مصطلح أو خلاصة مفيدة، لا لحشو الكلمات المفتاحية.');
-  if (hasItalics) preferences.push('استخدم المائل فقط عند وجود حاجة تحريرية فعلية.');
-  if (hasQuotes) preferences.push('لا تدرج اقتباساً منسوباً إلا إذا كان نصه ونسبته موثقين في مدخلات المستخدم؛ لا تنشئ اقتباسات أو أسماء خبراء.');
-  if (hasKeyPoints) preferences.push('أضف keyPoints بعد المقدمة الموسعة مباشرة (بعد فقرتي المقدمة)، في 5–7 محاور موجزة، من دون تكرار متن المقال.');
-  if (hasInstructions) preferences.push('عند شرح إجراء متسلسل حقيقي، أدرج steps عملية مرتبة مباشرة بعد الفقرة indent؛ لا تستخدمها للموضوعات الوصفية.');
-  if (hasTables) preferences.push('أدرج table فقط عندما توجد مقارنة أو بيانات مفيدة؛ لا تختلق قيماً لملء خلاياه.');
-  if (hasImages) preferences.push('أدرج image منظماً فقط عند وجود رابط صورة HTTP(S) قدمه المستخدم؛ لا تنشئ رابطاً أو عنصراً نائباً.');
-  if (hasNotes) preferences.push('يمكن إضافة note اختيارية إضافية عند وجود معلومة تفسيرية مفيدة؛ لا تكرر ملاحظة البداية الإلزامية.');
-  if (hasAlerts) preferences.push('أدرج alert عند وجود تحذير أو معلومة تستدعي إبرازاً، واختر alertStyle بدقة؛ لا تحوّل كل فقرة إلى تنبيه.');
-  if (hasBlur) preferences.push('استخدم spoiler مع accordionType=blur فقط لمعلومة اختيارية مناسبة كإجابة أو حرق؛ لا تخفِ المعلومة الأساسية.');
-  if (hasMark) preferences.push('استخدم mark لإبراز عبارة قصيرة ذات قيمة تحريرية فقط، مع اختيار markClass مدعوم؛ لا تميّز فقرات كاملة ولا تكرر التمييز.');
-  if (hasAccordionVariants) preferences.push('نوّع عناصر التفاعل بين ac alt أو sp أو blur أو group إذا خدم كل نمط غرضاً مختلفاً؛ أكورديون نهاية كل H2 الإلزامي يبقى accordionType:"ac".');
-  if (hasCode) preferences.push('أدرج code أو codeTabs أو inlineCode عند الحاجة التقنية الحقيقية فقط؛ اختر لغة من القائمة المدعومة، واستخدم kbd لاختصار لوحة مفاتيح حقيقي فقط.');
+  if (hasLists) preferences.push('أدرج 2–4 عناصر list في مواضع تناسب عناصر متوازية، ونوّع listStyle بين default وs1، ولا تكرر القائمة لمجرد التنويع.');
+  if (hasBold) preferences.push('استخدم <b>...</b> داخل الفقرات 8–15 مرة لإبراز مصطلحات وخلاصات مفيدة، لا لحشو الكلمات المفتاحية.');
+  if (hasItalics) preferences.push('استخدم <em>...</em> داخل الفقرات 4–8 مرات لعناوين أعمال أو مصطلحات أجنبية أو تشديد تحريري حقيقي.');
+  if (hasQuotes) preferences.push('أدرج 2–4 عناصر blockquote بنمط s1 أو s2: حكمة أو خلاصة عامة غير منسوبة. لا تنسب الاقتباس إلى شخص أو جهة إلا إذا ورد النص والنسبة في مدخلات المستخدم حرفياً.');
+  if (hasKeyPoints) preferences.push('أضف keyPoints إلزاماً بعد فقرتي المقدمة مباشرة، في 5–7 محاور موجزة، من دون تكرار متن المقال.');
+  if (hasInstructions) preferences.push('أدرج steps عملية (3–7 خطوات) في كل قسم H2 يشرح إجراءً متسلسلاً حقيقياً مباشرة بعد الفقرة indent؛ لا تستخدمها للموضوعات الوصفية.');
+  if (hasTables) preferences.push('أدرج 1–3 جداول table في مواضع المقارنة أو البيانات المفيدة، ونوّع tableClasses، ولا تختلق قيماً لملء خلاياه.');
+  if (hasImages) preferences.push('أدرج 1–2 عناصر image فقط عند وجود روابط صور HTTP(S) قدمها المستخدم حرفياً، مع alt دقيق؛ لا تنشئ رابطاً أو عنصراً نائباً.');
+  if (hasNotes) preferences.push('أدرج 3–6 عناصر note اختيارية (noteStyle بين info وwarning وquestion) لمعلومات تفسيرية أو نصائح، دون تكرار ملاحظة البداية الإلزامية.');
+  if (hasAlerts) preferences.push('أدرج 2–4 عناصر alert بأنماط alertStyle مختلفة (tip وwarning وsuccess أو info) لتحذير أو معلومة تستدعي إبرازاً؛ لا تحوّل كل فقرة إلى تنبيه.');
+  if (hasBlur) preferences.push('أدرج 1–2 عناصر spoiler مع accordionType:"blur" لمعلومة اختيارية مناسبة كإجابة أو حرق (spoilerBlurText نص ظاهر)، ولا تخفِ المعلومة الأساسية.');
+  if (hasMark) preferences.push('استخدم <mark>...</mark> داخل الفقرات 6–12 مرة لإبراز عبارات قصيرة ذات قيمة، وأضف 2–4 عناصر mark مستقلة بتنويع markClass (red وblue وgold وgreen)؛ لا تميّز فقرات كاملة.');
+  if (hasAccordionVariants) preferences.push('نوّع عناصر التفاعل: اجعل نحو ربع أكورديونات نهاية H2 بالنمط ac alt، وأضف 2–3 عناصر sp، وواحداً إلى اثنين blur عند تفعيل الضباب؛ يبقى الأكورديون الإلزامي الأول في كل H2 بالنمط ac.');
+  if (hasCode) preferences.push('أدرج 1–3 عناصر code كتلية بمثال حقيقي قصير مع codeLanguage صحيح، و6–15 عنصر inlineCode داخل الفقرات، واستخدم kbd فقط لاختصار لوحة مفاتيح حقيقي.');
   if (hasYoutube) preferences.push('لا تنشئ lazyYt أو معرّف فيديو؛ التطبيق يضيف الفيديو من مرجع YouTube الذي أدخله المستخدم بعد التوليد.');
+  preferences.push('غلّف كل مصطلح إنجليزي (مثل HTML وCSS وSEO وWordPress) وكل أمر برمجي وكل رقم تقني داخل <code>...</code>، بواقع 10–25 مرة في المقال.');
+  preferences.push('حصص التنسيق السطري إلزامية عند تفعيل خيارها، وتُوزّع على الفقرات وأجوبة الأسئلة، ولا تُجمع في فقرة واحدة.');
   preferences.push('استغل خصائص العناصر كلها بدلاً من الافتراضي فقط، ضمن الخيارات المفعّلة: نوّع paragraphStyle بين normal وindent، واستخدم ref فقط مع مصدر حقيقي، ونوّع quoteStyle بين s1 وs2، وnoteStyle بين info وwarning وquestion، وalertStyle مع alertOutlined بحسب طبيعة المعلومة، وlistStyle بين default وs1، واختر tableClasses مناسبة للمحتوى، وmarkClass بألوان مختلفة، وheadingBefore/headingAfter فقط عندما تضيف معنى (مثل «خطوة 1»)، وimageCaptionStyle وscrollHeight عند الصور، وaccordionType المناسب مع بقاء أكورديون نهاية H2 بنمط ac.');
   preferences.push('لا تكرر النمط نفسه في أكثر من عنصرين متتاليين؛ ونوّع أشكال الفقرات (عادي ثم بادئة ثم عادي) وتنوّع عناصر الإبراز بحيث لا يتحول المقال إلى قائمة متكررة من عنصر واحد.');
-  if (hasConclusion) preferences.push('أضف قسم الخاتمة المحدد في الهيكل الإلزامي، بخلاصة مفيدة بلا دعوة تسويقية أو ادعاء غير مدعوم.');
+  if (hasConclusion) preferences.push('أضف قسم الخاتمة المحدد في الهيكل الإلزامي بعنوان h2، بخلاصة مفيدة بلا دعوة تسويقية أو ادعاء غير مدعوم.');
   if (!hasH3) preferences.push('خيار H3 معطّل: لا تستخدم عناوين h3.');
   if (!hasH4) preferences.push('خيار H4 وما بعده معطّل: لا تستخدم h4 أو h5 أو h6.');
   if (!hasConclusion) preferences.push('خيار الخاتمة معطّل: تخطّ قسم الخاتمة وملاحظتها الختامية فقط؛ احتفظ بقسم FAQ ومرجع المقال النهائي.');
@@ -99,6 +101,16 @@ function buildArticlePrompt(params = {}) {
 
 قيم الأنماط للأقسام أعلاه مغلقة؛ لا تخترع قيمة جديدة. لا تخلط الأنواع المتشابهة: note ليس alert، وsteps ليست تنبيهاً، وspoiler هو نمط blur، وlink/button/downloadBox عناصر مختلفة. لا تستخدم link أو button أو downloadBox أو audioPlayer أو videoPlayer أو relatedManual إلا بطلب صريح من المستخدم ومع روابط HTTP(S) أدخلها هو؛ لا تختلق URL أو عنوان صفحة أو اسم ملف أو حجماً. videoPoster وimageUrl وgridUrls يجب أن تكون روابط قدمها المستخدم حرفياً. لا تستخدم relatedAuto أو accordionGroup أو codeTabs أو kbd إلا إذا طلبها المستخدم صراحةً أو كانت مفيدة بوضوح ضمن خيارها المفعّل. يمكن إدراج relatedAuto دون روابط يدوية لأنه يُحمّل منشورات المدونة تلقائياً؛ لا تخترع له data label. استخدم codeTabs فقط عند وجود أمثلة حقيقية متعددة؛ لا تملأ تبويباً بكود وهمي. أخرج هذه الأنواع بمخطط حقولها فقط.`;
 
+  const enabledChecklist = [
+    hasH3 ? 'H3: 3–6' : '', hasConclusion ? 'خاتمة h2 + ملاحظة' : '', hasTables ? 'جداول: 1–3' : '',
+    hasLists ? 'قوائم: 2–4' : '', hasQuotes ? 'اقتباسات: 2–4' : '', hasKeyPoints ? 'keyPoints: 5–7 محاور' : '',
+    hasInstructions ? 'steps في كل قسم إجرائي' : '', hasBold ? 'b داخل الفقرات: 8–15' : '',
+    hasItalics ? 'em: 4–8' : '', hasMark ? 'mark: 6–12 سطري + 2–4 مستقل' : '',
+    hasNotes ? 'ملاحظات: 3–6' : '', hasAlerts ? 'تنبيهات: 2–4' : '', hasBlur ? 'spoiler blur: 1–2' : '',
+    hasAccordionVariants ? 'تنويع الأكورديون: ac alt/sp/blur' : '', hasCode ? 'code كتلي: 1–3 + inlineCode: 6–15' : '',
+    'inlineCode للمصطلحات الإنجليزية والأرقام: 10–25', 'أكورديون ac في نهاية كل H2'
+  ].filter(Boolean).join(' | ');
+  const finalChecklist = `قائمة تحقق إلزامية قبل إرسال JSON — افحص sections وأكمل أي عنصر ناقص ثم أعد الإخراج: ${enabledChecklist}. إذا كان خيار مفعّلاً ولم تستطع الوفاء بحصته لعدم ملاءمة الموضوع، فاذكر ذلك في seoReport.recommendations بدل حذفه بصمت.`;
   const faqHeading = language === 'ar' ? 'الأسئلة الشائعة' : 'FAQ';
   const openingNote = 'تم إعداد هذا المقال عبر ModWeeb AI باستخدام تقنيات توليد المحتوى الحديثة مع التركيز على الوضوح والدقة.';
   const mandatoryStructure = `الهيكل الإلزامي للمقال — التزم بالترتيب والأنواع والحقول التالية، ولا تحذف عنصراً بنيوياً:
@@ -114,7 +126,7 @@ ${hasKeyPoints ? '6. keyPoints (items من 5–7 محاور حقيقية موج�
 
 الجسم الرئيسي — أنشئ ${h2Target} عناوين موضوعية H2 تقريباً وفق حجم المقال المختار، ولكل H2 هذا التسلسل الإلزامي:
 → heading (headingLevel: "h2") — عنوان محدد يضم الكلمة المفتاحية أو مرادفاً طبيعياً متى ناسب.
-→ paragraph (paragraphStyle: "normal") — شرح وافٍ من 4–6 جمل، عادةً 60–110 كلمات؛ استخدم <b> و<em> و<mark> و<code> عند الحاجة فقط، واحترم خيارات التنسيق المعطّلة.
+→ paragraph (paragraphStyle: "normal") — شرح وافٍ من 4–6 جمل، عادةً 60–110 كلمات؛ وطبّق حصص التنسيق السطري المعطّلة أدناه (<b> و<em> و<mark> و<code>) موزعة على الجمل، واحترم الخيارات المعطّلة.
 → paragraph (paragraphStyle: "indent") — تكملة أو زاوية عملية من 2–4 جمل، عادةً 30–70 كلمة. نوّع الأنماط في الفقرات الإضافية فقط بين normal وindent، ولا تجعل فقرات متتابعة متطابقة آلياً.
 → عنصر إلزامي واحد في كل قسم H2، وبالتناوب بين هذه الأنماط الثلاثة بحسب طبيعة القسم: note (noteStyle: "info") لمعلومة توضيحية، أو note (noteStyle: "warning" أو "question") لتنبيه أو سؤال يُفتح للقارئ، أو blockquote (quoteStyle: "s2") لفكرة مركزة. إن كان خيار الاقتباسات معطّلاً فاستخدم note بدلاً منه. لا تخترع اقتباساً منسوباً لشخص؛ quoteStyle "s2" يُستخدم لحكمة أو خلاصة عامة دون نسبة.
 → [عنصر اختياري إضافي عند الحاجة فقط: list أو table أو alert أو mark أو image أو غيرها من الأنواع المدعومة؛ لا تضع عنصراً عشوائياً ولا تكرر المحتوى].
@@ -166,6 +178,7 @@ ${hasConclusion ? `→ heading (headingLevel: "h2", content: "خاتمة").\n→
     `العناصر الأساسية غير قابلة للتعطيل: basics وheading h1 وملاحظة البداية وفقرة dropcap ثم فقرة normal وaccordion نهاية كل H2 وFAQ وpRef النهائي تُخرَج دائماً حتى لو أُغلقت خياراتها الاختيارية؛ الخيارات تتحكم فقط بالعناصر الإضافية وأنماط التنسيق الاختيارية. لا تحذف أي عنصر أساسي مهما كانت الإعدادات.`,
     `المخطط الدقيق: ${typeCatalog}`,
     `قيم tableClasses المسموح بها هي فقط bordered وnoborder وcborder وstripped وhovered وsticky وvab وfull وmh100 وmhvh وmh200 وmh300 وsp5 وsp10 وsp20 وprimary وwarning وsuccess وerror وclr وclb، وتفصل بينها مسافات. خيارات relatedSortBy هي updated أو published. لا تخترع thumbnailUrl أو videoPoster أو imageUrl أو gridUrls؛ استخدم URL قدمه المستخدم حرفياً.`,
+    finalChecklist,
     `الإخراج النهائي: أعد JSON صالحاً فقط بلا Markdown أو شرح خارجه، بالمفاتيح العليا title وmetaDescription وtags وsections وarticleStats وseoReport وhtmlReady. اجعل title هو عنوان H1 نفسه، وانسخ الوصف إلى basics.metaDescription، وأخرج 5–8 وسوم دقيقة. articleStats يضم wordCount وcharacterCount وestimatedReadingMinutes وتعداد العناوين والفقرات والأسئلة والصور والروابط؛ seoReport يضم focusKeyword وkeywordDensity (occurrences وpercent) وrepetition وrecommendations وschemaRecommendations. هذه قيم أولية، وسيعيد التطبيق حسابها من المقال المعروض. اجعل htmlReady سلسلة فارغة؛ التطبيق يولّد HTML النهائي من الأقسام المعتمدة بواسطة عارضه لتفادي اختلاف القالب أو تمرير HTML غير موثوق. لا تضف حقولاً أو أنواع أقسام غير المخطط. نفّذ مقاطع ModWeeb الثابتة المطلوبة حرفياً؛ لا تضف إسناداً أو ترويجاً آخر.`,
   ].join('\n\n');
 
