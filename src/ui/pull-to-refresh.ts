@@ -85,8 +85,8 @@ export function installPullToRefresh(): void {
     if (!pulling || event.touches.length !== 1) return;
     const dy = event.touches[0].clientY - startY;
     const dx = event.touches[0].clientX - startX;
-    // Horizontal gesture wins: release the pull so native panning is never blocked.
-    if (Math.abs(dx) > Math.abs(dy) || Math.abs(dx) > 10) {
+    // Only a genuinely horizontal gesture releases the pull; small diagonal drift is normal on touch screens.
+    if (Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.2) {
       reset();
       return;
     }
@@ -94,6 +94,7 @@ export function installPullToRefresh(): void {
       if (dy < 0) reset();
       return;
     }
+    if (dy < 6) return;
     if (event.cancelable) event.preventDefault();
     setDistance(dy * 0.55);
     ready = distance >= THRESHOLD;
